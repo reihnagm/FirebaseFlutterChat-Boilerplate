@@ -105,51 +105,54 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   Widget messageList() {
-    if( context.watch<ChatProvider>().messages != null) {
-      if( context.watch<ChatProvider>().messages!.isNotEmpty) {
+    if(context.watch<ChatProvider>().messages != null) {
+      if(context.watch<ChatProvider>().messages!.isNotEmpty) {
         return Expanded(
-          child: GroupedListView<ChatMessage, dynamic>(
-            physics: const ScrollPhysics(),
-            controller:  context.read<ChatProvider>().scrollController,
-            elements:  context.watch<ChatProvider>().messages!,
-            groupBy: (el) => DateFormat('dd MMM yyyy').format(el.sentTime),
-            groupSeparatorBuilder: (date) {
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  const Divider(),
-                  Container(
-                    padding: const EdgeInsets.all(8.0),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(10.0)
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 15.0, vertical: 15.0),
+            child: GroupedListView<ChatMessage, dynamic>(
+              physics: const ScrollPhysics(),
+              controller:  context.read<ChatProvider>().scrollController,
+              elements:  context.watch<ChatProvider>().messages!,
+              groupBy: (el) => DateFormat('dd MMM yyyy').format(el.sentTime),
+              groupSeparatorBuilder: (date) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    const Divider(),
+                    Container(
+                      padding: const EdgeInsets.all(8.0),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(10.0)
+                      ),
+                      child: Text(date,
+                        style: const TextStyle(
+                          fontSize: 12.0,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.grey
+                        )
+                      ),
                     ),
-                    child: Text(date,
-                      style: const TextStyle(
-                        fontSize: 12.0,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.grey
-                      )
-                    ),
-                  ),
-                  const Divider(),
-                ],
-              );
-            },
-            groupComparator: (value1, value2) => value1.compareTo(value2),
-            itemComparator: (item1, item2) => DateFormat('yyyy-MM-dd').format(item1.sentTime).compareTo(DateFormat('yyyy-MM-dd').format(item2.sentTime)),
-            order: GroupedListOrder.DESC,
-            shrinkWrap: true,
-            indexedItemBuilder: (BuildContext context, ChatMessage items, int i) {
-              ChatMessage chatMessage = context.read<ChatProvider>().messages![i];
-              bool isOwnMessage = chatMessage.senderID ==  context.watch<AuthenticationProvider>().auth.currentUser!.uid;
-              return CustomChatListViewTile(
-                deviceWidth: deviceWidth * 0.80, 
-                deviceHeight: deviceHeight, 
-                isOwnMessage: isOwnMessage, 
-                message: chatMessage, 
-                sender: widget.chat.members.where((el) => el.uid == chatMessage.senderID).first
-              );                
-            },
+                    const Divider(),
+                  ],
+                );
+              },
+              groupComparator: (value1, value2) => value1.compareTo(value2),
+              itemComparator: (item1, item2) => DateFormat('yyyy-MM-dd').format(item1.sentTime).compareTo(DateFormat('yyyy-MM-dd').format(item2.sentTime)),
+              order: GroupedListOrder.DESC,
+              shrinkWrap: true,
+              indexedItemBuilder: (BuildContext context, ChatMessage items, int i) {
+                ChatMessage chatMessage = context.read<ChatProvider>().messages![i];
+                bool isOwnMessage = chatMessage.senderID ==  context.watch<AuthenticationProvider>().auth.currentUser!.uid;
+                return CustomChatListViewTile(
+                  deviceWidth: deviceWidth * 0.80, 
+                  deviceHeight: deviceHeight, 
+                  isOwnMessage: isOwnMessage, 
+                  message: chatMessage, 
+                  sender: widget.chat.members.where((el) => el.uid == chatMessage.senderID).first
+                );                
+              },
+            ),
           ),
         );
       } else {

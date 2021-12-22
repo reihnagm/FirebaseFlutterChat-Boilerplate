@@ -1,4 +1,5 @@
-import 'package:chatv28/widgets/message_bubble.dart';
+// import 'package:chatv28/widgets/message_bubble.dart';
+import 'package:timeago/timeago.dart' as timeago;
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 
@@ -144,37 +145,73 @@ class CustomChatListViewTile extends StatelessWidget {
   
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.only(bottom: 10.0),
-      width: deviceWidth,
-      child: Row(
-        mainAxisSize: MainAxisSize.max,
-        mainAxisAlignment: isOwnMessage ? MainAxisAlignment.end : MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          !isOwnMessage 
-          ? RoundedImageNetwork(
-              key: UniqueKey(),
-              imagePath: sender.imageUrl!, 
-              size: deviceWidth * 0.08
-            ) 
-          : Container(),
-          SizedBox(width: deviceWidth * 0.05),
-          message.type == MessageType.text 
-          ? TextMessageBubble(
-            isOwnMessage: isOwnMessage, 
-            message: message, 
-            width: deviceWidth,
-            height: deviceHeight * 0.06
-          )
-          : ImageMessageBubble(
-            isOwnMessage: isOwnMessage, 
-            message: message, 
-            height: deviceHeight * 0.30, 
-            width: deviceWidth * 0.55
-          )
-        ],
-      ),
+    Color colorScheme = isOwnMessage 
+    ? const Color.fromRGBO(250, 250, 250, 1.0) 
+    : const Color.fromRGBO(51, 49, 68, 1.0);
+    return Row(
+      mainAxisAlignment: isOwnMessage ? MainAxisAlignment.end : MainAxisAlignment.start,
+      children: [
+        ConstrainedBox(
+          constraints: BoxConstraints(
+            maxWidth: MediaQuery.of(context).size.width - 60,
+          ),
+          child: Container(
+            margin: const EdgeInsets.only(top: 15.0),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 15.0,
+              vertical: 15.0
+            ),
+            decoration: BoxDecoration(
+              color: colorScheme,
+              borderRadius: BorderRadius.circular(15.0)
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text("Hello",
+                  textAlign: TextAlign.justify,
+                  style:  TextStyle(
+                    color: isOwnMessage 
+                    ? Colors.black 
+                    : Colors.white,
+                    fontSize: 14.0,
+                    height: 1.8
+                  ),
+                ),
+                const SizedBox(height: 6.0),
+                Text(timeago.format(message.sentTime),
+                  style: TextStyle(
+                    color: isOwnMessage 
+                    ? Colors.black 
+                    : Colors.white,
+                    fontSize: 11.0,
+                  ),
+                ),
+              ],
+            )
+          ),
+        ),
+        // !isOwnMessage 
+        // ? RoundedImageNetwork(
+        //     key: UniqueKey(),
+        //     imagePath: sender.imageUrl!, 
+        //     size: deviceWidth * 0.08
+        //   ) 
+        // : Container(),
+        // message.type == MessageType.text 
+        // ? TextMessageBubble(
+        //   isOwnMessage: isOwnMessage, 
+        //   message: message, 
+        //   width: deviceWidth,
+        //   height: deviceHeight * 0.06
+        // )
+        // : ImageMessageBubble(
+        //   isOwnMessage: isOwnMessage, 
+        //   message: message, 
+        //   height: deviceHeight * 0.30, 
+        //   width: deviceWidth * 0.55
+        // )
+      ],
     );
   }
 }

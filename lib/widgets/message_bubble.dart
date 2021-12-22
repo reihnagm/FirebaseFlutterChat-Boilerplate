@@ -20,27 +20,25 @@ class TextMessageBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    List<Color> colorScheme = isOwnMessage 
-    ? [
-        const Color.fromRGBO(0, 136, 249, 1.0),
-        const Color.fromRGBO(0, 82, 218, 1.0)
-      ] 
-    : [
-      const Color.fromRGBO(51, 49, 68, 1.0),
-      const Color.fromRGBO(51, 49, 68, 1.0)
-    ];
+    // List<Color> colorScheme = isOwnMessage 
+    // ? [
+    //     const Color.fromRGBO(0, 136, 249, 1.0),
+    //     const Color.fromRGBO(0, 82, 218, 1.0)
+    //   ] 
+    // : [
+    //   const Color.fromRGBO(51, 49, 68, 1.0),
+    //   const Color.fromRGBO(51, 49, 68, 1.0)
+    // ];
+    Color colorScheme = isOwnMessage 
+    ? const Color.fromRGBO(250, 250, 250, 1.0) 
+    : const Color.fromRGBO(51, 49, 68, 1.0);
+    
     return Container(
-      height: height + (message.content.length / 20 * 6.0),
       width: width,
-      padding: const EdgeInsets.symmetric(horizontal: 10),
+      padding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 10.0),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(10.0),
-        gradient: LinearGradient(
-          colors: colorScheme,
-          stops: const [0.30, 0.70],
-          begin: Alignment.centerLeft,
-          end: Alignment.centerRight 
-        )
+        color: colorScheme
       ), 
       child: Column(
         mainAxisSize: MainAxisSize.max,
@@ -48,15 +46,22 @@ class TextMessageBubble extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(message.content, 
-            style: const TextStyle(
-              color: Colors.white
+            style: TextStyle(
+              fontSize: 14.0,
+              color: isOwnMessage 
+              ? Colors.black
+              : Colors.white
             )
           ),
+          const SizedBox(height: 5.0),
           Text(timeago.format(message.sentTime), 
-            style: const TextStyle(
-              color: Colors.white70
+            style: TextStyle(
+              fontSize: 11.0,
+              color: isOwnMessage 
+              ? Colors.black
+              : Colors.white
             )
-          )
+          ),
         ],
       ),
     );
@@ -79,34 +84,31 @@ class ImageMessageBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    List<Color> colorScheme = isOwnMessage 
-    ? [
-        const Color.fromRGBO(0, 136, 249, 1.0),
-        const Color.fromRGBO(0, 82, 218, 1.0)
-      ] 
-    : [
-      const Color.fromRGBO(0, 136, 249, 1.0),
-      const Color.fromRGBO(0, 82, 218, 1.0)
-    ];
+    // List<Color> colorScheme = isOwnMessage 
+    // ? [
+    //     const Color.fromRGBO(0, 136, 249, 1.0),
+    //     const Color.fromRGBO(0, 82, 218, 1.0)
+    //   ] 
+    // : [
+    //   const Color.fromRGBO(0, 136, 249, 1.0),
+    //   const Color.fromRGBO(0, 82, 218, 1.0)
+    // ];
+    Color colorScheme = isOwnMessage 
+    ? const Color.fromRGBO(250, 250, 250, 1.0) 
+    : const Color.fromRGBO(51, 49, 68, 1.0);
     DecorationImage decorationImage = DecorationImage(
       image: NetworkImage(message.content),
       fit: BoxFit.cover
     ); 
     return Container(
-      height: height + (message.content.length / 20 * 6.0),
       width: width,
       padding: EdgeInsets.symmetric(
         horizontal: width * 0.02,
         vertical: height * 0.03
       ),
       decoration: BoxDecoration(
+        color: colorScheme,
         borderRadius: BorderRadius.circular(15.0),
-        gradient: LinearGradient(
-          colors: colorScheme,
-          stops: const [0.30, 0.70],
-          begin: Alignment.bottomLeft,
-          end: Alignment.topRight 
-        )
       ), 
       child: Column(
         mainAxisSize: MainAxisSize.max,
@@ -121,10 +123,15 @@ class ImageMessageBubble extends StatelessWidget {
               image: decorationImage 
             ),
           ),
-          Text(timeago.format(message.sentTime), 
-            style: const TextStyle(
-              color: Colors.white70
-            )
+          const SizedBox(height: 5.0),
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Text(timeago.format(message.sentTime), 
+              style: TextStyle(
+                fontSize: 11.0,
+                color: isOwnMessage ? Colors.black : Colors.white
+              )
+            ),
           )
         ],
       ),
