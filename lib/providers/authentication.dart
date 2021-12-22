@@ -11,6 +11,7 @@ import 'package:chatv28/pages/home.dart';
 import 'package:chatv28/services/navigation.dart';
 import 'package:chatv28/models/chat_user.dart';
 import 'package:chatv28/services/database.dart';
+
 enum LoginStatus { idle, loading, loaded, empty, error }
 
 class AuthenticationProvider extends ChangeNotifier {

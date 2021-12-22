@@ -1,3 +1,4 @@
+import 'package:chatv28/providers/authentication.dart';
 import 'package:chatv28/providers/firebase.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -44,6 +45,7 @@ class MainApp extends StatelessWidget {
         ),
         home: Builder(
           builder: (context) {
+            Provider.of<AuthenticationProvider>(context, listen: false).initAuthStateChanges();
             Provider.of<FirebaseProvider>(context, listen: false).initializeNotification(context);
             Provider.of<FirebaseProvider>(context, listen: false).listenNotification(context);
             return StreamBuilder(

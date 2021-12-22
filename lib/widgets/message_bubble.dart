@@ -7,15 +7,11 @@ class TextMessageBubble extends StatelessWidget {
 
   final bool isOwnMessage;
   final ChatMessage message;
-  final double height;
-  final double width;
 
   const TextMessageBubble({
     Key? key, 
     required this.isOwnMessage,
     required this.message,
-    required this.width,
-    required this.height
   }) : super(key: key);
 
   @override
@@ -33,36 +29,44 @@ class TextMessageBubble extends StatelessWidget {
     ? const Color.fromRGBO(250, 250, 250, 1.0) 
     : const Color.fromRGBO(51, 49, 68, 1.0);
     
-    return Container(
-      width: width,
-      padding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 10.0),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(10.0),
-        color: colorScheme
-      ), 
-      child: Column(
-        mainAxisSize: MainAxisSize.max,
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(message.content, 
-            style: TextStyle(
-              fontSize: 14.0,
-              color: isOwnMessage 
-              ? Colors.black
-              : Colors.white
-            )
-          ),
-          const SizedBox(height: 5.0),
-          Text(timeago.format(message.sentTime), 
-            style: TextStyle(
-              fontSize: 11.0,
-              color: isOwnMessage 
-              ? Colors.black
-              : Colors.white
-            )
-          ),
-        ],
+    return  ConstrainedBox(
+      constraints: BoxConstraints(
+        maxWidth: MediaQuery.of(context).size.width - 60,
+      ),
+      child: Container(
+        margin: const EdgeInsets.only(top: 15.0),
+        padding: const EdgeInsets.symmetric(
+          horizontal: 15.0,
+          vertical: 15.0
+        ),
+        decoration: BoxDecoration(
+          color: colorScheme,
+          borderRadius: BorderRadius.circular(15.0)
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Text(message.content,
+              textAlign: TextAlign.justify,
+              style:  TextStyle(
+                color: isOwnMessage 
+                ? Colors.black 
+                : Colors.white,
+                fontSize: 14.0,
+                height: 1.8
+              ),
+            ),
+            const SizedBox(height: 6.0),
+            Text(timeago.format(message.sentTime),
+              style: TextStyle(
+                color: isOwnMessage 
+                ? Colors.black 
+                : Colors.white,
+                fontSize: 11.0,
+              ),
+            ),
+          ],
+        )
       ),
     );
   }
@@ -102,9 +106,10 @@ class ImageMessageBubble extends StatelessWidget {
     ); 
     return Container(
       width: width,
+      margin: const EdgeInsets.only(top: 15.0),
       padding: EdgeInsets.symmetric(
         horizontal: width * 0.02,
-        vertical: height * 0.03
+        vertical: height * 0.00
       ),
       decoration: BoxDecoration(
         color: colorScheme,

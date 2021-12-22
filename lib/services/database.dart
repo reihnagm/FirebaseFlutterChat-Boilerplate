@@ -98,6 +98,16 @@ class DatabaseService {
     }
   }
 
+  Future<QuerySnapshot<Map<String, dynamic>>> userIsChatted(String uid) async {
+    return await db.collection(chatCollection)
+    .where("relations", arrayContains: uid)
+    .get();
+  }
+
+  Future<QuerySnapshot<Map<String, dynamic>>> fetchListChattedMessage(String uid) async {
+    return await db.collection(chatCollection).doc(uid).collection(messageCollection).get();
+  }
+
   Future<void> setRelationUserOnline(String uid, bool isOnline) async {
     try {
       QuerySnapshot<Map<String, dynamic>> data = await db.collection(chatCollection)

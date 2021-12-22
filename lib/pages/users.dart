@@ -1,3 +1,4 @@
+import 'package:chatv28/models/chat_message.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -108,65 +109,106 @@ class _UsersPageState extends State<UsersPage> {
                 isActive: users[i].isUserOnline(), 
                 isSelected: context.watch<UserProvider>().selectedUsers.contains(users[i]), 
                 onTap: () async {
-                  DocumentReference? doc = await databaseService.createChat(
-                    {
-                      "is_group": false,
-                      "is_activity": false,
-                      "relations": [
-                         authenticationProvider.chatUser.uid,
-                         users[i].uid
-                      ]
-                      "members": [
-                        {
-                          "uid": authenticationProvider.chatUser.uid,
-                          "email": authenticationProvider.chatUser.email,
-                          "image": authenticationProvider.chatUser.imageUrl,
-                          "isOnline": authenticationProvider.chatUser.isOnline,
-                          "last_active": authenticationProvider.chatUser.lastActive,
-                          "name": authenticationProvider.chatUser.name,
-                          "token": authenticationProvider.chatUser.token
-                        },
-                        {
-                          "uid": users[i].uid,
-                          "email":users[i].email,
-                          "image": users[i].imageUrl,
-                          "isOnline": users[i].isOnline,
-                          "last_active": users[i].lastActive,
-                          "name": users[i].name,
-                          "token": authenticationProvider.chatUser.token
-                        }
-                      ], 
+                  QuerySnapshot<Map<String, dynamic>> data = await databaseService.userIsChatted(users[i].uid!);
+                  if(data.docs.isEmpty) {
+                    DocumentReference? doc = await databaseService.createChat(
+                      {
+                        "is_group": false,
+                        "is_activity": false,
+                        "relations": [
+                          authenticationProvider.chatUser.uid,
+                          users[i].uid
+                        ]
+                        "members": [
+                          {
+                            "uid": authenticationProvider.chatUser.uid,
+                            "email": authenticationProvider.chatUser.email,
+                            "image": authenticationProvider.chatUser.imageUrl,
+                            "isOnline": authenticationProvider.chatUser.isOnline,
+                            "last_active": authenticationProvider.chatUser.lastActive,
+                            "name": authenticationProvider.chatUser.name,
+                            "token": authenticationProvider.chatUser.token
+                          },
+                          {
+                            "uid": users[i].uid,
+                            "email":users[i].email,
+                            "image": users[i].imageUrl,
+                            "isOnline": users[i].isOnline,
+                            "last_active": users[i].lastActive,
+                            "name": users[i].name,
+                            "token": authenticationProvider.chatUser.token
+                          }
+                        ], 
+                      }
+                    );
+                    NavigationService.pushNav(context, ChatPage(
+                      chat: Chat(
+                        uid: doc!.id, 
+                        currentUserId: authenticationProvider.chatUser.uid!, 
+                        activity: false, 
+                        group: false, 
+                        members: [
+                          ChatUser(
+                            uid: users[i].uid, 
+                            name: users[i].name, 
+                            email: users[i].email, 
+                            imageUrl: users[i].imageUrl, 
+                            isOnline: users[i].isOnline, 
+                            lastActive: users[i].lastActive,
+                            token: users[i].token
+                          ),
+                          ChatUser(
+                            uid: authenticationProvider.chatUser.uid, 
+                            name: authenticationProvider.chatUser.name, 
+                            email: authenticationProvider.chatUser.name, 
+                            imageUrl: authenticationProvider.chatUser.imageUrl, 
+                            isOnline: authenticationProvider.chatUser.isOnline, 
+                            lastActive: authenticationProvider.chatUser.lastActive,
+                            token: users[i].token
+                          ),
+                        ], 
+                        messages: []
+                      )
+                    ));
+                  } else {
+                    for (var element in data.docs) {
+                      QuerySnapshot<Map<String, dynamic>> data = await databaseService.fetchListChattedMessage(element.id);
+                      List<ChatMessage> messages = [];
+                      for (var item in data.docs) {
+                        Map<String, dynamic> result = item.data();
+                        messages.add(ChatMessage.fromJSON(result));
+                      }
+                      NavigationService.pushNav(context, ChatPage(
+                        chat: Chat(
+                          uid: element.id, 
+                          currentUserId: authenticationProvider.chatUser.uid!, 
+                          activity: false, 
+                          group: false, 
+                          members: [
+                            ChatUser(
+                              uid: users[i].uid, 
+                              name: users[i].name, 
+                              email: users[i].email, 
+                              imageUrl: users[i].imageUrl, 
+                              isOnline: users[i].isOnline, 
+                              lastActive: users[i].lastActive,
+                              token: users[i].token
+                            ),
+                            ChatUser(
+                              uid: authenticationProvider.chatUser.uid, 
+                              name: authenticationProvider.chatUser.name, 
+                              email: authenticationProvider.chatUser.name, 
+                              imageUrl: authenticationProvider.chatUser.imageUrl, 
+                              isOnline: authenticationProvider.chatUser.isOnline, 
+                              lastActive: authenticationProvider.chatUser.lastActive,
+                              token: users[i].token
+                            ),
+                          ], 
+                          messages: messages
+                        )
+                      ));
                     }
-                  );
-                  NavigationService.pushNav(context, ChatPage(
-                    chat: Chat(
-                      uid: doc!.id, 
-                      currentUserId: authenticationProvider.chatUser.uid!, 
-                      activity: false, 
-                      group: false, 
-                      members: [
-                        ChatUser(
-                          uid: users[i].uid, 
-                          name: users[i].name, 
-                          email: users[i].email, 
-                          imageUrl: users[i].imageUrl, 
-                          isOnline: users[i].isOnline, 
-                          lastActive: users[i].lastActive,
-                          token: users[i].token
-                        ),
-                        ChatUser(
-                          uid: authenticationProvider.chatUser.uid, 
-                          name: authenticationProvider.chatUser.name, 
-                          email: authenticationProvider.chatUser.name, 
-                          imageUrl: authenticationProvider.chatUser.imageUrl, 
-                          isOnline: authenticationProvider.chatUser.isOnline, 
-                          lastActive: authenticationProvider.chatUser.lastActive,
-                          token: users[i].token
-                        ),
-                      ], 
-                      messages: []
-                    )
-                  ));
+                  }
                 },
                 onLongPress: () {
                   context.read<UserProvider>().updateSelectedUsers(users[i]);
