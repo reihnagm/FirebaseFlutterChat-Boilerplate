@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:ionicons/ionicons.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
 import 'package:chatv28/models/chat_message.dart';
@@ -57,14 +58,31 @@ class TextMessageBubble extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 6.0),
-            Text(timeago.format(message.sentTime),
-              style: TextStyle(
-                color: isOwnMessage 
-                ? Colors.black 
-                : Colors.white,
-                fontSize: 11.0,
-              ),
-            ),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(timeago.format(message.sentTime),
+                  style: TextStyle(
+                    color: isOwnMessage 
+                    ? Colors.black 
+                    : Colors.white,
+                    fontSize: 11.0,
+                  ),
+                ),
+                const SizedBox(width: 10.0),
+                message.isRead
+                ? const Icon(
+                    Ionicons.checkmark_done,
+                    size: 17.0,
+                    color: Colors.greenAccent,  
+                  )  
+                : const Icon(
+                    Ionicons.checkmark_done,
+                    size: 17.0,
+                    color: Colors.black,  
+                  ),
+              ],
+            ), 
           ],
         )
       ),
@@ -129,15 +147,31 @@ class ImageMessageBubble extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 5.0),
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Text(timeago.format(message.sentTime), 
-              style: TextStyle(
-                fontSize: 11.0,
-                color: isOwnMessage ? Colors.black : Colors.white
-              )
-            ),
-          )
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(timeago.format(message.sentTime),
+                style: TextStyle(
+                  color: isOwnMessage 
+                  ? Colors.black 
+                  : Colors.white,
+                  fontSize: 11.0,
+                ),
+              ),
+              const SizedBox(width: 10.0),
+              message.isRead
+              ? const Icon(
+                  Ionicons.checkmark_done,
+                  size: 17.0,
+                  color: Colors.greenAccent,  
+                )  
+              : const Icon(
+                  Ionicons.checkmark_done,
+                  size: 17.0,
+                  color: Colors.black,  
+                ),
+            ],
+          ),
         ],
       ),
     );

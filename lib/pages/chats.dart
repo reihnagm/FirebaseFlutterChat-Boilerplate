@@ -1,3 +1,4 @@
+import 'package:chatv28/services/database.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -20,6 +21,7 @@ class ChatsPage extends StatefulWidget {
 class _ChatsPageState extends State<ChatsPage> {
   late double deviceHeight;
   late double deviceWidth;
+  late DatabaseService databaseService;
 
   @override 
   void initState() {
@@ -31,6 +33,7 @@ class _ChatsPageState extends State<ChatsPage> {
 
   @override
   Widget build(BuildContext context) {
+    databaseService = DatabaseService();
     deviceHeight = MediaQuery.of(context).size.height;
     deviceWidth = MediaQuery.of(context).size.width;
     return buildUI();
@@ -116,8 +119,9 @@ class _ChatsPageState extends State<ChatsPage> {
       imagePath: chat.imageURL(), 
       isActive: chat.isUsersOnline(), 
       isActivity: chat.activity, 
-      onTap: () {
-        NavigationService.pushNav(context, ChatPage(chat: chat));
+      onTap: () async {
+        await databaseService.updateMsgRead("");
+        // NavigationService.pushNav(context, ChatPage(chat: chat));
       }
     );
   }

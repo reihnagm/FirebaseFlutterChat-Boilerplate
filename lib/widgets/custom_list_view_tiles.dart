@@ -1,9 +1,8 @@
 // import 'package:chatv28/widgets/message_bubble.dart';
-import 'package:chatv28/widgets/message_bubble.dart';
-import 'package:timeago/timeago.dart' as timeago;
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 
+import 'package:chatv28/widgets/message_bubble.dart';
 import 'package:chatv28/models/chat_message.dart';
 import 'package:chatv28/models/chat_user.dart';
 import 'package:chatv28/widgets/rounded_image.dart';
@@ -160,13 +159,6 @@ class CustomChatListViewTile extends StatelessWidget {
             height: deviceHeight * 0.30, 
             width: deviceWidth * 0.55
           )
-        
-        // : ImageMessageBubble(
-        //   isOwnMessage: isOwnMessage, 
-        //   message: message, 
-        //   height: deviceHeight * 0.30, 
-        //   width: deviceWidth * 0.55
-        // )
       ],
     );
   }

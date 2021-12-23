@@ -38,7 +38,8 @@ class DatabaseService {
   Stream<QuerySnapshot> getUsers({String? name}) {
     Query query = db.collection(userCollection);
     if(name != null) {
-      query = query.where("name", isGreaterThanOrEqualTo: name).where("name", isLessThanOrEqualTo: name + "z");
+      query = query.where("name", isGreaterThanOrEqualTo: name)
+      .where("name", isLessThanOrEqualTo: name + "z");
     }
     return query.snapshots();
   }
@@ -64,11 +65,19 @@ class DatabaseService {
 
   Future<void> updateUserLastSeenTime(String uid) async {
     try {
-      await db.collection(userCollection).doc(uid).update(
-        {
-          "last_active": DateTime.now().toUtc()
-        }
-      );
+      await db.collection(userCollection).doc(uid).update({
+        "last_active": DateTime.now().toUtc()
+      });
+    } catch(e) {
+      debugPrint(e.toString());
+    }
+  }
+
+  Future<void> updateMsgRead(String uid) async {
+    try {
+      await db.collection(messageCollection).doc("GSAlCaDPTgMkS63WGHB4").update({
+        "is_read": true
+      });
     } catch(e) {
       debugPrint(e.toString());
     }
@@ -76,11 +85,9 @@ class DatabaseService {
 
   Future<void> updateUserToken(String uid, String? token) async {
     try {
-      await db.collection(userCollection).doc(uid).update(
-        {
-          "token": token
-        }
-      );
+      await db.collection(userCollection).doc(uid).update({
+        "token": token
+      });
     } catch(e) {
       debugPrint(e.toString());
     }
@@ -88,11 +95,9 @@ class DatabaseService {
 
   Future<void> updateUserOnline(String uid, bool isOnline) async {
     try {
-      await db.collection(userCollection).doc(uid).update(
-        {
-          "isOnline": isOnline
-        }
-      );
+      await db.collection(userCollection).doc(uid).update({
+        "isOnline": isOnline
+      });
     } catch(e) {
       debugPrint(e.toString());
     }

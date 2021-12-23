@@ -31,6 +31,9 @@ dependencies:
   get_it: ^7.2.0
   grouped_list: ^4.1.0
 
+  # I
+  ionicons: ^0.1.2
+
   # P
   provider: ^6.0.1
   

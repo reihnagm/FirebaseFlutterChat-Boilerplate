@@ -55,45 +55,41 @@ class _ChatPageState extends State<ChatPage> {
           body: SafeArea(
             child: LayoutBuilder(
               builder: (BuildContext context, BoxConstraints constraints) {
-                return SingleChildScrollView(
-                  child: Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: deviceWidth * 0.03,
-                      vertical: deviceHeight * 0.02
-                    ),
-                    width: deviceHeight * 0.97,
-                    height: deviceHeight,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.max,
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        TopBar(
-                          widget.chat.title(),
-                          fontSize: 16.0,
-                          primaryAction: IconButton(
-                            icon: const Icon(
-                              Icons.delete,
-                              color: Colors.white
-                            ),
-                            onPressed: () {
-                              context.read<ChatProvider>().deleteChat(context, chatId: widget.chat.uid);
-                            },
-                          ),  
-                          secondaryAction: IconButton(
-                            icon: const Icon(
-                              Icons.arrow_back,
-                              color: Colors.white
-                            ),
-                            onPressed: () {
-                              context.read<ChatProvider>().goBack(context);
-                            },
-                          ),  
-                        ),
-                        messageList(),
-                        sendMessageForm()
-                      ],
-                    ),
+                return Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: deviceWidth * 0.03,
+                    vertical: deviceHeight * 0.02
+                  ),
+                  width: deviceHeight * 0.97,
+                  height: deviceHeight,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      TopBar(
+                        widget.chat.title(),
+                        fontSize: 16.0,
+                        primaryAction: IconButton(
+                          icon: const Icon(
+                            Icons.delete,
+                            color: Colors.white
+                          ),
+                          onPressed: () {
+                            context.read<ChatProvider>().deleteChat(context, chatId: widget.chat.uid);
+                          },
+                        ),  
+                        secondaryAction: IconButton(
+                          icon: const Icon(
+                            Icons.arrow_back,
+                            color: Colors.white
+                          ),
+                          onPressed: () {
+                            context.read<ChatProvider>().goBack(context);
+                          },
+                        ),  
+                      ),
+                      messageList(),
+                      sendMessageForm()
+                    ],
                   ),
                 );
               },
