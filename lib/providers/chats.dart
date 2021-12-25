@@ -28,7 +28,7 @@ class ChatsProvider extends ChangeNotifier {
 
   Future<void> getChats() async {
     try {
-      DocumentSnapshot<Object?> user = await databaseService.getUser(authenticationProvider.auth.currentUser!.uid);
+      DocumentSnapshot<Object?> user = await databaseService.getUser(authenticationProvider.auth.currentUser!.uid)!;
       Map<String, dynamic> userData = user.data() as Map<String, dynamic>;
       ChatUser chatUser = ChatUser.fromJson({
         "uid": authenticationProvider.auth.currentUser!.uid,
@@ -42,8 +42,8 @@ class ChatsProvider extends ChangeNotifier {
         chats = await Future.wait(snapshot.docs.map((d) async {
           Map<String, dynamic> chatData = d.data() as Map<String, dynamic>;
           List<ChatUser> members = [];
-          for (var member in chatData["members"]) {
-            Map<String, dynamic> userData = member as Map<String, dynamic>;
+          for (Map<String, dynamic> member in chatData["members"]) {
+            Map<String, dynamic> userData = member;
             userData["uid"] = member["uid"];
             members.add(ChatUser.fromJson(userData));
           }
@@ -63,7 +63,7 @@ class ChatsProvider extends ChangeNotifier {
             messages: messages, 
           );
         }).toList());
-        notifyListeners();
+        Future.delayed(Duration.zero, () => notifyListeners());
       });
     } catch (e) {
       debugPrint("Error gettings chats.");

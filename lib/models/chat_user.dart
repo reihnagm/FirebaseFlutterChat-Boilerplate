@@ -3,7 +3,7 @@ class ChatUser {
   final String? name;
   final String? email;
   final String? imageUrl;
-  final bool? isOnline;
+  late final bool? isOnline;
   final DateTime? lastActive;
   final String? token;
 

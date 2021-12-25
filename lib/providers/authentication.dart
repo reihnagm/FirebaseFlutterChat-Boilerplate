@@ -30,36 +30,35 @@ class AuthenticationProvider extends ChangeNotifier {
   late ChatUser chatUser;
   
   AuthenticationProvider({required this.sharedPreferences, required this.databaseService}) {
-    initAuthStateChanges();
+    initAuthStateChanges(); 
   }
 
-  void initAuthStateChanges() {
-    auth.authStateChanges().listen((user) async {
-      if(user != null) {
-        databaseService.updateUserLastSeenTime(user.uid);
-        databaseService.updateUserOnline(user.uid, true);
-        DocumentSnapshot<Object?> event = await databaseService.getUser(user.uid);
-          Map<String, dynamic> userData = event.data() as Map<String, dynamic>;
-          chatUser = ChatUser.fromJson({
-            "uid": user.uid,
-            "name": userData["name"],
-            "email": userData["email"],
-            "last_active": userData["last_active"],
-            "isOnline": userData["isOnline"],
-            "image": userData["image"],
-            "token": await FirebaseMessaging.instance.getToken()
-          }); 
-      } else {
-        user = null;
-      }
-    });
+  Future<void> initAuthStateChanges() async {
+    databaseService.updateUserLastSeenTime(auth.currentUser!.uid);
+    databaseService.updateUserOnline(auth.currentUser!.uid, true);
+    try {
+      DocumentSnapshot<Object?> event = await databaseService.getUser(auth.currentUser!.uid)!;
+      Map<String, dynamic> userData = event.data() as Map<String, dynamic>;
+      chatUser = ChatUser.fromJson({
+        "uid": auth.currentUser!.uid,
+        "name": userData["name"],
+        "email": userData["email"],
+        "last_active": userData["last_active"],
+        "isOnline": userData["isOnline"],
+        "image": userData["image"],
+        "token": await FirebaseMessaging.instance.getToken()
+      }); 
+      Future.delayed(Duration.zero, () => notifyListeners());
+    } catch(e) {
+      debugPrint(e.toString());
+    }
   }
 
   Future<void> logout(BuildContext context) async {
     await databaseService.setRelationUserOnline(auth.currentUser!.uid, false);
     await databaseService.updateUserOnline(auth.currentUser!.uid, false);
-    await auth.signOut();
     NavigationService.pushNavReplacement(context, const LoginPage());
+    await auth.signOut();
   }
 
   Future<void> loginUsingEmailAndPassword(BuildContext context, String email, String password) async {

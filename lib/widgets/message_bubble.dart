@@ -45,7 +45,7 @@ class TextMessageBubble extends StatelessWidget {
           borderRadius: BorderRadius.circular(15.0)
         ),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.end,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(message.content,
               textAlign: TextAlign.justify,
@@ -76,10 +76,12 @@ class TextMessageBubble extends StatelessWidget {
                     size: 17.0,
                     color: Colors.greenAccent,  
                   )  
-                : const Icon(
+                : Icon(
                     Ionicons.checkmark_done,
                     size: 17.0,
-                    color: Colors.black,  
+                    color: isOwnMessage 
+                    ? Colors.black 
+                    : Colors.white  
                   ),
               ],
             ), 

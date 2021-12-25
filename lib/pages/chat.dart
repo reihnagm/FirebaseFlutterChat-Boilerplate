@@ -22,26 +22,53 @@ class ChatPage extends StatefulWidget {
   _ChatPageState createState() => _ChatPageState();
 }
 
-class _ChatPageState extends State<ChatPage> {
+class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   late double deviceHeight;
   late double deviceWidth;
 
-  @override
+
+  @override 
+  void didChangeAppLifecycleState(AppLifecycleState state) async {
+    super.didChangeAppLifecycleState(state); 
+    /* Lifecycle */
+    // - Resumed (App in Foreground)
+    // - Inactive (App Partially Visible - App not focused)
+    // - Paused (App in Background)
+    // - Detached (View Destroyed - App Closed)
+    if(state == AppLifecycleState.detached) {
+      debugPrint("=== APP CLOSED CHAT ===");
+      Provider.of<ChatProvider>(context, listen: false).leaveScreen(chatUid: widget.chat.uid);
+    }
+    if(state == AppLifecycleState.resumed) {
+      debugPrint("=== BACK TO APP CHAT ===");
+      Provider.of<ChatProvider>(context, listen: false).joinScreen(chatUid: widget.chat.uid);
+    }
+    if(state == AppLifecycleState.paused) {
+      debugPrint("=== PAUSED CHAT ===");
+      Provider.of<ChatProvider>(context, listen: false).leaveScreen(chatUid: widget.chat.uid);
+    }
+  }
+
+  @override 
   void initState() {
     super.initState();
+    WidgetsBinding.instance!.addObserver(this);
     WidgetsBinding.instance!.addPostFrameCallback((timeStamp) {
-      Provider.of<ChatProvider>(context, listen: false).listenToKeyboardType(chatId: widget.chat.uid);
-      Provider.of<ChatProvider>(context, listen: false).listenToMessages(chatId: widget.chat.uid);
+      Provider.of<ChatProvider>(context, listen: false).joinScreen(chatUid: widget.chat.uid);
     });
-  } 
+  }
 
   @override 
   void dispose() {
+    WidgetsBinding.instance!.removeObserver(this);
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+     Provider.of<ChatProvider>(context).isScreenOn(chatUid: widget.chat.uid, userUid: widget.chat.recepients.first.uid!);
+    Provider.of<ChatProvider>(context).listenToKeyboardType(chatUid: widget.chat.uid);
+    Provider.of<ChatProvider>(context).listenToMessages(chatUid: widget.chat.uid);
     context.watch<ChatProvider>();
     deviceHeight = MediaQuery.of(context).size.height;
     deviceWidth = MediaQuery.of(context).size.width; 
@@ -74,7 +101,7 @@ class _ChatPageState extends State<ChatPage> {
                             color: Colors.white
                           ),
                           onPressed: () {
-                            context.read<ChatProvider>().deleteChat(context, chatId: widget.chat.uid);
+                            context.read<ChatProvider>().deleteChat(context, chatUid: widget.chat.uid);
                           },
                         ),  
                         secondaryAction: IconButton(
@@ -84,6 +111,7 @@ class _ChatPageState extends State<ChatPage> {
                           ),
                           onPressed: () {
                             context.read<ChatProvider>().goBack(context);
+                            Provider.of<ChatProvider>(context, listen: false).leaveScreen(chatUid: widget.chat.uid);
                           },
                         ),  
                       ),
@@ -193,6 +221,7 @@ class _ChatPageState extends State<ChatPage> {
     return SizedBox(
       width: deviceWidth * 0.60,
       child: CustomTextFormField(
+        fillColor: Colors.transparent,
         controller: context.read<ChatProvider>().messageTextEditingController,
         onSaved: (val) {},
         regex: r"^(?!\s*$).+", 
@@ -205,7 +234,10 @@ class _ChatPageState extends State<ChatPage> {
   Widget sendMessageButton() {
     return IconButton(
       onPressed: () {
-        context.read<ChatProvider>().sendTextMessage(chatId: widget.chat.uid);
+        if(context.read<ChatProvider>().messageTextEditingController.text.isNotEmpty) {
+          context.read<ChatProvider>().sendTextMessage(chatUid: widget.chat.uid);
+        }
+        return;
       }, 
       icon: const Icon(
         Icons.send,

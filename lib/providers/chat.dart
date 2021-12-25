@@ -3,7 +3,6 @@
 import 'dart:async';
 
 import 'package:file_picker/file_picker.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
 
@@ -22,6 +21,8 @@ class ChatProvider extends ChangeNotifier {
   final NavigationService navigationService;
 
   List<ChatMessage>? messages;
+
+  bool isRead = false;
 
   late ScrollController scrollController;
   late TextEditingController messageTextEditingController;
@@ -53,15 +54,15 @@ class ChatProvider extends ChangeNotifier {
     // OPTION 1 listenToKeyboardChanges(); 
   }
 
-  void listenToMessages({required String chatId}) {
+  void listenToMessages({required String chatUid}) {
     try { 
-      messageStream = databaseService.streamMessagesForChat(chatId).listen((snapshot) {
-        List<ChatMessage> lcm = snapshot.docs.map((m) {
+      messageStream = databaseService.streamMessagesForChat(chatUid).listen((snapshot) {
+        List<ChatMessage> cm = snapshot.docs.map((m) {
           Map<String, dynamic> messageData = m.data() as Map<String, dynamic>;
           return ChatMessage.fromJSON(messageData);
         }).toList();
-        messages = lcm;
-        notifyListeners();
+        messages = cm;
+        Future.delayed(Duration.zero, () => notifyListeners());
         WidgetsBinding.instance!.addPostFrameCallback((_) {
           if(scrollController.hasClients) {
             scrollController.jumpTo(scrollController.position.maxScrollExtent);
@@ -80,28 +81,28 @@ class ChatProvider extends ChangeNotifier {
     });
   }
 
-  void listenToKeyboardType({required String chatId}) {
-    messageTextEditingController.addListener(() {
-      if(messageTextEditingController.text.isNotEmpty) {
-        toggleIsActivity(isActive: true, chatId: chatId);
-      } else {
-        toggleIsActivity(isActive: false, chatId: chatId);
-      }
-    });
+  void listenToKeyboardType({required String chatUid}) {
+    // messageTextEditingController.addListener(() {
+    //   if(messageTextEditingController.text.isNotEmpty) {
+    //     toggleIsActivity(isActive: true, chatId: chatId);
+    //   } else {
+    //     toggleIsActivity(isActive: false, chatId: chatId);
+    //   }
+    // });
   }
 
-  void sendTextMessage({required String chatId}) {
+  void sendTextMessage({required String chatUid}) {
     if(messages != null) {
       ChatMessage messageToSend = ChatMessage(
         content: messageTextEditingController.text, 
         senderID: authenticationProvider.auth.currentUser!.uid, 
-        isRead: false,
+        isRead: isRead ? true : false,
         type: MessageType.text, 
         sentTime: DateTime.now()
       );
-      databaseService.addMessageToChat(chatId, messageToSend);
+      databaseService.addMessageToChat(chatUid, messageToSend);
       messageTextEditingController.text = "";
-      notifyListeners();
+      Future.delayed(Duration.zero, () => notifyListeners());
     }
   }
 
@@ -109,13 +110,13 @@ class ChatProvider extends ChangeNotifier {
     try {
       PlatformFile? file = await mediaService.pickImageFromLibrary();
       if(file != null) { 
-        toggleIsActivity(isActive: true, chatId: chatId);
+        toggleIsActivity(isActive: true, chatUid: chatId);
         String? downloadUrl = await cloudStorageService.saveChatImageToStorage(chatId, authenticationProvider.auth.currentUser!.uid, file);
-        toggleIsActivity(isActive: false, chatId: chatId);
+        toggleIsActivity(isActive: false, chatUid: chatId);
         ChatMessage messageToSend = ChatMessage(
           content: downloadUrl!, 
           senderID: authenticationProvider.auth.currentUser!.uid, 
-          isRead: false,
+          isRead: isRead ? true : false,
           type: MessageType.image, 
           sentTime: DateTime.now()
         );
@@ -127,15 +128,29 @@ class ChatProvider extends ChangeNotifier {
     }
   }
 
-  void toggleIsActivity({required bool isActive, required String chatId}) {
-    databaseService.updateChatData(chatId, {
+  Future<void> isScreenOn({required String chatUid, required String userUid}) async {
+    bool? _isRead = await databaseService.isScreenOn(chatUid: chatUid, userUid: userUid);
+    isRead = _isRead!;
+    Future.delayed(Duration.zero, () => notifyListeners());
+  }
+
+  void joinScreen({required String chatUid}) {
+    databaseService.joinScreen(chatUid, authenticationProvider.auth.currentUser!.uid);
+  }
+
+  void leaveScreen({required String chatUid}) {
+    databaseService.leaveScreen(chatUid, authenticationProvider.auth.currentUser!.uid);
+  }
+
+  void toggleIsActivity({required bool isActive, required String chatUid}) {
+    databaseService.updateChatData(chatUid, {
       "is_activity": isActive
     });
   }
 
-  void deleteChat(BuildContext context, {required String chatId}) {
+  void deleteChat(BuildContext context, {required String chatUid}) {
     goBack(context);
-    databaseService.deleteChat(chatId);
+    databaseService.deleteChat(chatUid);
   }
   
   void goBack(BuildContext context) {

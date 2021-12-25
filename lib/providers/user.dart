@@ -38,8 +38,10 @@ class UserProvider extends ChangeNotifier {
           Map<String, dynamic> data = d.data() as Map<String, dynamic>;
           data["uid"] = d.id;
           return ChatUser.fromJson(data);
-        }).where((el) => el.uid != authenticationProvider.auth.currentUser!.uid).toList();
-        notifyListeners();
+        })
+        .where((el) => el.uid != authenticationProvider.auth.currentUser!.uid)
+        .toList();
+        Future.delayed(Duration.zero, () =>   notifyListeners());
       });
     } catch(e) {  
       debugPrint("Error getting users.");
@@ -61,24 +63,24 @@ class UserProvider extends ChangeNotifier {
       List<String> membersIds = _selectedUsers!.map((user) => user.uid!).toList();
       membersIds.add(authenticationProvider.auth.currentUser!.uid);
       bool isGroup = selectedUsers.length > 1;
-      DocumentReference? doc = await databaseService.createChat(
-        {
-          "is_group": isGroup,
-          "is_activity": false,
-          "members": membersIds, 
-        }
-      );
+      // DocumentReference? doc = await databaseService.createChat(
+      //   {
+      //     "is_group": isGroup,
+      //     "is_activity": false,
+      //     "members": membersIds, 
+      //   }
+      // );
       List<ChatUser> members = [];
       for (var uid in membersIds) {
-          DocumentSnapshot<Object?> event = await databaseService.getUser(uid);
-          Map<String, dynamic> userData = event.data() as Map<String, dynamic>;
-          userData["uid"] = event.id;
-          members.add(ChatUser.fromJson(userData));
-   
+        DocumentSnapshot<Object?> event = await databaseService.getUser(uid)!;
+        Map<String, dynamic> userData = event.data() as Map<String, dynamic>;
+        userData["uid"] = event.id;
+        members.add(ChatUser.fromJson(userData));
       }
       ChatPage chatPage = ChatPage(
         chat: Chat(
-          uid: doc!.id,
+          uid: "",
+          //  doc!.id
           currentUserId: authenticationProvider.auth.currentUser!.uid,
           messages: [],
           activity: false,
@@ -90,7 +92,7 @@ class UserProvider extends ChangeNotifier {
       Future.delayed(Duration.zero, () => notifyListeners());
       NavigationService.pushNav(context, chatPage);
     } catch(e) {
-      debugPrint("Error createing chat.");
+      debugPrint("Error creating chat.");
       debugPrint(e.toString());
     }
   }

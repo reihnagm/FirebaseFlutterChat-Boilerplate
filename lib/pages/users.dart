@@ -1,9 +1,9 @@
-import 'package:chatv28/models/chat_message.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
+import 'package:chatv28/models/chat_message.dart';
 import 'package:chatv28/models/chat.dart';
 import 'package:chatv28/pages/chat.dart';
 import 'package:chatv28/services/database.dart';
@@ -31,16 +31,9 @@ class _UsersPageState extends State<UsersPage> {
   late DatabaseService databaseService;
   late TextEditingController searchFieldTextEditingController = TextEditingController();
 
-  @override 
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance!.addPostFrameCallback((timeStamp) {
-      Provider.of<UserProvider>(context, listen: false).getUsers();
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
+    Provider.of<UserProvider>(context, listen: false).getUsers();
     authenticationProvider = context.watch<AuthenticationProvider>();
     databaseService = DatabaseService();
     deviceHeight = MediaQuery.of(context).size.height;
@@ -109,16 +102,22 @@ class _UsersPageState extends State<UsersPage> {
                 isActive: users[i].isUserOnline(), 
                 isSelected: context.watch<UserProvider>().selectedUsers.contains(users[i]), 
                 onTap: () async {
-                  QuerySnapshot<Map<String, dynamic>> data = await databaseService.userIsChatted(users[i].uid!);
-                  if(data.docs.isEmpty) {
+                  QuerySnapshot<Map<String, dynamic>> checkCreateChat = (await databaseService.checkCreateChat(users[i].uid!))!;
+                  if(checkCreateChat.docs.isEmpty) {
                     DocumentReference? doc = await databaseService.createChat(
                       {
                         "is_group": false,
                         "is_activity": false,
+                        "on_screens": FieldValue.arrayUnion([ 
+                          {
+                            "userUid": authenticationProvider.chatUser.uid,
+                            "on": true
+                          }
+                        ]),
                         "relations": [
                           authenticationProvider.chatUser.uid,
                           users[i].uid
-                        ]
+                        ],
                         "members": [
                           {
                             "uid": authenticationProvider.chatUser.uid,
@@ -139,61 +138,14 @@ class _UsersPageState extends State<UsersPage> {
                             "token": authenticationProvider.chatUser.token
                           }
                         ], 
-                      }
-                    );
-                    NavigationService.pushNav(context, ChatPage(
-                      chat: Chat(
-                        uid: doc!.id, 
-                        currentUserId: authenticationProvider.chatUser.uid!, 
-                        activity: false, 
-                        group: false, 
-                        members: [
-                          ChatUser(
-                            uid: users[i].uid, 
-                            name: users[i].name, 
-                            email: users[i].email, 
-                            imageUrl: users[i].imageUrl, 
-                            isOnline: users[i].isOnline, 
-                            lastActive: users[i].lastActive,
-                            token: users[i].token
-                          ),
-                          ChatUser(
-                            uid: authenticationProvider.chatUser.uid, 
-                            name: authenticationProvider.chatUser.name, 
-                            email: authenticationProvider.chatUser.name, 
-                            imageUrl: authenticationProvider.chatUser.imageUrl, 
-                            isOnline: authenticationProvider.chatUser.isOnline, 
-                            lastActive: authenticationProvider.chatUser.lastActive,
-                            token: users[i].token
-                          ),
-                        ], 
-                        messages: []
-                      )
-                    ));
-                  } else {
-                    for (var element in data.docs) {
-                      QuerySnapshot<Map<String, dynamic>> data = await databaseService.fetchListChattedMessage(element.id);
-                      List<ChatMessage> messages = [];
-                      for (var item in data.docs) {
-                        Map<String, dynamic> result = item.data();
-                        messages.add(ChatMessage.fromJSON(result));
-                      }
+                      });
                       NavigationService.pushNav(context, ChatPage(
                         chat: Chat(
-                          uid: element.id, 
+                          uid: doc!.id, 
                           currentUserId: authenticationProvider.chatUser.uid!, 
                           activity: false, 
                           group: false, 
                           members: [
-                            ChatUser(
-                              uid: users[i].uid, 
-                              name: users[i].name, 
-                              email: users[i].email, 
-                              imageUrl: users[i].imageUrl, 
-                              isOnline: users[i].isOnline, 
-                              lastActive: users[i].lastActive,
-                              token: users[i].token
-                            ),
                             ChatUser(
                               uid: authenticationProvider.chatUser.uid, 
                               name: authenticationProvider.chatUser.name, 
@@ -203,11 +155,49 @@ class _UsersPageState extends State<UsersPage> {
                               lastActive: authenticationProvider.chatUser.lastActive,
                               token: users[i].token
                             ),
+                            ChatUser(
+                              uid: users[i].uid, 
+                              name: users[i].name, 
+                              email: users[i].email, 
+                              imageUrl: users[i].imageUrl, 
+                              isOnline: users[i].isOnline, 
+                              lastActive: users[i].lastActive,
+                              token: users[i].token
+                            ),
                           ], 
-                          messages: messages
+                          messages: []
                         )
                       ));
-                    }
+                  } else {
+                    NavigationService.pushNav(context, ChatPage(
+                      chat: Chat(
+                        uid: checkCreateChat.docs[0].id, 
+                        currentUserId: authenticationProvider.chatUser.uid!, 
+                        activity: false, 
+                        group: false, 
+                        members: [
+                          ChatUser(
+                            uid: authenticationProvider.chatUser.uid, 
+                            name: authenticationProvider.chatUser.name, 
+                            email: authenticationProvider.chatUser.name, 
+                            imageUrl: authenticationProvider.chatUser.imageUrl, 
+                            isOnline: authenticationProvider.chatUser.isOnline, 
+                            lastActive: authenticationProvider.chatUser.lastActive,
+                            token: users[i].token
+                          ),
+                          ChatUser(
+                            uid: users[i].uid, 
+                            name: users[i].name, 
+                            email: users[i].email, 
+                            imageUrl: users[i].imageUrl, 
+                            isOnline: users[i].isOnline, 
+                            lastActive: users[i].lastActive,
+                            token: users[i].token
+                          ),
+                        ], 
+                        messages: []
+                      )
+                    ));
                   }
                 },
                 onLongPress: () {

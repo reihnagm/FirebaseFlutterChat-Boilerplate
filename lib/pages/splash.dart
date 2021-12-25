@@ -1,9 +1,5 @@
 
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-
-import 'package:chatv28/providers.dart';
-import 'package:chatv28/providers/firebase.dart';
 
 class SplashPage extends StatefulWidget {
   final VoidCallback onInitializationComplete;
@@ -27,22 +23,19 @@ class _SplashPageState extends State<SplashPage> {
 
   @override
   Widget build(BuildContext context) {
-    return MultiProvider(
-      providers: providers,
-      child: MaterialApp(
-        title: 'Chatify',
-        debugShowCheckedModeBanner: false,
-        theme: ThemeData(
-          backgroundColor: const Color.fromRGBO(36, 35, 49, 1.0),
-          scaffoldBackgroundColor: const Color.fromRGBO(36, 35,  49, 1.0)
-        ),
-        home: const Scaffold(
-          body: Center(
-            child: Text("Chatify",
-              style: TextStyle(
-                fontSize: 40.0,
-                color: Colors.white
-              ),
+    return MaterialApp(
+      title: 'Chatify',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        backgroundColor: const Color.fromRGBO(36, 35, 49, 1.0),
+        scaffoldBackgroundColor: const Color.fromRGBO(36, 35,  49, 1.0)
+      ),
+      home: const Scaffold(
+        body: Center(
+          child: Text("Chatify",
+            style: TextStyle(
+              fontSize: 40.0,
+              color: Colors.white
             ),
           ),
         ),
