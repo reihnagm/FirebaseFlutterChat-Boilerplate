@@ -1,4 +1,5 @@
 // import 'package:chatv28/widgets/message_bubble.dart';
+import 'package:chatv28/models/chat.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 
@@ -73,6 +74,8 @@ class CustomListViewTileWithActivity extends StatelessWidget {
   final bool isActive;
   final bool isActivity;
   final Function onTap;
+  final List<ChatCountRead> reads;
+  final String receiverId;
 
   const CustomListViewTileWithActivity({
     Key? key, 
@@ -82,7 +85,9 @@ class CustomListViewTileWithActivity extends StatelessWidget {
     required this.imagePath,
     required this.isActive,
     required this.isActivity,
-    required this.onTap
+    required this.onTap,
+    required this.reads,
+    required this.receiverId
   }) : super(key: key);
 
 
@@ -103,6 +108,27 @@ class CustomListViewTileWithActivity extends StatelessWidget {
           fontSize: 18.0,
           fontWeight: FontWeight.w500
         )
+      ),
+      trailing: reads.where((el) => el.receiverId == receiverId).isEmpty 
+      ? const SizedBox()
+      : reads.where((el) => el.isRead == false && el.receiverId == receiverId).isEmpty 
+      ? const SizedBox()
+      : Container(
+        width: 20.0,
+        height: 20.0,
+        alignment: Alignment.center,
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          shape: BoxShape.circle
+        ),
+        child: Text((
+          reads.where((el) => el.isRead == false && el.receiverId == receiverId).length
+        ).toString(),
+          style: const TextStyle(
+            color: Colors.black,
+            fontSize: 10.0
+          ),
+        ),
       ),
       subtitle: isActivity 
       ? Row(

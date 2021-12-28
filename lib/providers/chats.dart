@@ -47,6 +47,11 @@ class ChatsProvider extends ChangeNotifier {
             userData["uid"] = member["uid"];
             members.add(ChatUser.fromJson(userData));
           }
+          List<ChatCountRead> reads = [];
+          for (Map<String, dynamic> item in chatData["readeds"]) {
+            Map<String, dynamic> readed = item;
+            reads.add(ChatCountRead.fromJson(readed));
+          }
           List<ChatMessage> messages = [];
           QuerySnapshot chatMessage = await databaseService.getLastMessageForChat(d.id);
           if(chatMessage.docs.isNotEmpty) {
@@ -60,6 +65,7 @@ class ChatsProvider extends ChangeNotifier {
             activity: chatData["is_activity"], 
             group: chatData["is_group"], 
             members: members, 
+            reads: reads,
             messages: messages, 
           );
         }).toList());

@@ -51,20 +51,25 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
     // - Inactive (App Partially Visible - App not focused)
     // - Paused (App in Background)
     // - Detached (View Destroyed - App Closed)
-    if(state == AppLifecycleState.detached) {
-      debugPrint("=== APP CLOSED ===");
-      await databaseService.setRelationUserOnline(Provider.of<AuthenticationProvider>(context, listen: false).auth.currentUser!.uid, true);
-      await databaseService.updateUserOnline(Provider.of<AuthenticationProvider>(context, listen: false).auth.currentUser!.uid, true);
-    }
     if(state == AppLifecycleState.resumed) {
-      debugPrint("=== BACK TO APP ===");
+      debugPrint("=== APP RESUME ===");
       await databaseService.setRelationUserOnline(Provider.of<AuthenticationProvider>(context, listen: false).auth.currentUser!.uid, true);
       await databaseService.updateUserOnline(Provider.of<AuthenticationProvider>(context, listen: false).auth.currentUser!.uid, true);
     }
-    if(state == AppLifecycleState.paused) {
-      debugPrint("=== PAUSED ===");
+    if(state == AppLifecycleState.inactive) {
+      debugPrint("=== APP INACTIVE ===");
       await databaseService.updateUserOnline(Provider.of<AuthenticationProvider>(context, listen: false).auth.currentUser!.uid, false);
       await databaseService.setRelationUserOnline(Provider.of<AuthenticationProvider>(context, listen: false).auth.currentUser!.uid, false);
+    }
+    if(state == AppLifecycleState.paused) {
+      debugPrint("=== APP PAUSED ===");
+      await databaseService.updateUserOnline(Provider.of<AuthenticationProvider>(context, listen: false).auth.currentUser!.uid, false);
+      await databaseService.setRelationUserOnline(Provider.of<AuthenticationProvider>(context, listen: false).auth.currentUser!.uid, false);
+    }
+    if(state == AppLifecycleState.detached) {
+      debugPrint("=== APP CLOSED ===");
+      await databaseService.setRelationUserOnline(Provider.of<AuthenticationProvider>(context, listen: false).auth.currentUser!.uid, false);
+      await databaseService.updateUserOnline(Provider.of<AuthenticationProvider>(context, listen: false).auth.currentUser!.uid, false);
     }
   }
 

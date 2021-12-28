@@ -82,6 +82,7 @@ class UserProvider extends ChangeNotifier {
           uid: "",
           //  doc!.id
           currentUserId: authenticationProvider.auth.currentUser!.uid,
+          reads: [],
           messages: [],
           activity: false,
           members: members,

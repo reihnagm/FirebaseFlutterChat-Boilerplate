@@ -1,9 +1,11 @@
 
 
 import 'dart:async';
+import 'dart:ffi';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
 
 import 'package:chatv28/models/chat_message.dart';
@@ -12,6 +14,7 @@ import 'package:chatv28/services/cloud_storage.dart';
 import 'package:chatv28/services/database.dart';
 import 'package:chatv28/services/media.dart';
 import 'package:chatv28/services/navigation.dart';
+import 'package:soundpool/soundpool.dart';
 
 class ChatProvider extends ChangeNotifier {
   final AuthenticationProvider authenticationProvider;
@@ -21,6 +24,8 @@ class ChatProvider extends ChangeNotifier {
   final NavigationService navigationService;
 
   List<ChatMessage>? messages;
+
+  Soundpool pool = Soundpool.fromOptions(options: SoundpoolOptions.kDefault);
 
   bool isRead = false;
 
@@ -91,7 +96,7 @@ class ChatProvider extends ChangeNotifier {
     // });
   }
 
-  void sendTextMessage({required String chatUid}) {
+  Future<void> sendTextMessage({required String chatUid, required String receiverId}) async {
     if(messages != null) {
       ChatMessage messageToSend = ChatMessage(
         content: messageTextEditingController.text, 
@@ -100,19 +105,20 @@ class ChatProvider extends ChangeNotifier {
         type: MessageType.text, 
         sentTime: DateTime.now()
       );
-      databaseService.addMessageToChat(chatUid, messageToSend);
+      databaseService.addMessageToChat(chatUid, receiverId, messageToSend);
+      await loadSoundSent();
       messageTextEditingController.text = "";
       Future.delayed(Duration.zero, () => notifyListeners());
     }
   }
 
-  void sendImageMessage({required String chatId}) async {
+  Future sendImageMessage({required String chatUid, required String receiverId}) async {
     try {
       PlatformFile? file = await mediaService.pickImageFromLibrary();
       if(file != null) { 
-        toggleIsActivity(isActive: true, chatUid: chatId);
-        String? downloadUrl = await cloudStorageService.saveChatImageToStorage(chatId, authenticationProvider.auth.currentUser!.uid, file);
-        toggleIsActivity(isActive: false, chatUid: chatId);
+        toggleIsActivity(isActive: true, chatUid: chatUid);
+        String? downloadUrl = await cloudStorageService.saveChatImageToStorage(chatUid, authenticationProvider.auth.currentUser!.uid, file);
+        toggleIsActivity(isActive: false, chatUid: chatUid);
         ChatMessage messageToSend = ChatMessage(
           content: downloadUrl!, 
           senderID: authenticationProvider.auth.currentUser!.uid, 
@@ -120,7 +126,7 @@ class ChatProvider extends ChangeNotifier {
           type: MessageType.image, 
           sentTime: DateTime.now()
         );
-        databaseService.addMessageToChat(chatId, messageToSend);
+        databaseService.addMessageToChat(chatUid, receiverId, messageToSend);
       }
     } catch (e) {
       debugPrint("Error sending image message.");
@@ -132,6 +138,11 @@ class ChatProvider extends ChangeNotifier {
     bool? _isRead = await databaseService.isScreenOn(chatUid: chatUid, userUid: userUid);
     isRead = _isRead!;
     Future.delayed(Duration.zero, () => notifyListeners());
+  }
+
+  Future<int> loadSoundSent() async {
+    var asset = await rootBundle.load("assets/sounds/sent.mp3");
+    return await pool.play(await pool.load(asset));
   }
 
   void joinScreen({required String chatUid}) {

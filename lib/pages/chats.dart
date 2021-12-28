@@ -1,3 +1,4 @@
+import 'package:chatv28/providers/chat.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -22,6 +23,11 @@ class _ChatsPageState extends State<ChatsPage> {
   late double deviceHeight;
   late double deviceWidth;
   late DatabaseService databaseService;
+
+  @override 
+  void initState() { 
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -112,6 +118,8 @@ class _ChatsPageState extends State<ChatsPage> {
       imagePath: chat.imageURL(), 
       isActive: chat.isUsersOnline(), 
       isActivity: chat.activity, 
+      reads: chat.reads,
+      receiverId: chat.currentUserId,
       onTap: () async {
         await databaseService.seeMsg(chat.uid, chat.recepients.first.uid!);
         NavigationService.pushNav(context, ChatPage(chat: chat));

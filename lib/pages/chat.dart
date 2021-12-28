@@ -235,7 +235,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     return IconButton(
       onPressed: () {
         if(context.read<ChatProvider>().messageTextEditingController.text.isNotEmpty) {
-          context.read<ChatProvider>().sendTextMessage(chatUid: widget.chat.uid);
+          context.read<ChatProvider>().sendTextMessage(chatUid: widget.chat.uid, receiverId: widget.chat.recepients.first.uid!);
         }
         return;
       }, 
@@ -253,7 +253,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
       child: FloatingActionButton(
         backgroundColor: const Color.fromRGBO(0, 82, 218, 1.0),
         onPressed: () {
-           context.read<ChatProvider>().sendImageMessage(chatId: widget.chat.uid);
+           context.read<ChatProvider>().sendImageMessage(chatUid: widget.chat.uid, receiverId: widget.chat.recepients.first.uid!);
         },
         child: const Icon(
           Icons.camera_enhance,

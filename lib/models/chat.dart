@@ -1,13 +1,35 @@
 import 'package:chatv28/models/chat_message.dart';
 import 'package:chatv28/models/chat_user.dart';
 
+class ChatCountRead {
+  final String messageId;
+  final String receiverId;
+  final bool isRead;
+
+  ChatCountRead({
+    required this.messageId,
+    required this.receiverId,
+    required this.isRead
+  });
+
+  factory ChatCountRead.fromJson(Map<String, dynamic> json) {
+    return ChatCountRead(
+      messageId: json["message_id"],
+      receiverId: json["receiver_id"], 
+      isRead: json["isRead"],
+    );
+  }
+
+}
+
 class Chat {
   final String uid;
   final String currentUserId;
   final bool activity;
   final bool group;
   final List<ChatUser> members;
-  List<ChatMessage> messages; 
+  final List<ChatMessage> messages; 
+  List<ChatCountRead> reads;
   late final List<ChatUser> recepients;
 
   Chat({
@@ -17,12 +39,20 @@ class Chat {
     required this.group,
     required this.members,
     required this.messages,
+    required this.reads,
   }) {
     recepients = members.where((el) => el.uid != currentUserId).toList();
+    reads = reads.where((el) => el.isRead == false && el.receiverId == currentUserId).toList();
   }
 
   List<ChatUser> fetchListRecepients() {
     return recepients;
+  }
+
+  bool isRead() {
+    return reads.isEmpty 
+    ? true 
+    : false;
   }
 
   bool isUsersOnline() => fetchListRecepients().any((el) => el.isUserOnline());

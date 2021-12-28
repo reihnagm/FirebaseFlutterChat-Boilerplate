@@ -34,10 +34,10 @@ class AuthenticationProvider extends ChangeNotifier {
   }
 
   Future<void> initAuthStateChanges() async {
-    databaseService.updateUserLastSeenTime(auth.currentUser!.uid);
-    databaseService.updateUserOnline(auth.currentUser!.uid, true);
     try {
       DocumentSnapshot<Object?> event = await databaseService.getUser(auth.currentUser!.uid)!;
+      databaseService.updateUserLastSeenTime(auth.currentUser!.uid);
+      databaseService.updateUserOnline(auth.currentUser!.uid, true);
       Map<String, dynamic> userData = event.data() as Map<String, dynamic>;
       chatUser = ChatUser.fromJson({
         "uid": auth.currentUser!.uid,

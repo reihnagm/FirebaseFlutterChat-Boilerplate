@@ -118,6 +118,7 @@ class _UsersPageState extends State<UsersPage> {
                           authenticationProvider.chatUser.uid,
                           users[i].uid
                         ],
+                        "readeds": [],
                         "members": [
                           {
                             "uid": authenticationProvider.chatUser.uid,
@@ -165,6 +166,7 @@ class _UsersPageState extends State<UsersPage> {
                               token: users[i].token
                             ),
                           ], 
+                          reads: [],
                           messages: []
                         )
                       ));
@@ -195,6 +197,7 @@ class _UsersPageState extends State<UsersPage> {
                             token: users[i].token
                           ),
                         ], 
+                        reads: [],
                         messages: []
                       )
                     ));

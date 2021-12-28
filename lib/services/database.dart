@@ -50,12 +50,22 @@ class DatabaseService {
     return query.snapshots();
   }
 
-  Future<void> addMessageToChat(String chatID, ChatMessage message) async {
+  Future<void> addMessageToChat(String chatUid, String receiverId, ChatMessage message) async {
     try { 
-      await db.collection(chatCollection)
-      .doc(chatID)
+      DocumentReference doc = await db.collection(chatCollection)
+      .doc(chatUid)
       .collection(messageCollection)
       .add(message.toJson());
+      await db.collection(chatCollection)
+      .doc(chatUid)
+      .update({
+        "readeds": FieldValue.arrayUnion([{
+          "message_id": doc.id,
+          "receiver_id": receiverId,
+          "isRead": message.isRead
+        }])
+      });
+
     } catch(e) {
       debugPrint(e.toString());
     }
@@ -164,6 +174,31 @@ class DatabaseService {
       return await db
       .collection(chatCollection)
       .add(data);
+    } catch(e) {
+      debugPrint(e.toString());
+    }
+  }
+
+  Future<void> totalCountIsNotRead({required String userUid, required String receiverId}) async {
+    try {
+      QuerySnapshot<Map<String, dynamic>> query = await db
+      .collection(chatCollection)
+      .where("relations", arrayContains: userUid)
+      .get();
+      for (QueryDocumentSnapshot<Map<String, dynamic>> data in query.docs) {
+        QuerySnapshot<Map<String, dynamic>> doc = await db
+        .collection(chatCollection)
+        .doc(data.id)
+        .collection(messageCollection)
+        .where("is_read", isEqualTo: false)
+        .where("receiver_id", isEqualTo: receiverId)
+        .get();
+        debugPrint(doc.docs.length.toString());
+        // for (QueryDocumentSnapshot<Map<String, dynamic>> item in doc.docs) {
+        //   Map<String, dynamic> data = item.data();
+        //   print(data);
+        // }
+      }
     } catch(e) {
       debugPrint(e.toString());
     }
