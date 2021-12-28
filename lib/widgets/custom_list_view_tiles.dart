@@ -74,8 +74,8 @@ class CustomListViewTileWithActivity extends StatelessWidget {
   final bool isActive;
   final bool isActivity;
   final Function onTap;
-  final List<ChatCountRead> reads;
-  final String receiverId;
+  final bool isRead;
+  final int readCount;
 
   const CustomListViewTileWithActivity({
     Key? key, 
@@ -86,8 +86,8 @@ class CustomListViewTileWithActivity extends StatelessWidget {
     required this.isActive,
     required this.isActivity,
     required this.onTap,
-    required this.reads,
-    required this.receiverId
+    required this.isRead,
+    required this.readCount,
   }) : super(key: key);
 
 
@@ -109,9 +109,7 @@ class CustomListViewTileWithActivity extends StatelessWidget {
           fontWeight: FontWeight.w500
         )
       ),
-      trailing: reads.where((el) => el.receiverId == receiverId).isEmpty 
-      ? const SizedBox()
-      : reads.where((el) => el.isRead == false && el.receiverId == receiverId).isEmpty 
+      trailing: isRead
       ? const SizedBox()
       : Container(
         width: 20.0,
@@ -121,9 +119,7 @@ class CustomListViewTileWithActivity extends StatelessWidget {
           color: Colors.white,
           shape: BoxShape.circle
         ),
-        child: Text((
-          reads.where((el) => el.isRead == false && el.receiverId == receiverId).length
-        ).toString(),
+        child: Text((readCount).toString(),
           style: const TextStyle(
             color: Colors.black,
             fontSize: 10.0

@@ -16,8 +16,16 @@ class ChatCountRead {
     return ChatCountRead(
       messageId: json["message_id"],
       receiverId: json["receiver_id"], 
-      isRead: json["isRead"],
+      isRead: json["is_read"],
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      "message_id": messageId,
+      "receiver_id": receiverId,
+      "is_read": isRead,
+    };
   }
 
 }
@@ -29,7 +37,7 @@ class Chat {
   final bool group;
   final List<ChatUser> members;
   final List<ChatMessage> messages; 
-  List<ChatCountRead> reads;
+  List<ChatCountRead> readers;
   late final List<ChatUser> recepients;
 
   Chat({
@@ -39,21 +47,18 @@ class Chat {
     required this.group,
     required this.members,
     required this.messages,
-    required this.reads,
+    required this.readers,
   }) {
     recepients = members.where((el) => el.uid != currentUserId).toList();
-    reads = reads.where((el) => el.isRead == false && el.receiverId == currentUserId).toList();
+    readers = readers.where((el) => el.isRead == false && el.receiverId == currentUserId).toList();
   }
 
   List<ChatUser> fetchListRecepients() {
     return recepients;
   }
-
-  bool isRead() {
-    return reads.isEmpty 
-    ? true 
-    : false;
-  }
+ 
+  int readCount() => readers.length;
+  bool isRead() => readers.isEmpty ? true : false;
 
   bool isUsersOnline() => fetchListRecepients().any((el) => el.isUserOnline());
   String title() => !group ? recepients.first.name! : recepients.map((user) => user.name!).join(", ");

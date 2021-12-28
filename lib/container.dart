@@ -40,6 +40,7 @@ Future<void> init() async {
     navigationService: getIt(),
   ));
   getIt.registerFactory(() => FirebaseProvider());
+  
    // External
   final sharedPreferences = await SharedPreferences.getInstance();
   getIt.registerLazySingleton(() => sharedPreferences);

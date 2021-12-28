@@ -47,10 +47,10 @@ class ChatsProvider extends ChangeNotifier {
             userData["uid"] = member["uid"];
             members.add(ChatUser.fromJson(userData));
           }
-          List<ChatCountRead> reads = [];
-          for (Map<String, dynamic> item in chatData["readeds"]) {
-            Map<String, dynamic> readed = item;
-            reads.add(ChatCountRead.fromJson(readed));
+          List<ChatCountRead> readers = [];
+          for (Map<String, dynamic> item in chatData["readers"]) {
+            Map<String, dynamic> reader = item;
+            readers.add(ChatCountRead.fromJson(reader));
           }
           List<ChatMessage> messages = [];
           QuerySnapshot chatMessage = await databaseService.getLastMessageForChat(d.id);
@@ -61,18 +61,19 @@ class ChatsProvider extends ChangeNotifier {
           }
           return Chat(
             uid: d.id, 
-            currentUserId: authenticationProvider.auth.currentUser!.uid, 
+            currentUserId: authenticationProvider.auth.currentUser == 
+            null ? "" 
+            : authenticationProvider.auth.currentUser!.uid, 
             activity: chatData["is_activity"], 
             group: chatData["is_group"], 
             members: members, 
-            reads: reads,
+            readers: readers,
             messages: messages, 
           );
         }).toList());
         Future.delayed(Duration.zero, () => notifyListeners());
       });
     } catch (e) {
-      debugPrint("Error gettings chats.");
       debugPrint(e.toString());
     }
   }

@@ -27,14 +27,20 @@ class _UsersPageState extends State<UsersPage> {
   late double deviceHeight; 
   late double deviceWidth;
 
-  late AuthenticationProvider authenticationProvider;
   late DatabaseService databaseService;
   late TextEditingController searchFieldTextEditingController = TextEditingController();
 
+  @override 
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance!.addPostFrameCallback((timeStamp) {
+      Provider.of<AuthenticationProvider>(context, listen: false).initAuthStateChanges();
+      Provider.of<UserProvider>(context, listen: false).getUsers();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    Provider.of<UserProvider>(context, listen: false).getUsers();
-    authenticationProvider = context.watch<AuthenticationProvider>();
     databaseService = DatabaseService();
     deviceHeight = MediaQuery.of(context).size.height;
     deviceWidth = MediaQuery.of(context).size.width;
@@ -62,8 +68,8 @@ class _UsersPageState extends State<UsersPage> {
                     Icons.logout,
                     color: Colors.white,
                   ),
-                  onPressed: () {
-                    Provider.of<AuthenticationProvider>(context, listen: false).logout(context);
+                  onPressed: () async {
+                    await Provider.of<AuthenticationProvider>(context, listen: false).logout(context);
                   }, 
                 ),
               ),
@@ -77,7 +83,14 @@ class _UsersPageState extends State<UsersPage> {
                 hintText: "Search", 
                 obscureText: true
               ),
-              usersList(),
+              Consumer<AuthenticationProvider>(
+                builder: (BuildContext context, AuthenticationProvider authenticationProvider, Widget? child) {
+                  if(authenticationProvider.chatUser == null) {
+                    return Container();
+                  }
+                  return usersList();
+                },
+              ),
               createChatButton()
             ],
           ),
@@ -87,10 +100,11 @@ class _UsersPageState extends State<UsersPage> {
   }
 
   Widget usersList() {
-    List<ChatUser>? users = context.watch<UserProvider>().users; 
+    List<ChatUser>? _users = context.read<UserProvider>().users;
     return Expanded(child: () {
-      if(users != null) {
-        if(users.isNotEmpty) {
+      if(_users != null) {
+        if(_users.isNotEmpty) {
+          List<ChatUser> users = _users.where((el) => el.uid != context.read<AuthenticationProvider>().chatUser!.uid).toList();
           return ListView.builder(
             itemCount: users.length,
             itemBuilder: (BuildContext context, int i) {
@@ -110,24 +124,24 @@ class _UsersPageState extends State<UsersPage> {
                         "is_activity": false,
                         "on_screens": FieldValue.arrayUnion([ 
                           {
-                            "userUid": authenticationProvider.chatUser.uid,
+                            "userUid": context.read<AuthenticationProvider>().chatUser!.uid,
                             "on": true
                           }
                         ]),
                         "relations": [
-                          authenticationProvider.chatUser.uid,
+                          context.read<AuthenticationProvider>().chatUser!.uid,
                           users[i].uid
                         ],
-                        "readeds": [],
+                        "readers": [],
                         "members": [
                           {
-                            "uid": authenticationProvider.chatUser.uid,
-                            "email": authenticationProvider.chatUser.email,
-                            "image": authenticationProvider.chatUser.imageUrl,
-                            "isOnline": authenticationProvider.chatUser.isOnline,
-                            "last_active": authenticationProvider.chatUser.lastActive,
-                            "name": authenticationProvider.chatUser.name,
-                            "token": authenticationProvider.chatUser.token
+                            "uid": context.read<AuthenticationProvider>().chatUser!.uid,
+                            "email": context.read<AuthenticationProvider>().chatUser!.email,
+                            "image": context.read<AuthenticationProvider>().chatUser!.imageUrl,
+                            "isOnline": context.read<AuthenticationProvider>().chatUser!.isOnline,
+                            "last_active": context.read<AuthenticationProvider>().chatUser!.lastActive,
+                            "name": context.read<AuthenticationProvider>().chatUser!.name,
+                            "token": context.read<AuthenticationProvider>().chatUser!.token
                           },
                           {
                             "uid": users[i].uid,
@@ -136,24 +150,24 @@ class _UsersPageState extends State<UsersPage> {
                             "isOnline": users[i].isOnline,
                             "last_active": users[i].lastActive,
                             "name": users[i].name,
-                            "token": authenticationProvider.chatUser.token
+                            "token": context.read<AuthenticationProvider>().chatUser!.token
                           }
                         ], 
                       });
                       NavigationService.pushNav(context, ChatPage(
                         chat: Chat(
                           uid: doc!.id, 
-                          currentUserId: authenticationProvider.chatUser.uid!, 
+                          currentUserId: context.read<AuthenticationProvider>().chatUser!.uid!, 
                           activity: false, 
                           group: false, 
                           members: [
                             ChatUser(
-                              uid: authenticationProvider.chatUser.uid, 
-                              name: authenticationProvider.chatUser.name, 
-                              email: authenticationProvider.chatUser.name, 
-                              imageUrl: authenticationProvider.chatUser.imageUrl, 
-                              isOnline: authenticationProvider.chatUser.isOnline, 
-                              lastActive: authenticationProvider.chatUser.lastActive,
+                              uid: context.read<AuthenticationProvider>().chatUser!.uid, 
+                              name: context.read<AuthenticationProvider>().chatUser!.name, 
+                              email: context.read<AuthenticationProvider>().chatUser!.name, 
+                              imageUrl: context.read<AuthenticationProvider>().chatUser!.imageUrl, 
+                              isOnline: context.read<AuthenticationProvider>().chatUser!.isOnline, 
+                              lastActive: context.read<AuthenticationProvider>().chatUser!.lastActive,
                               token: users[i].token
                             ),
                             ChatUser(
@@ -166,7 +180,7 @@ class _UsersPageState extends State<UsersPage> {
                               token: users[i].token
                             ),
                           ], 
-                          reads: [],
+                          readers: [],
                           messages: []
                         )
                       ));
@@ -174,17 +188,17 @@ class _UsersPageState extends State<UsersPage> {
                     NavigationService.pushNav(context, ChatPage(
                       chat: Chat(
                         uid: checkCreateChat.docs[0].id, 
-                        currentUserId: authenticationProvider.chatUser.uid!, 
+                        currentUserId: context.read<AuthenticationProvider>().chatUser!.uid!, 
                         activity: false, 
                         group: false, 
                         members: [
                           ChatUser(
-                            uid: authenticationProvider.chatUser.uid, 
-                            name: authenticationProvider.chatUser.name, 
-                            email: authenticationProvider.chatUser.name, 
-                            imageUrl: authenticationProvider.chatUser.imageUrl, 
-                            isOnline: authenticationProvider.chatUser.isOnline, 
-                            lastActive: authenticationProvider.chatUser.lastActive,
+                            uid: context.read<AuthenticationProvider>().chatUser!.uid, 
+                            name: context.read<AuthenticationProvider>().chatUser!.name, 
+                            email: context.read<AuthenticationProvider>().chatUser!.name, 
+                            imageUrl: context.read<AuthenticationProvider>().chatUser!.imageUrl, 
+                            isOnline: context.read<AuthenticationProvider>().chatUser!.isOnline, 
+                            lastActive: context.read<AuthenticationProvider>().chatUser!.lastActive,
                             token: users[i].token
                           ),
                           ChatUser(
@@ -197,7 +211,7 @@ class _UsersPageState extends State<UsersPage> {
                             token: users[i].token
                           ),
                         ], 
-                        reads: [],
+                        readers: [],
                         messages: []
                       )
                     ));

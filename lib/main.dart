@@ -53,22 +53,22 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
     // - Detached (View Destroyed - App Closed)
     if(state == AppLifecycleState.resumed) {
       debugPrint("=== APP RESUME ===");
-      await databaseService.setRelationUserOnline(Provider.of<AuthenticationProvider>(context, listen: false).auth.currentUser!.uid, true);
+      await databaseService.setOnChatsUserOnline(Provider.of<AuthenticationProvider>(context, listen: false).auth.currentUser!.uid, true);
       await databaseService.updateUserOnline(Provider.of<AuthenticationProvider>(context, listen: false).auth.currentUser!.uid, true);
     }
     if(state == AppLifecycleState.inactive) {
       debugPrint("=== APP INACTIVE ===");
       await databaseService.updateUserOnline(Provider.of<AuthenticationProvider>(context, listen: false).auth.currentUser!.uid, false);
-      await databaseService.setRelationUserOnline(Provider.of<AuthenticationProvider>(context, listen: false).auth.currentUser!.uid, false);
+      await databaseService.setOnChatsUserOnline(Provider.of<AuthenticationProvider>(context, listen: false).auth.currentUser!.uid, false);
     }
     if(state == AppLifecycleState.paused) {
       debugPrint("=== APP PAUSED ===");
       await databaseService.updateUserOnline(Provider.of<AuthenticationProvider>(context, listen: false).auth.currentUser!.uid, false);
-      await databaseService.setRelationUserOnline(Provider.of<AuthenticationProvider>(context, listen: false).auth.currentUser!.uid, false);
+      await databaseService.setOnChatsUserOnline(Provider.of<AuthenticationProvider>(context, listen: false).auth.currentUser!.uid, false);
     }
     if(state == AppLifecycleState.detached) {
       debugPrint("=== APP CLOSED ===");
-      await databaseService.setRelationUserOnline(Provider.of<AuthenticationProvider>(context, listen: false).auth.currentUser!.uid, false);
+      await databaseService.setOnChatsUserOnline(Provider.of<AuthenticationProvider>(context, listen: false).auth.currentUser!.uid, false);
       await databaseService.updateUserOnline(Provider.of<AuthenticationProvider>(context, listen: false).auth.currentUser!.uid, false);
     }
   }
@@ -99,18 +99,35 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
       ),
       home: Builder(
         builder: (context) {
+          Provider.of<AuthenticationProvider>(context, listen: false).initAuthStateChanges();
           Provider.of<FirebaseProvider>(context, listen: false).initializeNotification(context);
           Provider.of<FirebaseProvider>(context, listen: false).listenNotification(context);
-          return StreamBuilder(
-            stream: FirebaseAuth.instance.authStateChanges(),
-            builder: (BuildContext context, AsyncSnapshot<Object?> snapshot) {
-              User? user = snapshot.data as User?;
-              if(user != null) {
+          return Consumer<AuthenticationProvider>(
+            builder: (BuildContext context, AuthenticationProvider authenticationProvider, Widget? child) {
+              if(authenticationProvider.chatUser == null) {
+                return const LoginPage();
+              }
+              if(authenticationProvider.chatUser != null) {
                 return const HomePage();
               }
-              return const LoginPage();
+              return MultiProvider(
+                providers: providers,
+                child: const MainApp()
+              );
             },
           );
+          // return FutureBuilder(
+          //   future: Provider.of<AuthenticationProvider>(context, listen: false).initAuthStateChanges(),
+          //   builder: (BuildContext context, AsyncSnapshot<Object?> snapshot) {
+          //     if(snapshot.connectionState == ConnectionState.waiting) {
+          //       return Container();
+          //     }
+          //     if(Provider.of<AuthenticationProvider>(context, listen: false).chatUser != null) {
+          //       return const HomePage();
+          //     }
+          //     return const LoginPage();
+          //   },
+          // );
         },
       )
     );

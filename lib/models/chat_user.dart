@@ -30,7 +30,7 @@ class ChatUser {
   }
 
   Map<String, dynamic> toMap() {
-    return  {
+    return {
       "email": email,
       "name": name,
       "last_active": lastActive,

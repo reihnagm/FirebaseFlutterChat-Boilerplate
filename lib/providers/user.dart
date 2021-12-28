@@ -15,14 +15,14 @@ class UserProvider extends ChangeNotifier {
   final DatabaseService databaseService;
   final NavigationService navigationService;
 
-  List<ChatUser>? users;
+  List<ChatUser> _users = [];
+  List<ChatUser> get users => [..._users];
   StreamSubscription? usersStream;
   List<ChatUser>? _selectedUsers;
   List<ChatUser> get selectedUsers => [..._selectedUsers!];
 
   UserProvider({required this.authenticationProvider, required this.databaseService, required this.navigationService}) {
     _selectedUsers = [];
-    getUsers();
   }
 
   @override
@@ -34,17 +34,15 @@ class UserProvider extends ChangeNotifier {
   void getUsers({String? name}) async {
     try {
       usersStream = databaseService.getUsers(name: name).listen((event) async {
-        users = event.docs.map((d) {
+        _users = event.docs.map((d) {
           Map<String, dynamic> data = d.data() as Map<String, dynamic>;
           data["uid"] = d.id;
           return ChatUser.fromJson(data);
         })
-        .where((el) => el.uid != authenticationProvider.auth.currentUser!.uid)
         .toList();
         Future.delayed(Duration.zero, () =>   notifyListeners());
       });
     } catch(e) {  
-      debugPrint("Error getting users.");
       debugPrint(e.toString());
     }
   }
@@ -82,7 +80,7 @@ class UserProvider extends ChangeNotifier {
           uid: "",
           //  doc!.id
           currentUserId: authenticationProvider.auth.currentUser!.uid,
-          reads: [],
+          readers: [],
           messages: [],
           activity: false,
           members: members,
