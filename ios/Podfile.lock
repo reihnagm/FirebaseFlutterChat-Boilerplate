@@ -567,6 +567,8 @@ PODS:
   - SDWebImage/Core (5.12.1)
   - shared_preferences_ios (0.0.1):
     - Flutter
+  - soundpool (0.0.1):
+    - Flutter
   - SwiftyGif (5.4.0)
 
 DEPENDENCIES:
@@ -581,6 +583,7 @@ DEPENDENCIES:
   - flutter_keyboard_visibility (from `.symlinks/plugins/flutter_keyboard_visibility/ios`)
   - flutter_local_notifications (from `.symlinks/plugins/flutter_local_notifications/ios`)
   - shared_preferences_ios (from `.symlinks/plugins/shared_preferences_ios/ios`)
+  - soundpool (from `.symlinks/plugins/soundpool/ios`)
 
 SPEC REPOS:
   trunk:
@@ -632,6 +635,8 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/flutter_local_notifications/ios"
   shared_preferences_ios:
     :path: ".symlinks/plugins/shared_preferences_ios/ios"
+  soundpool:
+    :path: ".symlinks/plugins/soundpool/ios"
 
 SPEC CHECKSUMS:
   abseil: 6c8eb7892aefa08d929b39f9bb108e5367e3228f
@@ -668,6 +673,7 @@ SPEC CHECKSUMS:
   PromisesObjC: 68159ce6952d93e17b2dfe273b8c40907db5ba58
   SDWebImage: 4dc3e42d9ec0c1028b960a33ac6b637bb432207b
   shared_preferences_ios: aef470a42dc4675a1cdd50e3158b42e3d1232b32
+  soundpool: c7f4422ca206e77f8900ed3c4ee6a6ff5a0e38a9
   SwiftyGif: 5d4af95df24caf1c570dbbcb32a3b8a0763bc6d7
 
 PODFILE CHECKSUM: 28ba2a4cbea2c54c773fb44308c4788ea4f19eef

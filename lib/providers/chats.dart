@@ -18,7 +18,9 @@ class ChatsProvider extends ChangeNotifier {
   ChatsProvider({
     required this.authenticationProvider,
     required this.databaseService
-  });
+  }) {
+    chats = [];
+  }
 
   @override 
   void dispose() {

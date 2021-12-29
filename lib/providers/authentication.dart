@@ -54,7 +54,9 @@ class AuthenticationProvider extends ChangeNotifier {
     try {
       DocumentSnapshot<Object?> snapshot = await databaseService.getUser(auth.currentUser!.uid)!;
       Map<String, dynamic> userData = snapshot.data() as Map<String, dynamic>;
-      databaseService.updateUserLastSeenTime(auth.currentUser!.uid);
+      await databaseService.updateUserLastSeenTime(auth.currentUser!.uid);
+      await databaseService.updateUserOnline(auth.currentUser!.uid, true);
+      await databaseService.updateUserToken(auth.currentUser!.uid, await FirebaseMessaging.instance.getToken());
       chatUser = ChatUser.fromJson({
         "uid": auth.currentUser!.uid,
         "name": userData["name"],
@@ -75,10 +77,9 @@ class AuthenticationProvider extends ChangeNotifier {
     setStateLogoutStatus(LogoutStatus.loading);
     try {
       await databaseService.updateUserOnline(auth.currentUser!.uid, false);
-      auth.signOut().then((_) {
-        setStateLogoutStatus(LogoutStatus.loaded);
-        NavigationService.pushNavReplacement(context, const LoginPage());
-      });
+      await auth.signOut();
+      setStateLogoutStatus(LogoutStatus.loaded);
+      NavigationService.pushBackNavReplacement(context, const LoginPage());
     } catch(e) {
       debugPrint(e.toString());
     }
@@ -88,8 +89,6 @@ class AuthenticationProvider extends ChangeNotifier {
     setStateLoginStatus(LoginStatus.loading);
     try {
       await auth.signInWithEmailAndPassword(email: email, password: password);
-      await databaseService.updateUserOnline(auth.currentUser!.uid, true);
-      // await databaseService.updateUserToken(auth.currentUser!.uid, await FirebaseMessaging.instance.getToken());
       setStateLoginStatus(LoginStatus.loaded);
       NavigationService.pushNavReplacement(context, const HomePage());
     } on FirebaseAuthException {

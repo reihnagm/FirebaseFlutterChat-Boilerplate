@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:get_it/get_it.dart';
 import 'package:provider/provider.dart';
 
+import 'package:chatv28/utils/box_shadow.dart';
+import 'package:chatv28/utils/dimensions.dart';
+import 'package:chatv28/utils/color_resources.dart';
 import 'package:chatv28/providers/authentication.dart';
 import 'package:chatv28/services/navigation.dart';
-import 'package:chatv28/widgets/custom_button.dart';
-import 'package:chatv28/widgets/custom_input_fields.dart';
+import 'package:chatv28/basewidget/button/custom_button.dart';
+import 'package:chatv28/basewidget/custom_input_fields.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({ Key? key }) : super(key: key);
@@ -21,7 +23,8 @@ class _LoginPageState extends State<LoginPage> {
   late AuthenticationProvider authenticationProvider;
   late NavigationService navigation;
 
-  final loginFormKey = GlobalKey<FormState>();
+  GlobalKey<ScaffoldState> globalKey = GlobalKey<ScaffoldState>();
+  GlobalKey<FormState> loginFormKey = GlobalKey<FormState>();
 
   String? email;
   String? password;
@@ -31,12 +34,13 @@ class _LoginPageState extends State<LoginPage> {
     deviceHeight = MediaQuery.of(context).size.height;
     deviceWidth = MediaQuery.of(context).size.width;
     authenticationProvider = Provider.of<AuthenticationProvider>(context);
-    navigation = GetIt.instance.get<NavigationService>();
+    navigation = NavigationService();
     return buildUI();
   }
 
   Widget buildUI() {
     return Scaffold(
+      key: globalKey,
       body: Container(
         padding: EdgeInsets.symmetric(
           horizontal: deviceWidth * 0.03,
@@ -50,11 +54,11 @@ class _LoginPageState extends State<LoginPage> {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             pageTitle(),
-            SizedBox(height: deviceHeight * 0.04),
+            const SizedBox(height: 20.0),
             loginForm(),
-            SizedBox(height: deviceHeight * 0.05),
-            loginButton(context),
-            SizedBox(height: deviceHeight * 0.02),
+            const SizedBox(height: 20.0),
+            loginButton(),
+            const SizedBox(height: 10.0),
             registerAccountLink()
           ],
         ),
@@ -65,19 +69,29 @@ class _LoginPageState extends State<LoginPage> {
   Widget pageTitle() {
     return SizedBox(
       height: deviceHeight * 0.10,
-      child: const Text("Chatify",
-        style: TextStyle(
-          color: Colors.white,
-          fontSize: 40.0,
-          fontWeight: FontWeight.w400
-        ),
-      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text("Chatify",
+            style: TextStyle(
+              color: ColorResources.textBlackPrimary,
+              fontSize: 40.0,
+              fontWeight: FontWeight.bold
+            ),
+          ),
+          const SizedBox(width: 3.0),
+          const Icon(
+            Icons.chat_bubble_rounded,
+            size: 20.0,  
+          ),
+        ],
+      ) 
     );
   }
 
   Widget loginForm() {
     return SizedBox(
-      height: deviceHeight * 0.20,
+      height: deviceHeight * 0.17,
       child: Form(
         key: loginFormKey,
         child: Column(
@@ -85,25 +99,44 @@ class _LoginPageState extends State<LoginPage> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            CustomTextFormField(
-              onSaved: (val) {
-                setState(() {
-                  email = val;
-                });
-              }, 
-              regex: r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+", 
-              hintText: "E-mail Address", 
-              obscureText: false
+            Container(
+              decoration: BoxDecoration(
+                boxShadow: boxShadow
+              ),
+              child: CustomTextFormField(
+                onSaved: (val) {
+                  setState(() {
+                    email = val;
+                  });
+                }, 
+                regex: r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+", 
+                hintText: "", 
+                label: const Text("E-mail Address",
+                  style: TextStyle(
+                    color: ColorResources.textBlackPrimary
+                  ),
+                ),
+                obscureText: false
+              ),
             ),
-            CustomTextFormField(
-              onSaved: (val) {
-                setState(() {
-                  password = val;
-                });
-              }, 
-              regex: r".{8,}", 
-              hintText: "Password", 
-              obscureText: true
+            Container(
+              decoration: BoxDecoration(
+                boxShadow: boxShadow
+              ),
+              child: CustomTextPasswordFormField(
+                onSaved: (val) {
+                  setState(() {
+                    password = val;
+                  });
+                }, 
+                regex: r".{8,}", 
+                hintText: "", 
+                label: const Text("Password",
+                  style: TextStyle(
+                    color: ColorResources.textBlackPrimary
+                  ),
+                ),
+              ),
             )
           ],
         ),
@@ -111,7 +144,7 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  Widget loginButton(BuildContext context) {
+  Widget loginButton() {
     return CustomButton(
       onTap: () {
         if(loginFormKey.currentState!.validate()) {
@@ -119,23 +152,40 @@ class _LoginPageState extends State<LoginPage> {
           authenticationProvider.loginUsingEmailAndPassword(context, email!, password!);
         }
       },
+      height: 40.0,
+      isBorder: false,
+      isBoxShadow: true,
       isLoading: context.watch<AuthenticationProvider>().loginStatus == LoginStatus.loading ? true : false,
-      isBoxShadow: false,
+      btnColor: ColorResources.loaderBluePrimary,
       btnTxt: "Login"
     );
   } 
 
   Widget registerAccountLink() {
-    return GestureDetector(
-      onTap: () {},
-      child: const SizedBox(
-        child: Text("Don't have an account",
-          style: TextStyle(
-            color: Colors.white70,
-            fontSize: 12.0
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        const SizedBox(),
+        SizedBox(
+          child: Material(
+            color: ColorResources.transparent,
+            child: InkWell(
+              onTap: () {
+                
+              },
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Text("Register",
+                  style: TextStyle(
+                    color: ColorResources.textBlackPrimary,
+                    fontSize: Dimensions.fontSizeExtraSmall
+                  ),
+                ),
+              ),
+            ),
           ),
-        ),
-      ),
+        )
+      ],
     );
   }
 

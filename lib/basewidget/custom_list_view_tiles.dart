@@ -1,12 +1,14 @@
 // import 'package:chatv28/widgets/message_bubble.dart';
-import 'package:chatv28/models/chat.dart';
+import 'package:chatv28/utils/box_shadow.dart';
+import 'package:chatv28/utils/color_resources.dart';
+import 'package:chatv28/utils/dimensions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 
-import 'package:chatv28/widgets/message_bubble.dart';
+import 'package:chatv28/basewidget/message_bubble.dart';
 import 'package:chatv28/models/chat_message.dart';
 import 'package:chatv28/models/chat_user.dart';
-import 'package:chatv28/widgets/rounded_image.dart';
+import 'package:chatv28/basewidget/rounded_image.dart';
 
 class CustomListViewTile extends StatelessWidget {
   final double height;
@@ -49,17 +51,16 @@ class CustomListViewTile extends StatelessWidget {
         size: height / 2,
       ),
       title: Text(title,
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 18.0,
-          fontWeight: FontWeight.w500
+        style: TextStyle(
+          color: ColorResources.textBlackPrimary,
+          fontSize: Dimensions.fontSizeSmall,
+          fontWeight: FontWeight.bold
         ),
       ),
       subtitle: Text(subtitle,
-        style: const TextStyle(
-          color: Colors.white54,
-          fontSize: 12.0,
-          fontWeight: FontWeight.w500
+        style: TextStyle(
+          color: ColorResources.textBlackPrimary,
+          fontSize: Dimensions.fontSizeExtraSmall,
         ),
       ),
     );
@@ -103,10 +104,10 @@ class CustomListViewTileWithActivity extends StatelessWidget {
       ),
       minVerticalPadding: height * 0.20,
       title: Text(title,
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 18.0,
-          fontWeight: FontWeight.w500
+        style: TextStyle(
+          color: ColorResources.textBlackPrimary,
+          fontSize: Dimensions.fontSizeSmall,
+          fontWeight: FontWeight.bold
         )
       ),
       trailing: isRead
@@ -115,14 +116,15 @@ class CustomListViewTileWithActivity extends StatelessWidget {
         width: 20.0,
         height: 20.0,
         alignment: Alignment.center,
-        decoration: const BoxDecoration(
-          color: Colors.white,
+        decoration: BoxDecoration(
+          color: ColorResources.error,
+          boxShadow: boxShadow,
           shape: BoxShape.circle
         ),
         child: Text((readCount).toString(),
-          style: const TextStyle(
-            color: Colors.black,
-            fontSize: 10.0
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: Dimensions.fontSizeExtraSmall
           ),
         ),
       ),
@@ -138,12 +140,11 @@ class CustomListViewTileWithActivity extends StatelessWidget {
           )
         ],
       ) : Text(subtitle, 
-        style: const TextStyle(
-          color: Colors.white54,
-          fontSize: 12.0,
-          fontWeight: FontWeight.w400
+        style: TextStyle(
+          color: ColorResources.textBlackPrimary,
+          fontSize: Dimensions.fontSizeExtraSmall,
         )
-      )
+      )      
     );
   }
 

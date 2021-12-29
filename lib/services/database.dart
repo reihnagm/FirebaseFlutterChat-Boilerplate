@@ -100,22 +100,22 @@ class DatabaseService {
       .get();
       QuerySnapshot<Map<String, dynamic>> chat = await db
       .collection(chatCollection)
-      .where("relations", arrayContains: userUid)
       .get();
       for (QueryDocumentSnapshot<Map<String, dynamic>> doc in chat.docs) {
         List<dynamic> readers = doc.data()["readers"];
         List<dynamic> chatCountRead = [];
-        for (var reader in readers.where((el) => el["receiver_id"] == userUid).toList()) {
-          reader["is_read"] = true;
-          chatCountRead.add(reader);  
-        }     
-        if(chatCountRead.isNotEmpty) {
+        List<dynamic> checkReaders = readers.where((el) => el["receiver_id"] == userUid).where((el) => el["is_read"] == false).toList();
+        if(checkReaders.isNotEmpty) {
+          for (var reader in checkReaders) {
+            reader["is_read"] = true;
+            chatCountRead.add(reader);  
+          }     
           await db
           .collection(chatCollection)
           .doc(doc.id)
           .update({
             "readers": chatCountRead
-          }); 
+        }); 
         }
       }
       for (QueryDocumentSnapshot<Map<String, dynamic>> doc in msg.docs) {
@@ -138,10 +138,13 @@ class DatabaseService {
 
   Future<void> updateUserOnline(String userUid, bool isOnline) async {
     try {
-      await db.collection(userCollection).doc(userUid).update({
+      await db
+      .collection(userCollection)
+      .doc(userUid)
+      .update({
         "isOnline": isOnline
       });
-      await setOnChatsUserOnline(userUid, isOnline);
+      setOnChatsUserOnline(userUid, isOnline);
     } catch(e) {
       debugPrint(e.toString());
     }
@@ -151,12 +154,11 @@ class DatabaseService {
     try {
       QuerySnapshot<Map<String, dynamic>> data = await db
       .collection(chatCollection)
-      .where("relations", arrayContains: userUid)
       .get();
       for (QueryDocumentSnapshot<Map<String, dynamic>> doc in data.docs) {
         List<dynamic> members = doc.data()["members"];
-        int index = members.indexWhere((el) => el["uid"] == userUid);
-        members[index]["isOnline"] = isOnline;
+        int i = members.indexWhere((el) => el["uid"] == userUid);
+        members[i]["isOnline"] = isOnline;
         doc.reference.update({
           "members": members
         });

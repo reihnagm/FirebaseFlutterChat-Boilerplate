@@ -1,3 +1,6 @@
+import 'package:chatv28/utils/box_shadow.dart';
+import 'package:chatv28/utils/color_resources.dart';
+import 'package:chatv28/utils/dimensions.dart';
 import 'package:flutter/material.dart';
 import 'package:grouped_list/grouped_list.dart';
 import 'package:provider/provider.dart';
@@ -5,9 +8,9 @@ import 'package:intl/intl.dart';
 
 import 'package:chatv28/models/chat_message.dart';
 import 'package:chatv28/providers/chat.dart';
-import 'package:chatv28/widgets/custom_input_fields.dart';
-import 'package:chatv28/widgets/custom_list_view_tiles.dart';
-import 'package:chatv28/widgets/top_bar.dart';
+import 'package:chatv28/basewidget/custom_input_fields.dart';
+import 'package:chatv28/basewidget/custom_list_view_tiles.dart';
+import 'package:chatv28/basewidget/top_bar.dart';
 import 'package:chatv28/providers/authentication.dart';
 import 'package:chatv28/models/chat.dart';
 
@@ -55,6 +58,8 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     WidgetsBinding.instance!.addObserver(this);
     WidgetsBinding.instance!.addPostFrameCallback((timeStamp) {
       Provider.of<ChatProvider>(context, listen: false).joinScreen(chatUid: widget.chat.uid);
+      Provider.of<ChatProvider>(context, listen: false).isScreenOn(chatUid: widget.chat.uid, userUid: widget.chat.recepients.first.uid!);
+      Provider.of<ChatProvider>(context, listen: false).listenToMessages(chatUid: widget.chat.uid);
     });
   }
 
@@ -66,10 +71,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-     Provider.of<ChatProvider>(context).isScreenOn(chatUid: widget.chat.uid, userUid: widget.chat.recepients.first.uid!);
-    Provider.of<ChatProvider>(context).listenToKeyboardType(chatUid: widget.chat.uid);
-    Provider.of<ChatProvider>(context).listenToMessages(chatUid: widget.chat.uid);
-    context.watch<ChatProvider>();
+    // Provider.of<ChatProvider>(context).listenToKeyboardType(chatUid: widget.chat.uid);
     deviceHeight = MediaQuery.of(context).size.height;
     deviceWidth = MediaQuery.of(context).size.width; 
     return buildUI();
@@ -87,18 +89,19 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                     horizontal: deviceWidth * 0.03,
                     vertical: deviceHeight * 0.02
                   ),
-                  width: deviceHeight * 0.97,
+                  width: double.infinity,
                   height: deviceHeight,
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       TopBar(
                         widget.chat.title(),
-                        fontSize: 16.0,
+                        fontSize: Dimensions.fontSizeDefault,
+                        barTitleColor: ColorResources.textBlackPrimary,
                         primaryAction: IconButton(
                           icon: const Icon(
                             Icons.delete,
-                            color: Colors.white
+                            color: ColorResources.backgroundBlackPrimary
                           ),
                           onPressed: () {
                             context.read<ChatProvider>().deleteChat(context, chatUid: widget.chat.uid);
@@ -107,7 +110,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                         secondaryAction: IconButton(
                           icon: const Icon(
                             Icons.arrow_back,
-                            color: Colors.white
+                            color: ColorResources.backgroundBlackPrimary
                           ),
                           onPressed: () {
                             context.read<ChatProvider>().goBack(context);
@@ -136,8 +139,8 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
             padding: const EdgeInsets.symmetric(horizontal: 15.0, vertical: 15.0),
             child: GroupedListView<ChatMessage, dynamic>(
               physics: const ScrollPhysics(),
-              controller:  context.read<ChatProvider>().scrollController,
-              elements:  context.watch<ChatProvider>().messages!,
+              controller: context.read<ChatProvider>().scrollController,
+              elements: context.watch<ChatProvider>().messages!,
               groupBy: (el) => DateFormat('dd MMM yyyy').format(el.sentTime),
               groupSeparatorBuilder: (date) {
                 return Column(
@@ -201,7 +204,8 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   Widget sendMessageForm() {
     return Container(
       decoration: BoxDecoration(
-        color: const Color.fromRGBO(30, 29, 27, 1.0),
+        boxShadow: boxShadow,
+        color: ColorResources.backgroundBlueSecondary,
         borderRadius: BorderRadius.circular(10.0)
       ),
       child: Row(
@@ -220,8 +224,9 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   Widget messageTextField() {
     return SizedBox(
       width: deviceWidth * 0.60,
-      child: CustomTextFormField(
+      child: CustomTextMessageFormField(
         fillColor: Colors.transparent,
+        label: Container(),
         controller: context.read<ChatProvider>().messageTextEditingController,
         onSaved: (val) {},
         regex: r"^(?!\s*$).+", 

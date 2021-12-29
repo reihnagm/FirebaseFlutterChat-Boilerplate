@@ -1,8 +1,9 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
 
+import 'package:chatv28/utils/color_resources.dart';
 import 'package:chatv28/providers/authentication.dart';
 import 'package:chatv28/providers/firebase.dart';
 import 'package:chatv28/services/database.dart';
@@ -53,23 +54,27 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
     // - Detached (View Destroyed - App Closed)
     if(state == AppLifecycleState.resumed) {
       debugPrint("=== APP RESUME ===");
-      await databaseService.setOnChatsUserOnline(Provider.of<AuthenticationProvider>(context, listen: false).auth.currentUser!.uid, true);
-      await databaseService.updateUserOnline(Provider.of<AuthenticationProvider>(context, listen: false).auth.currentUser!.uid, true);
+      if(Provider.of<AuthenticationProvider>(context, listen: false).auth.currentUser != null) {
+        await databaseService.updateUserOnline(Provider.of<AuthenticationProvider>(context, listen: false).auth.currentUser!.uid, true);
+      }
     }
     if(state == AppLifecycleState.inactive) {
       debugPrint("=== APP INACTIVE ===");
-      await databaseService.updateUserOnline(Provider.of<AuthenticationProvider>(context, listen: false).auth.currentUser!.uid, false);
-      await databaseService.setOnChatsUserOnline(Provider.of<AuthenticationProvider>(context, listen: false).auth.currentUser!.uid, false);
+      if(Provider.of<AuthenticationProvider>(context, listen: false).auth.currentUser != null) {
+        await databaseService.updateUserOnline(Provider.of<AuthenticationProvider>(context, listen: false).auth.currentUser!.uid, false);
+      }
     }
     if(state == AppLifecycleState.paused) {
       debugPrint("=== APP PAUSED ===");
-      await databaseService.updateUserOnline(Provider.of<AuthenticationProvider>(context, listen: false).auth.currentUser!.uid, false);
-      await databaseService.setOnChatsUserOnline(Provider.of<AuthenticationProvider>(context, listen: false).auth.currentUser!.uid, false);
+      if(Provider.of<AuthenticationProvider>(context, listen: false).auth.currentUser != null) {
+        await databaseService.updateUserOnline(Provider.of<AuthenticationProvider>(context, listen: false).auth.currentUser!.uid, false);
+      }
     }
     if(state == AppLifecycleState.detached) {
       debugPrint("=== APP CLOSED ===");
-      await databaseService.setOnChatsUserOnline(Provider.of<AuthenticationProvider>(context, listen: false).auth.currentUser!.uid, false);
-      await databaseService.updateUserOnline(Provider.of<AuthenticationProvider>(context, listen: false).auth.currentUser!.uid, false);
+      if(Provider.of<AuthenticationProvider>(context, listen: false).auth.currentUser != null) {
+        await databaseService.updateUserOnline(Provider.of<AuthenticationProvider>(context, listen: false).auth.currentUser!.uid, false);
+      }
     }
   }
 
@@ -87,49 +92,42 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
 
   @override 
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: "Chatify",
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        backgroundColor: const Color.fromRGBO(36, 35, 49, 1.0),
-        scaffoldBackgroundColor: const Color.fromRGBO(36, 35, 49, 1.0),
-        bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-          backgroundColor: Color.fromRGBO(30, 29, 37, 1.0),
-        )
-      ),
-      home: Builder(
-        builder: (context) {
-          Provider.of<AuthenticationProvider>(context, listen: false).initAuthStateChanges();
-          Provider.of<FirebaseProvider>(context, listen: false).initializeNotification(context);
-          Provider.of<FirebaseProvider>(context, listen: false).listenNotification(context);
-          return Consumer<AuthenticationProvider>(
-            builder: (BuildContext context, AuthenticationProvider authenticationProvider, Widget? child) {
-              if(authenticationProvider.chatUser == null) {
-                return const LoginPage();
-              }
-              if(authenticationProvider.chatUser != null) {
-                return const HomePage();
-              }
-              return MultiProvider(
-                providers: providers,
-                child: const MainApp()
+    return ScreenUtilInit(
+      designSize: const Size(360.0, 640.0),
+      builder: () {
+        return MaterialApp(
+          title: "Chatify",
+          debugShowCheckedModeBanner: false,
+          theme: ThemeData(
+            backgroundColor: ColorResources.backgroundColor,
+            scaffoldBackgroundColor:  ColorResources.backgroundColor,
+            bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+              backgroundColor: ColorResources.backgroundBlueSecondary,
+            )
+          ),
+          home: Builder(
+            builder: (context) {
+              Provider.of<AuthenticationProvider>(context, listen: false).initAuthStateChanges();
+              Provider.of<FirebaseProvider>(context, listen: false).initializeNotification(context);
+              Provider.of<FirebaseProvider>(context, listen: false).listenNotification(context);
+              return Consumer<AuthenticationProvider>(
+                builder: (BuildContext context, AuthenticationProvider authenticationProvider, Widget? child) {
+                  if(authenticationProvider.chatUser == null) {
+                    return const LoginPage();
+                  }
+                  if(authenticationProvider.chatUser != null) {
+                    return const HomePage();
+                  }
+                  return MultiProvider(
+                    providers: providers,
+                    child: const MainApp()
+                  );
+                },
               );
             },
-          );
-          // return FutureBuilder(
-          //   future: Provider.of<AuthenticationProvider>(context, listen: false).initAuthStateChanges(),
-          //   builder: (BuildContext context, AsyncSnapshot<Object?> snapshot) {
-          //     if(snapshot.connectionState == ConnectionState.waiting) {
-          //       return Container();
-          //     }
-          //     if(Provider.of<AuthenticationProvider>(context, listen: false).chatUser != null) {
-          //       return const HomePage();
-          //     }
-          //     return const LoginPage();
-          //   },
-          // );
-        },
-      )
+          )
+        );
+      },
     );
   }
 }

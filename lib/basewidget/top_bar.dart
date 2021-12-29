@@ -2,8 +2,11 @@
 
 import 'package:flutter/material.dart';
 
+import 'package:chatv28/utils/color_resources.dart';
+
 class TopBar extends StatelessWidget {
   final String? barTitle;
+  final Color barTitleColor;
   final Widget? primaryAction;
   final Widget? secondaryAction;
   final double? fontSize;
@@ -12,7 +15,10 @@ class TopBar extends StatelessWidget {
   late double deviceWidth;
 
   TopBar(
-    this.barTitle, {Key? key, 
+    this.barTitle, 
+  {
+    Key? key, 
+    this.barTitleColor = ColorResources.white,
     this.primaryAction,
     this.secondaryAction,
     this.fontSize = 35,
@@ -47,7 +53,7 @@ class TopBar extends StatelessWidget {
       barTitle!, 
       overflow: TextOverflow.ellipsis,
       style:  TextStyle(
-        color: Colors.white,
+        color: barTitleColor,
         fontSize: fontSize,
         fontWeight: FontWeight.w700
       ),

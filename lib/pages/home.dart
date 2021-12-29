@@ -1,3 +1,4 @@
+import 'package:chatv28/utils/color_resources.dart';
 import 'package:flutter/material.dart';
 
 import 'package:chatv28/pages/users.dart';
@@ -32,8 +33,8 @@ class _HomePageState extends State<HomePage> {
             currentPage = index;
           });
         },
-        selectedItemColor: Colors.white,
-        unselectedItemColor: Colors.grey,
+        selectedItemColor: ColorResources.white,
+        unselectedItemColor: ColorResources.gainsBoro,
         items: const [
           BottomNavigationBarItem(
             label: "Chats",

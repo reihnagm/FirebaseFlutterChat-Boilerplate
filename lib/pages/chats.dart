@@ -1,3 +1,6 @@
+import 'package:chatv28/basewidget/animated_dialog/show_animate_dialog.dart';
+import 'package:chatv28/basewidget/signout_confirmation_dialog/signout_confirmation_dialog.dart';
+import 'package:chatv28/utils/color_resources.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -8,8 +11,8 @@ import 'package:chatv28/pages/chat.dart';
 import 'package:chatv28/services/navigation.dart';
 import 'package:chatv28/models/chat.dart';
 import 'package:chatv28/providers/chats.dart';
-import 'package:chatv28/widgets/custom_list_view_tiles.dart';
-import 'package:chatv28/widgets/top_bar.dart';
+import 'package:chatv28/basewidget/custom_list_view_tiles.dart';
+import 'package:chatv28/basewidget/top_bar.dart';
 
 class ChatsPage extends StatefulWidget {
   const ChatsPage({ Key? key }) : super(key: key);
@@ -44,25 +47,32 @@ class _ChatsPageState extends State<ChatsPage> {
     return Builder(
       builder: (BuildContext context) {
         return Container(
+          decoration: const BoxDecoration(
+            color: ColorResources.backgroundColor
+          ),
           padding: EdgeInsets.symmetric(
             horizontal: deviceWidth * 0.03,
             vertical: deviceHeight * 0.02
           ),
           height: deviceHeight * 0.98,
-          width: deviceWidth * 0.97,
+          width: double.infinity,
           child: Column(
             mainAxisSize: MainAxisSize.max,
             mainAxisAlignment: MainAxisAlignment.start,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               TopBar("Chats",
+                barTitleColor: ColorResources.textBlackPrimary,
                 primaryAction: IconButton(
                   onPressed: () {
-                    Provider.of<AuthenticationProvider>(context, listen: false).logout(context);
+                    showAnimatedDialog(context,
+                      const SignOutConfirmationDialog(),
+                      isFlip: false
+                    );
                   }, 
                   icon: const Icon(
                     Icons.logout,
-                    color: Colors.white
+                    color: ColorResources.textBlackPrimary
                   )
                 ),
               ),
