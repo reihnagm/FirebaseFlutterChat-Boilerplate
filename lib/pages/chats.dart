@@ -1,9 +1,9 @@
-import 'package:chatv28/basewidget/animated_dialog/show_animate_dialog.dart';
-import 'package:chatv28/basewidget/signout_confirmation_dialog/signout_confirmation_dialog.dart';
-import 'package:chatv28/utils/color_resources.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import 'package:chatv28/basewidget/animated_dialog/show_animate_dialog.dart';
+import 'package:chatv28/basewidget/signout_confirmation_dialog/signout_confirmation_dialog.dart';
+import 'package:chatv28/utils/color_resources.dart';
 import 'package:chatv28/services/database.dart';
 import 'package:chatv28/providers/authentication.dart';
 import 'package:chatv28/models/chat_message.dart';
@@ -100,7 +100,7 @@ class _ChatsPageState extends State<ChatsPage> {
             return const Center(
               child: Text("No Chats Found.",
                 style: TextStyle(
-                  color: Colors.white
+                  color: ColorResources.textBlackPrimary
                 ),
               ),
             );
@@ -108,7 +108,7 @@ class _ChatsPageState extends State<ChatsPage> {
         } else {
           return const Center(
             child: CircularProgressIndicator(
-              color: Colors.white,
+              color: ColorResources.backgroundBlueSecondary,
             ),
           );
         }

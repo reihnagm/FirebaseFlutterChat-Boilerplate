@@ -112,16 +112,11 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
               Provider.of<FirebaseProvider>(context, listen: false).listenNotification(context);
               return Consumer<AuthenticationProvider>(
                 builder: (BuildContext context, AuthenticationProvider authenticationProvider, Widget? child) {
-                  if(authenticationProvider.chatUser == null) {
+                  if(authenticationProvider.isLogin()) {
+                    return const HomePage();
+                  } else {
                     return const LoginPage();
                   }
-                  if(authenticationProvider.chatUser != null) {
-                    return const HomePage();
-                  }
-                  return MultiProvider(
-                    providers: providers,
-                    child: const MainApp()
-                  );
                 },
               );
             },

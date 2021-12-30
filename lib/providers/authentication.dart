@@ -55,7 +55,6 @@ class AuthenticationProvider extends ChangeNotifier {
       DocumentSnapshot<Object?> snapshot = await databaseService.getUser(auth.currentUser!.uid)!;
       Map<String, dynamic> userData = snapshot.data() as Map<String, dynamic>;
       await databaseService.updateUserLastSeenTime(auth.currentUser!.uid);
-      await databaseService.updateUserOnline(auth.currentUser!.uid, true);
       await databaseService.updateUserToken(auth.currentUser!.uid, await FirebaseMessaging.instance.getToken());
       chatUser = ChatUser.fromJson({
         "uid": auth.currentUser!.uid,
@@ -76,10 +75,12 @@ class AuthenticationProvider extends ChangeNotifier {
   Future<void> logout(BuildContext context) async {
     setStateLogoutStatus(LogoutStatus.loading);
     try {
-      await databaseService.updateUserOnline(auth.currentUser!.uid, false);
-      await auth.signOut();
-      setStateLogoutStatus(LogoutStatus.loaded);
-      NavigationService.pushBackNavReplacement(context, const LoginPage());
+      databaseService.updateUserOnline(auth.currentUser!.uid, false).then((_) async {
+        await auth.signOut();
+        sharedPreferences.setBool("login", false);
+        setStateLogoutStatus(LogoutStatus.loaded);
+        NavigationService.pushBackNavReplacement(context, const LoginPage());
+      });
     } catch(e) {
       debugPrint(e.toString());
     }
@@ -89,6 +90,8 @@ class AuthenticationProvider extends ChangeNotifier {
     setStateLoginStatus(LoginStatus.loading);
     try {
       await auth.signInWithEmailAndPassword(email: email, password: password);
+      await databaseService.updateUserOnline(auth.currentUser!.uid, true);
+      sharedPreferences.setBool("login", true);
       setStateLoginStatus(LoginStatus.loaded);
       NavigationService.pushNavReplacement(context, const HomePage());
     } on FirebaseAuthException {
@@ -99,4 +102,7 @@ class AuthenticationProvider extends ChangeNotifier {
       debugPrint(e.toString());
     }
   } 
+
+
+  bool isLogin() => sharedPreferences.getBool("login") ?? false;
 }

@@ -35,50 +35,63 @@ class SignOutConfirmationDialog extends StatelessWidget {
           ),
           Row(
             children: [
-            Expanded(
-              child: InkWell(
-              onTap: () {
-                Provider.of<AuthenticationProvider>(context, listen: false).logout(context);
-              },
-              child: Container(
-                padding: EdgeInsets.all(Dimensions.paddingSizeSmall),
-                alignment: Alignment.center,
-                decoration: const BoxDecoration(
-                  color: ColorResources.secondaryV3Background,
-                  borderRadius: BorderRadius.only(
-                    bottomLeft: Radius.circular(10.0)
-                  )
+              Expanded(
+                child: InkWell(
+                onTap: () async {
+                  await Provider.of<AuthenticationProvider>(context, listen: false).logout(context);
+                },
+                child: Consumer<AuthenticationProvider>(
+                  builder: (BuildContext context, AuthenticationProvider authenticationProvider, Widget? child) {
+                    return Container(
+                      padding: EdgeInsets.all(Dimensions.paddingSizeSmall),
+                      alignment: Alignment.center,
+                      decoration: const BoxDecoration(
+                        color: ColorResources.backgroundBlueSecondary,
+                        borderRadius: BorderRadius.only(
+                          bottomLeft: Radius.circular(10.0)
+                        )
+                      ),
+                      child: authenticationProvider.logoutStatus == LogoutStatus.loading 
+                      ? Text("...", 
+                          style: TextStyle(
+                            color: ColorResources.white,
+                            fontSize: Dimensions.fontSizeSmall
+                          )
+                        )
+                      : Text("Ya", 
+                          style: TextStyle(
+                            color: ColorResources.white,
+                            fontSize: Dimensions.fontSizeSmall
+                          )
+                        ),
+                    );   
+                  },
+                )
+              )),
+              Expanded(
+                child: InkWell(
+                onTap: () => Navigator.pop(context),
+                child: Container(
+                  padding: EdgeInsets.all(Dimensions.paddingSizeSmall),
+                  alignment: Alignment.center,
+                  decoration: const BoxDecoration(
+                    color: ColorResources.white, 
+                    borderRadius: BorderRadius.only(
+                      bottomRight: Radius.circular(10.0)
+                    )
+                  ),
+                  child: Text("Tidak", 
+                    style: TextStyle(
+                      color: ColorResources.black,
+                      fontSize: Dimensions.fontSizeSmall,
+                    )
+                  ),
                 ),
-                child: Text("Ya", style: TextStyle(
-                  color: ColorResources.white,
-                  fontSize: Dimensions.fontSizeSmall
-                )),
-              ),
-            )
+              )),
+            ]
           ),
-          Expanded(
-            child: InkWell(
-              onTap: () => Navigator.pop(context),
-              child: Container(
-                padding: EdgeInsets.all(Dimensions.paddingSizeSmall),
-                alignment: Alignment.center,
-                decoration: const BoxDecoration(
-                  color: ColorResources.white, 
-                  borderRadius: BorderRadius.only(
-                    bottomRight: Radius.circular(10.0)
-                  )
-                ),
-                child: Text("Tidak", 
-                  style: TextStyle(
-                    color: ColorResources.black,
-                    fontSize: Dimensions.fontSizeSmall,
-                  )
-                ),
-              ),
-            )
-          ),
-        ]),
-      ]),
+        ]
+      ),
     );
   }
 }

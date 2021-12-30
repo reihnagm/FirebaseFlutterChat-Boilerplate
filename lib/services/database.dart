@@ -144,16 +144,9 @@ class DatabaseService {
       .update({
         "isOnline": isOnline
       });
-      setOnChatsUserOnline(userUid, isOnline);
-    } catch(e) {
-      debugPrint(e.toString());
-    }
-  }
-
-  Future<void> setOnChatsUserOnline(String userUid, bool isOnline) async {
-    try {
       QuerySnapshot<Map<String, dynamic>> data = await db
       .collection(chatCollection)
+      .where("relations", arrayContains: userUid)
       .get();
       for (QueryDocumentSnapshot<Map<String, dynamic>> doc in data.docs) {
         List<dynamic> members = doc.data()["members"];

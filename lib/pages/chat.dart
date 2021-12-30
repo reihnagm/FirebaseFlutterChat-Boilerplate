@@ -1,11 +1,11 @@
-import 'package:chatv28/utils/box_shadow.dart';
-import 'package:chatv28/utils/color_resources.dart';
-import 'package:chatv28/utils/dimensions.dart';
 import 'package:flutter/material.dart';
 import 'package:grouped_list/grouped_list.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 
+import 'package:chatv28/utils/box_shadow.dart';
+import 'package:chatv28/utils/color_resources.dart';
+import 'package:chatv28/utils/dimensions.dart';
 import 'package:chatv28/models/chat_message.dart';
 import 'package:chatv28/providers/chat.dart';
 import 'package:chatv28/basewidget/custom_input_fields.dart';
@@ -38,16 +38,20 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     // - Inactive (App Partially Visible - App not focused)
     // - Paused (App in Background)
     // - Detached (View Destroyed - App Closed)
-    if(state == AppLifecycleState.detached) {
-      debugPrint("=== APP CLOSED CHAT ===");
-      Provider.of<ChatProvider>(context, listen: false).leaveScreen(chatUid: widget.chat.uid);
-    }
     if(state == AppLifecycleState.resumed) {
-      debugPrint("=== BACK TO APP CHAT ===");
+      debugPrint("=== APP RESUME ===");
       Provider.of<ChatProvider>(context, listen: false).joinScreen(chatUid: widget.chat.uid);
     }
+    if(state == AppLifecycleState.inactive) {
+      debugPrint("=== APP INACTIVE ===");
+      Provider.of<ChatProvider>(context, listen: false).leaveScreen(chatUid: widget.chat.uid);
+    }
     if(state == AppLifecycleState.paused) {
-      debugPrint("=== PAUSED CHAT ===");
+      debugPrint("=== APP PAUSED ===");
+      Provider.of<ChatProvider>(context, listen: false).leaveScreen(chatUid: widget.chat.uid);
+    }
+    if(state == AppLifecycleState.detached) {
+      debugPrint("=== APP CLOSED ===");
       Provider.of<ChatProvider>(context, listen: false).leaveScreen(chatUid: widget.chat.uid);
     }
   }
@@ -58,7 +62,6 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     WidgetsBinding.instance!.addObserver(this);
     WidgetsBinding.instance!.addPostFrameCallback((timeStamp) {
       Provider.of<ChatProvider>(context, listen: false).joinScreen(chatUid: widget.chat.uid);
-      Provider.of<ChatProvider>(context, listen: false).isScreenOn(chatUid: widget.chat.uid, userUid: widget.chat.recepients.first.uid!);
       Provider.of<ChatProvider>(context, listen: false).listenToMessages(chatUid: widget.chat.uid);
     });
   }
@@ -71,6 +74,10 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
+    Provider.of<ChatProvider>(context).isScreenOn(
+      chatUid: widget.chat.uid, 
+      userUid: widget.chat.recepients.first.uid!
+    );
     // Provider.of<ChatProvider>(context).listenToKeyboardType(chatUid: widget.chat.uid);
     deviceHeight = MediaQuery.of(context).size.height;
     deviceWidth = MediaQuery.of(context).size.width; 
@@ -187,7 +194,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
           alignment: Alignment.center,
           child: Text("Be the first to say Hi!",
             style: TextStyle(
-              color: Colors.white
+              color: ColorResources.textBlackPrimary
             ),
           ),
         );
@@ -195,7 +202,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     } else {
       return const Center(
         child: CircularProgressIndicator(
-          color: Colors.white,
+          color: ColorResources.backgroundBluePrimary,
         ),
       );
     }

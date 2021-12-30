@@ -25,6 +25,7 @@ dependencies:
   file_picker: ^4.2.7
   firebase_analytics: ^9.0.3
   firebase_storage: ^10.2.3
+  flutter_launcher_icons: ^0.9.2
   firebase_messaging: ^11.2.4
   flutter_keyboard_visibility: ^5.1.0
   
@@ -51,11 +52,18 @@ dev_dependencies:
 
   flutter_lints: ^1.0.0
 
+flutter_icons:
+  android: "launcher_icon"
+  ios: true
+  remove_alpha_ios: true
+  image_path: "assets/images/logo-chatify.png"
+
 flutter:
 
   uses-material-design: true
 
   assets:
     - assets/sounds/
+    - assets/images/
 
  
