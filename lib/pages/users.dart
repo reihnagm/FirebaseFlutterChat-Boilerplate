@@ -37,6 +37,7 @@ class _UsersPageState extends State<UsersPage> {
   void initState() {
     super.initState();
     WidgetsBinding.instance!.addPostFrameCallback((timeStamp) {
+      Provider.of<AuthenticationProvider>(context, listen: false).initAuthStateChanges();
       Provider.of<UserProvider>(context, listen: false).getUsers();
     });
   }
@@ -96,7 +97,17 @@ class _UsersPageState extends State<UsersPage> {
               Consumer<AuthenticationProvider>(
                 builder: (BuildContext context, AuthenticationProvider authenticationProvider, Widget? child) {
                   if(authenticationProvider.chatUser == null) {
-                    return Container();
+                    return const Expanded(
+                      child: Center(
+                        child: SizedBox(
+                          width: 16.0,
+                          height: 16.0,
+                          child: CircularProgressIndicator(
+                            color: ColorResources.loaderBluePrimary,
+                          ),
+                        ),
+                      ),
+                    );
                   }
                   return usersList();
                 },
@@ -111,7 +122,8 @@ class _UsersPageState extends State<UsersPage> {
 
   Widget usersList() {
     List<ChatUser>? _users = context.read<UserProvider>().users;
-    return Expanded(child: () {
+    return Expanded(
+      child: () {
       if(_users != null) {
         if(_users.isNotEmpty) {
           List<ChatUser> users = _users.where((el) => el.uid != context.read<AuthenticationProvider>().chatUser!.uid).toList();
@@ -135,7 +147,7 @@ class _UsersPageState extends State<UsersPage> {
                         "on_screens": FieldValue.arrayUnion([ 
                           {
                             "userUid": context.read<AuthenticationProvider>().chatUser!.uid,
-                            "token": context.read<AuthenticationProvider>().chatUser!.token,
+                            "token": users[i].token,
                             "on": true
                           }
                         ]),

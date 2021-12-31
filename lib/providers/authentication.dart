@@ -50,7 +50,6 @@ class AuthenticationProvider extends ChangeNotifier {
   AuthenticationProvider({required this.sharedPreferences, required this.databaseService});
 
   Future<void> initAuthStateChanges() async {
-    setStateAuthStatus(AuthStatus.loading);
     try {
       DocumentSnapshot<Object?> snapshot = await databaseService.getUser(auth.currentUser!.uid)!;
       Map<String, dynamic> userData = snapshot.data() as Map<String, dynamic>;

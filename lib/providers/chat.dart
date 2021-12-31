@@ -167,7 +167,7 @@ class ChatProvider extends ChangeNotifier {
       if(onScreens!.where((el) => el["userUid"] == userUid).isNotEmpty) {
         isRead = onScreens.firstWhere((el) => el["userUid"] == userUid)["on"];
       } 
-      token = onScreens.firstWhere((el) => el["userUid"] == userUid)["token"];
+      token = onScreens.firstWhere((el) => el["userUid"] != userUid)["token"];
       Future.delayed(Duration.zero, () => notifyListeners()); 
     } catch(e) {
       debugPrint(e.toString());
@@ -183,17 +183,13 @@ class ChatProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> joinScreen({required String chatUid}) async {
+  Future<void> joinScreen({required String token, required String chatUid}) async {
     try {
-      DocumentSnapshot<Object?> snapshot = await databaseService.getUser(authenticationProvider.auth.currentUser!.uid)!;
-      Map<String, dynamic> userData = snapshot.data() as Map<String, dynamic>;
-      Future.delayed(const Duration(seconds: 1), () async {
-        await databaseService.joinScreen(
-          token: userData["token"],
-          chatUid: chatUid,
-          userUid: authenticationProvider.auth.currentUser!.uid
-        );
-      });
+      await databaseService.joinScreen(
+        token: token,
+        chatUid: chatUid,
+        userUid: authenticationProvider.auth.currentUser!.uid
+      );
     } catch(e) {
       debugPrint(e.toString());
     }

@@ -15,14 +15,12 @@ class UserProvider extends ChangeNotifier {
   final DatabaseService databaseService;
   final NavigationService navigationService;
 
-  List<ChatUser> _users = [];
-  List<ChatUser> get users => [..._users];
+  List<ChatUser>? users;
   StreamSubscription? usersStream;
   List<ChatUser>? _selectedUsers;
   List<ChatUser> get selectedUsers => [..._selectedUsers!];
 
   UserProvider({required this.authenticationProvider, required this.databaseService, required this.navigationService}) {
-    authenticationProvider.initAuthStateChanges();
     _selectedUsers = [];
   }
 
@@ -35,7 +33,7 @@ class UserProvider extends ChangeNotifier {
   void getUsers({String? name}) async {
     try {
       usersStream = databaseService.getUsers(name: name).listen((event) async {
-        _users = event.docs.map((d) {
+        users = event.docs.map((d) {
           Map<String, dynamic> data = d.data() as Map<String, dynamic>;
           data["uid"] = d.id;
           return ChatUser.fromJson(data);

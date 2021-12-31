@@ -24,11 +24,12 @@ class FirebaseProvider with ChangeNotifier {
   void listenNotification(BuildContext context) {
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
       RemoteNotification notification = message.notification!;
-      displayNotification(notification); 
+      Map<String, dynamic> data = message.data;
+      displayNotification(data, notification); 
     });
   }
 
-  Future<void> displayNotification(RemoteNotification message) async {
+  Future<void> displayNotification(Map<String, dynamic> data, RemoteNotification message) async {
     AndroidNotificationDetails androidNotificationDetails = const AndroidNotificationDetails('BroadcastID', 'Broadcast');
     IOSNotificationDetails iosNotificationDetails = const IOSNotificationDetails();
     NotificationDetails notificationDetails = NotificationDetails(android: androidNotificationDetails, iOS: iosNotificationDetails);
@@ -48,15 +49,12 @@ class FirebaseProvider with ChangeNotifier {
           "to": token,
           "collapse_key": "chat",
           "notification": {
-          "title": title,
-          "body" : body,
-          "data": {
-            "chatUid": chatUid  
-          },
+            "title": title,
+            "body": body,
             "sound":"default"
           },
           "data": {
-            "type": "chat"
+            "chatUid": chatUid,
           },
           "priority":"high"
         },

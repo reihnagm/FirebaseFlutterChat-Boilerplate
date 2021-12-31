@@ -40,7 +40,10 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     // - Detached (View Destroyed - App Closed)
     if(state == AppLifecycleState.resumed) {
       debugPrint("=== APP RESUME ===");
-      Provider.of<ChatProvider>(context, listen: false).joinScreen(chatUid: widget.chat.uid);
+      Provider.of<ChatProvider>(context, listen: false).joinScreen(
+        chatUid: widget.chat.uid,
+        token: widget.chat.recepients.first.token!
+      );
     }
     if(state == AppLifecycleState.inactive) {
       debugPrint("=== APP INACTIVE ===");
@@ -61,7 +64,10 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     super.initState();
     WidgetsBinding.instance!.addObserver(this);
     WidgetsBinding.instance!.addPostFrameCallback((timeStamp) {
-      Provider.of<ChatProvider>(context, listen: false).joinScreen(chatUid: widget.chat.uid);
+      Provider.of<ChatProvider>(context, listen: false).joinScreen(
+        chatUid: widget.chat.uid,
+        token: widget.chat.recepients.first.token!
+      );
       Provider.of<ChatProvider>(context, listen: false).listenToMessages(chatUid: widget.chat.uid);
     });
   }
