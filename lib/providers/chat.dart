@@ -1,20 +1,22 @@
 
 
 import 'dart:async';
-import 'dart:ffi';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:soundpool/soundpool.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
 
+import 'package:chatv28/providers/firebase.dart';
 import 'package:chatv28/models/chat_message.dart';
 import 'package:chatv28/providers/authentication.dart';
 import 'package:chatv28/services/cloud_storage.dart';
 import 'package:chatv28/services/database.dart';
 import 'package:chatv28/services/media.dart';
 import 'package:chatv28/services/navigation.dart';
-import 'package:soundpool/soundpool.dart';
 
 class ChatProvider extends ChangeNotifier {
   final AuthenticationProvider authenticationProvider;
@@ -28,6 +30,7 @@ class ChatProvider extends ChangeNotifier {
   Soundpool pool = Soundpool.fromOptions(options: SoundpoolOptions.kDefault);
 
   bool isRead = false;
+  String token = "";
 
   late ScrollController scrollController;
   late TextEditingController messageTextEditingController;
@@ -53,6 +56,7 @@ class ChatProvider extends ChangeNotifier {
     required this.cloudStorageService,
     required this.navigationService
   }) {
+    authenticationProvider.initAuthStateChanges();
     keyboardVisibilityController = KeyboardVisibilityController();
     scrollController = ScrollController();
     messageTextEditingController = TextEditingController();
@@ -67,12 +71,18 @@ class ChatProvider extends ChangeNotifier {
           return ChatMessage.fromJSON(messageData);
         }).toList();
         messages = cm;
-        Future.delayed(Duration.zero, () => notifyListeners());
         WidgetsBinding.instance!.addPostFrameCallback((_) {
           if(scrollController.hasClients) {
-            scrollController.jumpTo(scrollController.position.maxScrollExtent);
+            scrollController.animateTo(
+              scrollController.position.maxScrollExtent, 
+              duration: const Duration(
+                milliseconds: 300
+              ), 
+              curve: Curves.easeInOut
+            );
           }
         });
+        Future.delayed(Duration.zero, () => notifyListeners());
       });
     } catch(e) {
       debugPrint("Error gettings messages");
@@ -96,7 +106,12 @@ class ChatProvider extends ChangeNotifier {
     // });
   }
 
-  Future<void> sendTextMessage({required String chatUid, required String receiverId}) async {
+  Future<void> sendTextMessage(
+    BuildContext context,
+  {
+    required String chatUid, 
+    required String receiverId
+  }) async {
     if(messages != null) {
       ChatMessage messageToSend = ChatMessage(
         content: messageTextEditingController.text, 
@@ -105,8 +120,20 @@ class ChatProvider extends ChangeNotifier {
         type: MessageType.text, 
         sentTime: DateTime.now()
       );
-      databaseService.addMessageToChat(chatUid, receiverId, messageToSend);
-      await loadSoundSent();
+      await databaseService.addMessageToChat(chatUid, receiverId, messageToSend);
+      if(!isRead) {
+        Future.delayed(const Duration(seconds: 1), () async {
+          await Provider.of<FirebaseProvider>(context, listen: false).sendNotification(
+            token: token, 
+            title: authenticationProvider.chatUser!.name!,
+            body: messageToSend.content, 
+            chatUid: chatUid
+          );
+        });
+      }
+      Future.delayed(Duration.zero, () async {
+        await loadSoundSent();
+      });
       messageTextEditingController.text = "";
       Future.delayed(Duration.zero, () => notifyListeners());
     }
@@ -121,7 +148,7 @@ class ChatProvider extends ChangeNotifier {
         toggleIsActivity(isActive: false, chatUid: chatUid);
         ChatMessage messageToSend = ChatMessage(
           content: downloadUrl!, 
-          senderID: authenticationProvider.auth.currentUser!.uid, 
+          senderID:  authenticationProvider.auth.currentUser!.uid, 
           isRead: isRead ? true : false,
           type: MessageType.image, 
           sentTime: DateTime.now()
@@ -135,36 +162,71 @@ class ChatProvider extends ChangeNotifier {
   }
 
   Future<void> isScreenOn({required String chatUid, required String userUid}) async {
-    List<dynamic>? onScreens = await databaseService.isScreenOn(chatUid: chatUid);
-    if(onScreens!.where((el) => el["userUid"] == userUid).isNotEmpty) {
-      Map<dynamic, dynamic> screen = onScreens.firstWhere((el) => el["userUid"] == userUid);
-      isRead = screen["on"];    
-    }  
-    Future.delayed(Duration.zero, () => notifyListeners());
+    try {
+      List<dynamic>? onScreens = await databaseService.isScreenOn(chatUid: chatUid);
+      if(onScreens!.where((el) => el["userUid"] == userUid).isNotEmpty) {
+        isRead = onScreens.firstWhere((el) => el["userUid"] == userUid)["on"];
+      } 
+      token = onScreens.firstWhere((el) => el["userUid"] == userUid)["token"];
+      Future.delayed(Duration.zero, () => notifyListeners()); 
+    } catch(e) {
+      debugPrint(e.toString());
+    }
   }
 
-  Future<int> loadSoundSent() async {
-    var asset = await rootBundle.load("assets/sounds/sent.mp3");
-    return await pool.play(await pool.load(asset));
+  Future<int?> loadSoundSent() async {
+    try {
+      ByteData asset = await rootBundle.load("assets/sounds/sent.mp3");
+      return await pool.play(await pool.load(asset));
+    } catch(e) {
+      debugPrint(e.toString());
+    }
   }
 
-  void joinScreen({required String chatUid}) {
-    databaseService.joinScreen(chatUid, authenticationProvider.auth.currentUser!.uid);
+  Future<void> joinScreen({required String chatUid}) async {
+    try {
+      DocumentSnapshot<Object?> snapshot = await databaseService.getUser(authenticationProvider.auth.currentUser!.uid)!;
+      Map<String, dynamic> userData = snapshot.data() as Map<String, dynamic>;
+      Future.delayed(const Duration(seconds: 1), () async {
+        await databaseService.joinScreen(
+          token: userData["token"],
+          chatUid: chatUid,
+          userUid: authenticationProvider.auth.currentUser!.uid
+        );
+      });
+    } catch(e) {
+      debugPrint(e.toString());
+    }
   }
 
-  void leaveScreen({required String chatUid}) {
-    databaseService.leaveScreen(chatUid, authenticationProvider.auth.currentUser!.uid);
+  Future<void> leaveScreen({required String chatUid}) async {
+    try {
+      await databaseService.leaveScreen(
+        chatUid: chatUid,
+        userUid: authenticationProvider.auth.currentUser!.uid
+      );
+    } catch(e) {
+      debugPrint(e.toString());
+    }
   }
 
-  void toggleIsActivity({required bool isActive, required String chatUid}) {
-    databaseService.updateChatData(chatUid, {
-      "is_activity": isActive
-    });
+  Future<void> toggleIsActivity({required bool isActive, required String chatUid}) async {
+    try {
+      await databaseService.updateChatData(chatUid, {
+        "is_activity": isActive
+      });
+    } catch(e) {
+      debugPrint(e.toString());
+    }
   }
 
-  void deleteChat(BuildContext context, {required String chatUid}) {
+  Future<void> deleteChat(BuildContext context, {required String chatUid}) async {
     goBack(context);
-    databaseService.deleteChat(chatUid);
+    try {
+      await databaseService.deleteChat(chatUid);
+    } catch(e) {
+      debugPrint(e.toString());
+    }
   }
   
   void goBack(BuildContext context) {

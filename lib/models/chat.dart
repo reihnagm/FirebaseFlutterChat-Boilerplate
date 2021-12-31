@@ -27,7 +27,6 @@ class ChatCountRead {
       "is_read": isRead,
     };
   }
-
 }
 
 class Chat {

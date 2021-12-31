@@ -71,7 +71,7 @@ class _LoginPageState extends State<LoginPage> {
       height: deviceHeight * 0.10,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
-        children: [
+        children: const [
           Text("Chatify",
             style: TextStyle(
               color: ColorResources.textBlackPrimary,
@@ -79,8 +79,8 @@ class _LoginPageState extends State<LoginPage> {
               fontWeight: FontWeight.bold
             ),
           ),
-          const SizedBox(width: 3.0),
-          const Icon(
+          SizedBox(width: 3.0),
+          Icon(
             Icons.chat_bubble_rounded,
             size: 20.0,  
           ),

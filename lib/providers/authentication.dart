@@ -75,13 +75,19 @@ class AuthenticationProvider extends ChangeNotifier {
   Future<void> logout(BuildContext context) async {
     setStateLogoutStatus(LogoutStatus.loading);
     try {
-      databaseService.updateUserOnline(auth.currentUser!.uid, false).then((_) async {
-        await auth.signOut();
-        sharedPreferences.setBool("login", false);
-        setStateLogoutStatus(LogoutStatus.loaded);
-        NavigationService.pushBackNavReplacement(context, const LoginPage());
+      await databaseService.updateUserOnline(auth.currentUser!.uid, false);
+      Future.delayed(const Duration(seconds: 1), () async {
+        try {
+          await auth.signOut();
+          sharedPreferences.setBool("login", false);
+          setStateLogoutStatus(LogoutStatus.loaded);
+          NavigationService.pushBackNavReplacement(context, const LoginPage());
+        } catch(_) {
+          setStateLogoutStatus(LogoutStatus.error);
+        }
       });
     } catch(e) {
+      setStateLogoutStatus(LogoutStatus.error);
       debugPrint(e.toString());
     }
   }
@@ -90,13 +96,18 @@ class AuthenticationProvider extends ChangeNotifier {
     setStateLoginStatus(LoginStatus.loading);
     try {
       await auth.signInWithEmailAndPassword(email: email, password: password);
-      await databaseService.updateUserOnline(auth.currentUser!.uid, true);
-      sharedPreferences.setBool("login", true);
-      setStateLoginStatus(LoginStatus.loaded);
-      NavigationService.pushNavReplacement(context, const HomePage());
+      Future.delayed(const Duration(seconds: 1), () async {
+        try {
+          await databaseService.updateUserOnline(auth.currentUser!.uid, true);
+          sharedPreferences.setBool("login", true);
+          setStateLoginStatus(LoginStatus.loaded);
+          NavigationService.pushNavReplacement(context, const HomePage());
+        } catch(_) {
+          setStateLoginStatus(LoginStatus.error);
+        }
+      });
     } on FirebaseAuthException {
       setStateLoginStatus(LoginStatus.error);
-      debugPrint("Error logging user into Firebase");
     } catch(e) {
       setStateLoginStatus(LoginStatus.error);
       debugPrint(e.toString());

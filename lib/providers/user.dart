@@ -22,6 +22,7 @@ class UserProvider extends ChangeNotifier {
   List<ChatUser> get selectedUsers => [..._selectedUsers!];
 
   UserProvider({required this.authenticationProvider, required this.databaseService, required this.navigationService}) {
+    authenticationProvider.initAuthStateChanges();
     _selectedUsers = [];
   }
 

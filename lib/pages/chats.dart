@@ -5,7 +5,6 @@ import 'package:chatv28/basewidget/animated_dialog/show_animate_dialog.dart';
 import 'package:chatv28/basewidget/signout_confirmation_dialog/signout_confirmation_dialog.dart';
 import 'package:chatv28/utils/color_resources.dart';
 import 'package:chatv28/services/database.dart';
-import 'package:chatv28/providers/authentication.dart';
 import 'package:chatv28/models/chat_message.dart';
 import 'package:chatv28/pages/chat.dart';
 import 'package:chatv28/services/navigation.dart';
@@ -30,7 +29,6 @@ class _ChatsPageState extends State<ChatsPage> {
   void initState() {
     super.initState();
     WidgetsBinding.instance!.addPostFrameCallback((timeStamp) {
-      Provider.of<AuthenticationProvider>(context, listen: false).initAuthStateChanges();
       Provider.of<ChatsProvider>(context, listen: false).getChats();
     });
   }
@@ -107,8 +105,12 @@ class _ChatsPageState extends State<ChatsPage> {
           }
         } else {
           return const Center(
-            child: CircularProgressIndicator(
-              color: ColorResources.backgroundBlueSecondary,
+            child: SizedBox(
+              width: 16.0,
+              height: 16.0,
+              child: CircularProgressIndicator(
+                color: ColorResources.backgroundBlueSecondary,
+              ),
             ),
           );
         }

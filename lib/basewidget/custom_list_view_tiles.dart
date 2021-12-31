@@ -155,14 +155,12 @@ class CustomChatListViewTile extends StatelessWidget {
   final double deviceHeight;
   final bool isOwnMessage;
   final ChatMessage message;
-  final ChatUser sender;
 
   const CustomChatListViewTile({
     required this.deviceWidth,
     required this.deviceHeight,
     required this.isOwnMessage,
     required this.message,
-    required this.sender,
     Key? key
   }) : super(key: key);
   

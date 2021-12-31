@@ -37,7 +37,6 @@ class _UsersPageState extends State<UsersPage> {
   void initState() {
     super.initState();
     WidgetsBinding.instance!.addPostFrameCallback((timeStamp) {
-      Provider.of<AuthenticationProvider>(context, listen: false).initAuthStateChanges();
       Provider.of<UserProvider>(context, listen: false).getUsers();
     });
   }
@@ -136,6 +135,7 @@ class _UsersPageState extends State<UsersPage> {
                         "on_screens": FieldValue.arrayUnion([ 
                           {
                             "userUid": context.read<AuthenticationProvider>().chatUser!.uid,
+                            "token": context.read<AuthenticationProvider>().chatUser!.token,
                             "on": true
                           }
                         ]),
@@ -238,15 +238,19 @@ class _UsersPageState extends State<UsersPage> {
           return const Center(
             child: Text("No Users Found.",
               style: TextStyle(
-                color: Colors.white
+                color: ColorResources.textBlackPrimary
               ),
             ),
           );
         }
       } else {
         return const Center(
-          child: CircularProgressIndicator(
-            color: ColorResources.loaderBluePrimary,
+          child: SizedBox(
+            width: 16.0,
+            height: 16.0,
+            child: CircularProgressIndicator(
+              color: ColorResources.loaderBluePrimary,
+            ),
           ),
         );
       }

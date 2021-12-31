@@ -18,9 +18,9 @@ class DatabaseService {
     }
   }
 
-  Stream<QuerySnapshot> getChatsForUser(String uid) {
+  Stream<QuerySnapshot> getChatsForUser(String userUid) {
     return db.collection(chatCollection)
-    .where('relations', arrayContains: uid)
+    .where('relations', arrayContains: userUid)
     .snapshots();
   }
 
@@ -56,16 +56,21 @@ class DatabaseService {
       .doc(chatUid)
       .collection(messageCollection)
       .add(message.toJson());
-      await db.collection(chatCollection)
-      .doc(chatUid)
-      .update({
-        "readers": FieldValue.arrayUnion([{
-          "message_id": doc.id,
-          "receiver_id": receiverId,
-          "is_read": message.isRead
-        }])
+      Future.delayed(const Duration(seconds: 1), () async {
+        try {
+          await db.collection(chatCollection)
+          .doc(chatUid)
+          .update({
+            "readers": FieldValue.arrayUnion([{
+              "message_id": doc.id,
+              "receiver_id": receiverId,
+              "is_read": message.isRead
+            }])
+          });
+        } catch(e) {
+          debugPrint(e.toString());
+        }
       });
-
     } catch(e) {
       debugPrint(e.toString());
     }
@@ -98,29 +103,30 @@ class DatabaseService {
       .where("sender_id", isEqualTo: senderId)
       .where("is_read", isEqualTo: false)
       .get();
-      QuerySnapshot<Map<String, dynamic>> chat = await db
-      .collection(chatCollection)
-      .get();
-      for (QueryDocumentSnapshot<Map<String, dynamic>> doc in chat.docs) {
-        List<dynamic> readers = doc.data()["readers"];
-        List<dynamic> chatCountRead = [];
-        List<dynamic> checkReaders = readers.where((el) => el["receiver_id"] == userUid).where((el) => el["is_read"] == false).toList();
-        if(checkReaders.isNotEmpty) {
-          for (var reader in checkReaders) {
-            reader["is_read"] = true;
-            chatCountRead.add(reader);  
-          }     
-          await db
+      Future.delayed(const Duration(seconds: 1), () async {
+        try {
+          QuerySnapshot<Map<String, dynamic>> chat = await db
           .collection(chatCollection)
-          .doc(doc.id)
-          .update({
-            "readers": chatCountRead
-        }); 
-        }
-      }
-      for (QueryDocumentSnapshot<Map<String, dynamic>> doc in msg.docs) {
-        doc.reference.update({"is_read": true});
-      }
+          .get();
+          for (QueryDocumentSnapshot<Map<String, dynamic>> doc in chat.docs) {
+            List<dynamic> readers = doc.data()["readers"];
+            List<dynamic> chatCountRead = [];
+            List<dynamic> checkReaders = readers.where((el) => el["receiver_id"] == userUid).where((el) => el["is_read"] == false).toList();
+            if(checkReaders.isNotEmpty) {
+              for (var reader in checkReaders) {
+                reader["is_read"] = true;
+                chatCountRead.add(reader);  
+              }     
+              doc.reference.update({
+                "readers": chatCountRead
+              }); 
+            }
+          }
+          for (QueryDocumentSnapshot<Map<String, dynamic>> doc in msg.docs) {
+            doc.reference.update({"is_read": true});
+          }
+        } catch(_) {}
+      });
     } catch(e) {
       debugPrint(e.toString());
     }
@@ -144,18 +150,20 @@ class DatabaseService {
       .update({
         "isOnline": isOnline
       });
-      QuerySnapshot<Map<String, dynamic>> data = await db
-      .collection(chatCollection)
-      .where("relations", arrayContains: userUid)
-      .get();
-      for (QueryDocumentSnapshot<Map<String, dynamic>> doc in data.docs) {
-        List<dynamic> members = doc.data()["members"];
-        int i = members.indexWhere((el) => el["uid"] == userUid);
-        members[i]["isOnline"] = isOnline;
-        doc.reference.update({
-          "members": members
-        });
-      }
+      Future.delayed(const Duration(seconds: 1), () async {
+        QuerySnapshot<Map<String, dynamic>> data = await db
+        .collection(chatCollection)
+        .where("relations", arrayContains: userUid)
+        .get();
+        for (QueryDocumentSnapshot<Map<String, dynamic>> doc in data.docs) {
+          List<dynamic> members = doc.data()["members"];
+          int index = members.indexWhere((el) => el["uid"] == userUid);
+          members[index]["isOnline"] = isOnline;
+          doc.reference.update({
+            "members": members
+          });
+        }
+      });
     } catch(e) {
       debugPrint(e.toString());
     }
@@ -200,13 +208,19 @@ class DatabaseService {
         batch.delete(item.reference);
       }
       batch.commit();
-      await db.collection(chatCollection).doc(chatID).delete();
+      Future.delayed(const Duration(seconds: 1), () async {
+        try {
+          await db.collection(chatCollection).doc(chatID).delete();
+        } catch(e) {
+          debugPrint(e.toString());
+        }
+      });
     } catch(e) {
       debugPrint(e.toString());
     }
   }
 
-  Future<void> joinScreen(String chatUid, String userUid) async {
+  Future<void> joinScreen({required String token, required String chatUid, required String userUid}) async {
     try {
       DocumentSnapshot<Map<String, dynamic>> data = await db
       .collection(chatCollection)
@@ -216,25 +230,34 @@ class DatabaseService {
       int index = onScreens.indexWhere((el) => el["userUid"] == userUid);
       if(index != -1) {
         onScreens[index]["on"] = true;
-        await db
-        .collection(chatCollection)
-        .doc(chatUid)
-        .update({
-          "on_screens": onScreens
+        Future.delayed(const Duration(seconds: 1), () async {
+          try {
+            await db
+            .collection(chatCollection)
+            .doc(chatUid)
+            .update({
+              "on_screens": onScreens
+            });
+          } catch(e) {
+            debugPrint(e.toString());
+          }
         });
       } else {
-        await db
-        .collection(chatCollection)
-        .doc(chatUid)
-        .update({
-          "on_screens": FieldValue.arrayUnion(
-            [
-              {
+        Future.delayed(const Duration(seconds: 1), () async {
+          try {
+            await db
+            .collection(chatCollection)
+            .doc(chatUid)
+            .update({
+              "on_screens": FieldValue.arrayUnion([{
                 "userUid": userUid,
-                "on": true
-              }
-            ]
-          )
+                "on": true,
+                "token": token
+              }])
+            });
+          } catch(e) {
+            debugPrint(e.toString());
+          }
         });
       }
     } catch(e) {
@@ -242,7 +265,7 @@ class DatabaseService {
     }
   }
 
-  Future<void> leaveScreen(String chatUid, String userUid) async {
+  Future<void> leaveScreen({required String chatUid, required String userUid}) async {
     try {
       DocumentSnapshot<Map<String, dynamic>> data = await db
       .collection(chatCollection)
@@ -251,11 +274,13 @@ class DatabaseService {
       List<dynamic> onScreens = data.data()!["on_screens"];
       int index = onScreens.indexWhere((el) => el["userUid"] == userUid);
       onScreens[index]["on"] = false;
-      await db
-      .collection(chatCollection)
-      .doc(chatUid)
-      .update({
-        "on_screens": onScreens
+      Future.delayed(const Duration(seconds: 1), () async {
+        await db
+        .collection(chatCollection)
+        .doc(chatUid)
+        .update({
+          "on_screens": onScreens
+        });
       });
     } catch(e) {
       debugPrint(e.toString());

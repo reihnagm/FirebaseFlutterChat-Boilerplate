@@ -16,6 +16,9 @@ dependencies:
   cloud_firestore: ^3.1.4
   cupertino_icons: ^1.0.2
 
+  # D
+  dio: ^4.0.4
+
   # F
   flutter_screenutil: ^5.0.2
   firebase_auth: ^3.3.3

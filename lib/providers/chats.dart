@@ -19,7 +19,7 @@ class ChatsProvider extends ChangeNotifier {
     required this.authenticationProvider,
     required this.databaseService
   }) {
-    chats = [];
+    authenticationProvider.initAuthStateChanges();
   }
 
   @override 
@@ -30,17 +30,7 @@ class ChatsProvider extends ChangeNotifier {
 
   Future<void> getChats() async {
     try {
-      DocumentSnapshot<Object?> user = await databaseService.getUser(authenticationProvider.auth.currentUser!.uid)!;
-      Map<String, dynamic> userData = user.data() as Map<String, dynamic>;
-      ChatUser chatUser = ChatUser.fromJson({
-        "uid": authenticationProvider.auth.currentUser!.uid,
-        "name": userData["name"],
-        "email": userData["email"],
-        "last_active": userData["last_active"],
-        "isOnline": userData["isOnline"],
-        "image": userData["image"]
-      }); 
-      chatsStream = databaseService.getChatsForUser(chatUser.uid!).listen((snapshot) async {
+      chatsStream = databaseService.getChatsForUser(authenticationProvider.auth.currentUser!.uid).listen((snapshot) async {
         chats = await Future.wait(snapshot.docs.map((d) async {
           Map<String, dynamic> chatData = d.data() as Map<String, dynamic>;
           List<ChatUser> members = [];
@@ -63,9 +53,7 @@ class ChatsProvider extends ChangeNotifier {
           }
           return Chat(
             uid: d.id, 
-            currentUserId: authenticationProvider.auth.currentUser == 
-            null ? "" 
-            : authenticationProvider.auth.currentUser!.uid, 
+            currentUserId: authenticationProvider.auth.currentUser!.uid, 
             activity: chatData["is_activity"], 
             group: chatData["is_group"], 
             members: members, 

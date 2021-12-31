@@ -1,4 +1,5 @@
 
+import 'package:chatv28/utils/color_resources.dart';
 import 'package:flutter/material.dart';
 
 class SplashPage extends StatefulWidget {
@@ -16,7 +17,7 @@ class _SplashPageState extends State<SplashPage> {
   @override 
   void initState() {
     super.initState();
-    Future.delayed(const Duration(seconds: 2)).then((_) => {
+    Future.delayed(const Duration(seconds: 1)).then((_) => {
       setup().then((_) => widget.onInitializationComplete())
     });
   }
@@ -27,21 +28,33 @@ class _SplashPageState extends State<SplashPage> {
       title: 'Chatify',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        backgroundColor: const Color.fromRGBO(36, 35, 49, 1.0),
-        scaffoldBackgroundColor: const Color.fromRGBO(36, 35,  49, 1.0)
+        backgroundColor: ColorResources.backgroundBluePrimary,
+        scaffoldBackgroundColor: ColorResources.backgroundBlueSecondary
       ),
-      home: const Scaffold(
+      home: Scaffold(
         body: Center(
-          child: Text("Chatify",
-            style: TextStyle(
-              fontSize: 40.0,
-              color: Colors.white
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: const [
+            Text("Chatify",
+              style: TextStyle(
+                color: ColorResources.white,
+                fontSize: 40.0,
+                fontWeight: FontWeight.bold
+              ),
             ),
-          ),
-        ),
+            SizedBox(width: 3.0),
+            Icon(
+              Icons.chat_bubble_rounded,
+              size: 20.0,  
+              color: Colors.white,
+            ),
+          ],
+        ) 
       ),
-    );
-  }
+    ),
+  );
+}
 
   Future<void> setup() async {}
 }

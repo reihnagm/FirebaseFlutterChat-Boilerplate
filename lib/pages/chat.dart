@@ -177,13 +177,12 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
               shrinkWrap: true,
               indexedItemBuilder: (BuildContext context, ChatMessage items, int i) {
                 ChatMessage chatMessage = context.read<ChatProvider>().messages![i];
-                bool isOwnMessage = chatMessage.senderID ==  context.watch<AuthenticationProvider>().auth.currentUser!.uid;
+                bool isOwnMessage = chatMessage.senderID == context.read<AuthenticationProvider>().auth.currentUser!.uid;
                 return CustomChatListViewTile(
                   deviceWidth: deviceWidth * 0.80, 
                   deviceHeight: deviceHeight, 
                   isOwnMessage: isOwnMessage, 
                   message: chatMessage, 
-                  sender: widget.chat.members.where((el) => el.uid == chatMessage.senderID).first
                 );                
               },
             ),
@@ -247,7 +246,11 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     return IconButton(
       onPressed: () {
         if(context.read<ChatProvider>().messageTextEditingController.text.isNotEmpty) {
-          context.read<ChatProvider>().sendTextMessage(chatUid: widget.chat.uid, receiverId: widget.chat.recepients.first.uid!);
+          context.read<ChatProvider>().sendTextMessage(
+            context,
+            chatUid: widget.chat.uid, 
+            receiverId: widget.chat.recepients.first.uid!,
+          );
         }
         return;
       }, 
@@ -265,7 +268,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
       child: FloatingActionButton(
         backgroundColor: const Color.fromRGBO(0, 82, 218, 1.0),
         onPressed: () {
-           context.read<ChatProvider>().sendImageMessage(chatUid: widget.chat.uid, receiverId: widget.chat.recepients.first.uid!);
+          context.read<ChatProvider>().sendImageMessage(chatUid: widget.chat.uid, receiverId: widget.chat.recepients.first.uid!);
         },
         child: const Icon(
           Icons.camera_enhance,
