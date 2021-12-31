@@ -274,13 +274,8 @@ class DatabaseService {
       List<dynamic> onScreens = data.data()!["on_screens"];
       int index = onScreens.indexWhere((el) => el["userUid"] == userUid);
       onScreens[index]["on"] = false;
-      Future.delayed(const Duration(seconds: 1), () async {
-        await db
-        .collection(chatCollection)
-        .doc(chatUid)
-        .update({
-          "on_screens": onScreens
-        });
+      data.reference.update({
+        "on_screens": onScreens
       });
     } catch(e) {
       debugPrint(e.toString());

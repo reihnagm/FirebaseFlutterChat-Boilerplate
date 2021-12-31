@@ -27,6 +27,10 @@ class FirebaseProvider with ChangeNotifier {
       Map<String, dynamic> data = message.data;
       displayNotification(data, notification); 
     });
+    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+      Map<String, dynamic> data = message.data;
+      debugPrint(data.toString());
+    });
   }
 
   Future<void> displayNotification(Map<String, dynamic> data, RemoteNotification message) async {

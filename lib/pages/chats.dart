@@ -140,7 +140,10 @@ class _ChatsPageState extends State<ChatsPage> {
           senderId: chat.recepients.first.uid!,
           userUid: chat.currentUserId
         );
-        NavigationService.pushNav(context, ChatPage(chat: chat));
+        NavigationService.pushNav(context, ChatPage(
+          chatUid: chat.uid,
+          chat: chat,  
+        ));
       }
     );
   }

@@ -16,8 +16,10 @@ import 'package:chatv28/models/chat.dart';
 
 class ChatPage extends StatefulWidget {
   final Chat chat;
+  final String chatUid;
   const ChatPage({ 
     required this.chat,
+    required this.chatUid,
     Key? key 
   }) : super(key: key);
 
@@ -41,21 +43,30 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     if(state == AppLifecycleState.resumed) {
       debugPrint("=== APP RESUME ===");
       Provider.of<ChatProvider>(context, listen: false).joinScreen(
-        chatUid: widget.chat.uid,
+        chatUid: widget.chatUid,
         token: widget.chat.recepients.first.token!
       );
     }
     if(state == AppLifecycleState.inactive) {
       debugPrint("=== APP INACTIVE ===");
-      Provider.of<ChatProvider>(context, listen: false).leaveScreen(chatUid: widget.chat.uid);
+      Provider.of<ChatProvider>(context, listen: false).leaveScreen(
+        chatUid: widget.chatUid,
+        userUid: widget.chat.recepients.first.uid!
+      );
     }
     if(state == AppLifecycleState.paused) {
       debugPrint("=== APP PAUSED ===");
-      Provider.of<ChatProvider>(context, listen: false).leaveScreen(chatUid: widget.chat.uid);
+      Provider.of<ChatProvider>(context, listen: false).leaveScreen(
+        chatUid: widget.chatUid,
+        userUid: widget.chat.recepients.first.uid!
+      );
     }
     if(state == AppLifecycleState.detached) {
       debugPrint("=== APP CLOSED ===");
-      Provider.of<ChatProvider>(context, listen: false).leaveScreen(chatUid: widget.chat.uid);
+      Provider.of<ChatProvider>(context, listen: false).leaveScreen(
+        chatUid: widget.chatUid,
+        userUid: widget.chat.recepients.first.uid!
+      );
     }
   }
 
@@ -65,10 +76,10 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     WidgetsBinding.instance!.addObserver(this);
     WidgetsBinding.instance!.addPostFrameCallback((timeStamp) {
       Provider.of<ChatProvider>(context, listen: false).joinScreen(
-        chatUid: widget.chat.uid,
+        chatUid: widget.chatUid,
         token: widget.chat.recepients.first.token!
       );
-      Provider.of<ChatProvider>(context, listen: false).listenToMessages(chatUid: widget.chat.uid);
+      Provider.of<ChatProvider>(context, listen: false).listenToMessages(chatUid: widget.chatUid);
     });
   }
 
@@ -81,10 +92,9 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   @override
   Widget build(BuildContext context) {
     Provider.of<ChatProvider>(context).isScreenOn(
-      chatUid: widget.chat.uid, 
+      chatUid: widget.chatUid, 
       userUid: widget.chat.recepients.first.uid!
     );
-    // Provider.of<ChatProvider>(context).listenToKeyboardType(chatUid: widget.chat.uid);
     deviceHeight = MediaQuery.of(context).size.height;
     deviceWidth = MediaQuery.of(context).size.width; 
     return buildUI();
@@ -117,7 +127,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                             color: ColorResources.backgroundBlackPrimary
                           ),
                           onPressed: () {
-                            context.read<ChatProvider>().deleteChat(context, chatUid: widget.chat.uid);
+                            context.read<ChatProvider>().deleteChat(context, chatUid: widget.chatUid);
                           },
                         ),  
                         secondaryAction: IconButton(
@@ -127,7 +137,10 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                           ),
                           onPressed: () {
                             context.read<ChatProvider>().goBack(context);
-                            Provider.of<ChatProvider>(context, listen: false).leaveScreen(chatUid: widget.chat.uid);
+                            Provider.of<ChatProvider>(context, listen: false).leaveScreen(
+                              chatUid: widget.chatUid,
+                              userUid: widget.chat.recepients.first.uid!
+                            );
                           },
                         ),  
                       ),
@@ -254,7 +267,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
         if(context.read<ChatProvider>().messageTextEditingController.text.isNotEmpty) {
           context.read<ChatProvider>().sendTextMessage(
             context,
-            chatUid: widget.chat.uid, 
+            chatUid: widget.chatUid, 
             receiverId: widget.chat.recepients.first.uid!,
           );
         }
@@ -274,7 +287,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
       child: FloatingActionButton(
         backgroundColor: const Color.fromRGBO(0, 82, 218, 1.0),
         onPressed: () {
-          context.read<ChatProvider>().sendImageMessage(chatUid: widget.chat.uid, receiverId: widget.chat.recepients.first.uid!);
+          context.read<ChatProvider>().sendImageMessage(chatUid: widget.chatUid, receiverId: widget.chat.recepients.first.uid!);
         },
         child: const Icon(
           Icons.camera_enhance,

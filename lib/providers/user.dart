@@ -75,6 +75,7 @@ class UserProvider extends ChangeNotifier {
         members.add(ChatUser.fromJson(userData));
       }
       ChatPage chatPage = ChatPage(
+        chatUid: "",
         chat: Chat(
           uid: "",
           //  doc!.id
