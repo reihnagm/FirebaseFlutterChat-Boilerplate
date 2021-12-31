@@ -54,6 +54,7 @@ class AuthenticationProvider extends ChangeNotifier {
       DocumentSnapshot<Object?> snapshot = await databaseService.getUser(auth.currentUser!.uid)!;
       Map<String, dynamic> userData = snapshot.data() as Map<String, dynamic>;
       await databaseService.updateUserLastSeenTime(auth.currentUser!.uid);
+      await databaseService.updateUserOnline(auth.currentUser!.uid, true);
       await databaseService.updateUserToken(auth.currentUser!.uid, await FirebaseMessaging.instance.getToken());
       chatUser = ChatUser.fromJson({
         "uid": auth.currentUser!.uid,
