@@ -127,7 +127,9 @@ class ChatProvider extends ChangeNotifier {
             token: token, 
             title: authenticationProvider.chatUser!.name!,
             body: messageToSend.content, 
-            chatUid: chatUid
+            chatUid: chatUid,
+            senderId: authenticationProvider.chatUser!.uid!,
+            receiverId: receiverId
           );
         });
       }
@@ -181,6 +183,18 @@ class ChatProvider extends ChangeNotifier {
     }
   }
 
+  Future<void> seeMsg({required String chatUid, required String senderId}) async {
+    try {
+      await databaseService.seeMsg(
+        chatUid: chatUid,
+        senderId: senderId,
+        userUid: authenticationProvider.auth.currentUser!.uid,
+      );
+    } catch(e) {
+      debugPrint(e.toString());
+    }
+  }
+
   Future<void> joinScreen({required String token, required String chatUid}) async {
     try {
       await databaseService.joinScreen(
@@ -193,7 +207,7 @@ class ChatProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> leaveScreen({required String userUid, required String chatUid}) async {
+  Future<void> leaveScreen({required String chatUid}) async {
     try {
       await databaseService.leaveScreen(
         chatUid: chatUid,

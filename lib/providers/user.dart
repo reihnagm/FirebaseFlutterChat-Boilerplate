@@ -74,22 +74,15 @@ class UserProvider extends ChangeNotifier {
         userData["uid"] = event.id;
         members.add(ChatUser.fromJson(userData));
       }
-      ChatPage chatPage = ChatPage(
-        chatUid: "",
-        chat: Chat(
-          uid: "",
-          //  doc!.id
-          currentUserId: authenticationProvider.auth.currentUser!.uid,
-          readers: [],
-          messages: [],
-          activity: false,
-          members: members,
-          group: isGroup,
-        )
-      );
-      _selectedUsers = [];
-      Future.delayed(Duration.zero, () => notifyListeners());
-      NavigationService.pushNav(context, chatPage);
+      // ChatPage chatPage = ChatPage(
+      //   receiverId: "",
+      //   title: "",
+      //   token: "",
+      //   chatUid: "",
+      // );
+      // _selectedUsers = [];
+      // Future.delayed(Duration.zero, () => notifyListeners());
+      // NavigationService.pushNav(context, chatPage);
     } catch(e) {
       debugPrint("Error creating chat.");
       debugPrint(e.toString());

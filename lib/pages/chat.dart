@@ -12,14 +12,19 @@ import 'package:chatv28/basewidget/custom_input_fields.dart';
 import 'package:chatv28/basewidget/custom_list_view_tiles.dart';
 import 'package:chatv28/basewidget/top_bar.dart';
 import 'package:chatv28/providers/authentication.dart';
-import 'package:chatv28/models/chat.dart';
 
 class ChatPage extends StatefulWidget {
-  final Chat chat;
+  final String title;
   final String chatUid;
+  final String senderId;
+  final String token;
+  final String receiverId;
   const ChatPage({ 
-    required this.chat,
+    required this.title,
     required this.chatUid,
+    required this.senderId,
+    required this.token,
+    required this.receiverId,
     Key? key 
   }) : super(key: key);
 
@@ -30,7 +35,6 @@ class ChatPage extends StatefulWidget {
 class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   late double deviceHeight;
   late double deviceWidth;
-
 
   @override 
   void didChangeAppLifecycleState(AppLifecycleState state) async {
@@ -44,28 +48,25 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
       debugPrint("=== APP RESUME ===");
       Provider.of<ChatProvider>(context, listen: false).joinScreen(
         chatUid: widget.chatUid,
-        token: widget.chat.recepients.first.token!
+        token: widget.token
       );
     }
     if(state == AppLifecycleState.inactive) {
       debugPrint("=== APP INACTIVE ===");
       Provider.of<ChatProvider>(context, listen: false).leaveScreen(
         chatUid: widget.chatUid,
-        userUid: widget.chat.recepients.first.uid!
       );
     }
     if(state == AppLifecycleState.paused) {
       debugPrint("=== APP PAUSED ===");
       Provider.of<ChatProvider>(context, listen: false).leaveScreen(
         chatUid: widget.chatUid,
-        userUid: widget.chat.recepients.first.uid!
       );
     }
     if(state == AppLifecycleState.detached) {
       debugPrint("=== APP CLOSED ===");
       Provider.of<ChatProvider>(context, listen: false).leaveScreen(
         chatUid: widget.chatUid,
-        userUid: widget.chat.recepients.first.uid!
       );
     }
   }
@@ -75,9 +76,13 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     super.initState();
     WidgetsBinding.instance!.addObserver(this);
     WidgetsBinding.instance!.addPostFrameCallback((timeStamp) {
+      Provider.of<ChatProvider>(context, listen: false).seeMsg(
+        chatUid: widget.chatUid, 
+        senderId: widget.senderId,
+      );
       Provider.of<ChatProvider>(context, listen: false).joinScreen(
         chatUid: widget.chatUid,
-        token: widget.chat.recepients.first.token!
+        token: widget.token
       );
       Provider.of<ChatProvider>(context, listen: false).listenToMessages(chatUid: widget.chatUid);
     });
@@ -93,7 +98,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   Widget build(BuildContext context) {
     Provider.of<ChatProvider>(context).isScreenOn(
       chatUid: widget.chatUid, 
-      userUid: widget.chat.recepients.first.uid!
+      userUid: widget.receiverId
     );
     deviceHeight = MediaQuery.of(context).size.height;
     deviceWidth = MediaQuery.of(context).size.width; 
@@ -118,7 +123,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       TopBar(
-                        widget.chat.title(),
+                        widget.title,
                         fontSize: Dimensions.fontSizeDefault,
                         barTitleColor: ColorResources.textBlackPrimary,
                         primaryAction: IconButton(
@@ -139,7 +144,6 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                             context.read<ChatProvider>().goBack(context);
                             Provider.of<ChatProvider>(context, listen: false).leaveScreen(
                               chatUid: widget.chatUid,
-                              userUid: widget.chat.recepients.first.uid!
                             );
                           },
                         ),  
@@ -268,7 +272,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
           context.read<ChatProvider>().sendTextMessage(
             context,
             chatUid: widget.chatUid, 
-            receiverId: widget.chat.recepients.first.uid!,
+            receiverId: widget.receiverId,
           );
         }
         return;
@@ -287,7 +291,10 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
       child: FloatingActionButton(
         backgroundColor: const Color.fromRGBO(0, 82, 218, 1.0),
         onPressed: () {
-          context.read<ChatProvider>().sendImageMessage(chatUid: widget.chatUid, receiverId: widget.chat.recepients.first.uid!);
+          context.read<ChatProvider>().sendImageMessage(
+            chatUid: widget.chatUid, 
+            receiverId: widget.receiverId
+          );
         },
         child: const Icon(
           Icons.camera_enhance,

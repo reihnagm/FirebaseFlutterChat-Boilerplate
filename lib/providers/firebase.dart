@@ -1,3 +1,6 @@
+import 'package:chatv28/models/chat.dart';
+import 'package:chatv28/pages/chat.dart';
+import 'package:chatv28/services/navigation.dart';
 import 'package:dio/dio.dart';
 
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -29,7 +32,20 @@ class FirebaseProvider with ChangeNotifier {
     });
     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
       Map<String, dynamic> data = message.data;
-      debugPrint(data.toString());
+      String chatUid = data["chatUid"];
+      String title = data["title"];
+      String token = data["token"];
+      String senderId = data["senderId"];
+      String receiverId = data["receiverId"];
+      NavigationService.pushNav(context, 
+        ChatPage(
+          chatUid: chatUid,
+          title: title,  
+          token: token, 
+          senderId: senderId,
+          receiverId: receiverId
+        )
+      );
     });
   }
 
@@ -44,7 +60,9 @@ class FirebaseProvider with ChangeNotifier {
     required String token, 
     required String title, 
     required String body,
-    required String chatUid
+    required String chatUid,
+    required String senderId,
+    required String receiverId
   }) async {
     try {
       Dio dio = Dio();
@@ -59,6 +77,11 @@ class FirebaseProvider with ChangeNotifier {
           },
           "data": {
             "chatUid": chatUid,
+            "title": title,
+            "token": token,
+            "senderId": senderId,
+            "receiverId": receiverId,
+            "click_action": "FLUTTER_NOTIFICATION_CLICK"
           },
           "priority":"high"
         },

@@ -134,15 +134,13 @@ class _ChatsPageState extends State<ChatsPage> {
       isActivity: chat.activity, 
       readCount: chat.readCount(),
       isRead: chat.isRead(),
-      onTap: () async {
-        await databaseService.seeMsg(
-          chatUid: chat.uid, 
-          senderId: chat.recepients.first.uid!,
-          userUid: chat.currentUserId
-        );
+      onTap: () {
         NavigationService.pushNav(context, ChatPage(
+          title: chat.title(),
           chatUid: chat.uid,
-          chat: chat,  
+          senderId: chat.recepients.first.uid!,
+          receiverId: chat.recepients.first.uid!,  
+          token: chat.recepients.first.token!,
         ));
       }
     );

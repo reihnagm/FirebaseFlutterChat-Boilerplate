@@ -184,66 +184,18 @@ class _UsersPageState extends State<UsersPage> {
                       });
                       NavigationService.pushNav(context, ChatPage(
                         chatUid: doc!.id,
-                        chat: Chat(
-                          uid: doc.id, 
-                          currentUserId: context.read<AuthenticationProvider>().chatUser!.uid!, 
-                          activity: false, 
-                          group: false, 
-                          members: [
-                            ChatUser(
-                              uid: context.read<AuthenticationProvider>().chatUser!.uid, 
-                              name: context.read<AuthenticationProvider>().chatUser!.name, 
-                              email: context.read<AuthenticationProvider>().chatUser!.name, 
-                              imageUrl: context.read<AuthenticationProvider>().chatUser!.imageUrl, 
-                              isOnline: context.read<AuthenticationProvider>().chatUser!.isOnline, 
-                              lastActive: context.read<AuthenticationProvider>().chatUser!.lastActive,
-                              token: users[i].token
-                            ),
-                            ChatUser(
-                              uid: users[i].uid, 
-                              name: users[i].name, 
-                              email: users[i].email, 
-                              imageUrl: users[i].imageUrl, 
-                              isOnline: users[i].isOnline, 
-                              lastActive: users[i].lastActive,
-                              token: users[i].token
-                            ),
-                          ], 
-                          readers: [],
-                          messages: []
-                        )
+                        senderId: context.read<AuthenticationProvider>().chatUser!.uid!,
+                        receiverId: users[i].uid!,
+                        title: users[i].name!,
+                        token: users[i].token!,
                       ));
                   } else {
                     NavigationService.pushNav(context, ChatPage(
                       chatUid: checkCreateChat.docs[0].id,
-                      chat: Chat(
-                        uid: checkCreateChat.docs[0].id, 
-                        currentUserId: context.read<AuthenticationProvider>().chatUser!.uid!, 
-                        activity: false, 
-                        group: false, 
-                        members: [
-                          ChatUser(
-                            uid: context.read<AuthenticationProvider>().chatUser!.uid, 
-                            name: context.read<AuthenticationProvider>().chatUser!.name, 
-                            email: context.read<AuthenticationProvider>().chatUser!.name, 
-                            imageUrl: context.read<AuthenticationProvider>().chatUser!.imageUrl, 
-                            isOnline: context.read<AuthenticationProvider>().chatUser!.isOnline, 
-                            lastActive: context.read<AuthenticationProvider>().chatUser!.lastActive,
-                            token: users[i].token
-                          ),
-                          ChatUser(
-                            uid: users[i].uid, 
-                            name: users[i].name, 
-                            email: users[i].email, 
-                            imageUrl: users[i].imageUrl, 
-                            isOnline: users[i].isOnline, 
-                            lastActive: users[i].lastActive,
-                            token: users[i].token
-                          ),
-                        ], 
-                        readers: [],
-                        messages: []
-                      )
+                      senderId: context.read<AuthenticationProvider>().chatUser!.uid!,
+                      receiverId: users[i].uid!,
+                      title: users[i].name!,
+                      token: users[i].token!,
                     ));
                   }
                 },
