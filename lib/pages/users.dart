@@ -1,13 +1,18 @@
+import 'dart:io';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:image_cropper/image_cropper.dart';
 import 'package:provider/provider.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
+import 'package:chatv28/services/media.dart';
+import 'package:chatv28/utils/dimensions.dart';
 import 'package:chatv28/utils/box_shadow.dart';
 import 'package:chatv28/utils/color_resources.dart';
 import 'package:chatv28/basewidget/animated_dialog/show_animate_dialog.dart';
 import 'package:chatv28/basewidget/signout_confirmation_dialog/signout_confirmation_dialog.dart';
-import 'package:chatv28/models/chat.dart';
 import 'package:chatv28/pages/chat.dart';
 import 'package:chatv28/services/database.dart';
 import 'package:chatv28/services/navigation.dart';
@@ -27,15 +32,47 @@ class UsersPage extends StatefulWidget {
 }
 
 class _UsersPageState extends State<UsersPage> {
+  GlobalKey<FormState> formKey = GlobalKey<FormState>();
   late double deviceHeight; 
   late double deviceWidth;
 
-  late DatabaseService databaseService;
-  late TextEditingController searchFieldTextEditingController = TextEditingController();
+  File? file;
+  PlatformFile? groupImage;
+  late DatabaseService databaseService; 
+  late MediaService mediaService;
+  late TextEditingController searchFieldTextEditingController;
+  String groupName = "";
+  FocusNode focusNodeGroupName = FocusNode();
+
+  void chooseGroupAvatar() async {
+    PlatformFile? f = await mediaService.pickImageFromLibrary();
+    if(f != null) { 
+      groupImage = f;
+      File? cropped = await ImageCropper.cropImage(
+        sourcePath: f.path!,
+        androidUiSettings: AndroidUiSettings(
+          toolbarTitle: "Crop It"
+          toolbarColor: Colors.blueGrey[900],
+          toolbarWidgetColor: Colors.white,
+          initAspectRatio: CropAspectRatioPreset.original,
+          lockAspectRatio: false
+        ),
+        iosUiSettings: const IOSUiSettings(
+          minimumAspectRatio: 1.0,
+        )
+      );  
+      if(cropped != null) {
+        setState(() => file = cropped);
+      } else {
+        setState(() => file = null);
+      }
+    }   
+  }
 
   @override 
   void initState() {
     super.initState();
+    searchFieldTextEditingController = TextEditingController();
     WidgetsBinding.instance!.addPostFrameCallback((timeStamp) {
       Provider.of<AuthenticationProvider>(context, listen: false).initAuthStateChanges();
       Provider.of<UserProvider>(context, listen: false).getUsers();
@@ -45,6 +82,7 @@ class _UsersPageState extends State<UsersPage> {
   @override
   Widget build(BuildContext context) {
     databaseService = DatabaseService();
+    mediaService = MediaService();
     deviceHeight = MediaQuery.of(context).size.height;
     deviceWidth = MediaQuery.of(context).size.width;
     return buildUI();
@@ -65,7 +103,8 @@ class _UsersPageState extends State<UsersPage> {
             mainAxisAlignment: MainAxisAlignment.start,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              TopBar("Users",
+              TopBar(
+                barTitle: "Users",
                 barTitleColor: ColorResources.backgroundBlackPrimary,
                 primaryAction: IconButton(
                   icon: const Icon(
@@ -76,6 +115,279 @@ class _UsersPageState extends State<UsersPage> {
                     showAnimatedDialog(context,
                       const SignOutConfirmationDialog(),
                       isFlip: false
+                    );
+                  }, 
+                ),
+                secondaryAction: IconButton(
+                  icon: const Icon(
+                    Icons.group_add,
+                    color: ColorResources.backgroundBlackPrimary,
+                  ),
+                  onPressed: () async {
+                    showModalBottomSheet(
+                      isScrollControlled: true,
+                      backgroundColor: ColorResources.white,
+                      shape: const RoundedRectangleBorder(
+                        borderRadius: BorderRadius.only(
+                          topLeft: Radius.circular(10.0), 
+                          topRight: Radius.circular(10.0)
+                        )
+                      ),
+                      context: context, 
+                      builder: (context) {
+                        List<ChatUser>? users = context.read<UserProvider>().users;
+                        return SafeArea(
+                          child: LayoutBuilder(
+                            builder: (BuildContext context, BoxConstraints constraints) {
+                              return Stack(
+                                children: [
+                                  Padding(
+                                    padding: EdgeInsets.all(Dimensions.paddingSizeDefault),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        
+                                        Container(
+                                          margin: EdgeInsets.all(Dimensions.marginSizeSmall),
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Row(
+                                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                children: [
+                                                  Text("Create a group",
+                                                    style: TextStyle(
+                                                      color: ColorResources.textBlackPrimary,
+                                                      fontSize: Dimensions.fontSizeLarge,
+                                                      fontWeight: FontWeight.bold
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),  
+                                              Row(
+                                                mainAxisAlignment: MainAxisAlignment.center,
+                                                children: [
+                                                  file != null 
+                                                  ? Stack(
+                                                      children: [
+                                                        Container(
+                                                          width: 80.0,
+                                                          height: 100.0,
+                                                          padding: const EdgeInsets.all(10.0),
+                                                          child: Image.file(
+                                                            file!,
+                                                            width: 50.0,
+                                                            height: 50.0,
+                                                          )
+                                                        ),
+                                                        Positioned(
+                                                          bottom: 0.0,
+                                                          left: 0.0,
+                                                          right: 0.0,
+                                                          child: InkWell(
+                                                            onTap: () => chooseGroupAvatar(),
+                                                            child: const Icon(
+                                                              Icons.edit,
+                                                              size: 25.0,
+                                                              color: ColorResources.black,
+                                                            ),
+                                                          )
+                                                        ),
+                                                      ],
+                                                    )
+                                                  : Stack(
+                                                      children: [
+                                                        Container(
+                                                          width: 80.0,
+                                                          height: 100.0,
+                                                          padding: const EdgeInsets.all(10.0),
+                                                          decoration: BoxDecoration(
+                                                            color: ColorResources.backgroundBlueSecondary,
+                                                            boxShadow: boxShadow,
+                                                            shape: BoxShape.circle
+                                                          ),
+                                                          child: const Icon(
+                                                            Icons.group,
+                                                            size: 45.0,
+                                                            color: ColorResources.white,
+                                                          ),
+                                                        ),
+                                                        Positioned(
+                                                          bottom: 0.0,
+                                                          left: 0.0,
+                                                          right: 0.0,
+                                                          child: InkWell(
+                                                            onTap: () => chooseGroupAvatar(),
+                                                            child: const Icon(
+                                                              Icons.edit,
+                                                              size: 25.0,
+                                                              color: ColorResources.black,
+                                                            ),
+                                                          )
+                                                        ),
+                                                      ],
+                                                    ),
+                                                ],
+                                              ),
+                                              const SizedBox(height: 20.0),
+                                              Form(
+                                                key: formKey,
+                                                child: Column(
+                                                  children: [
+                                                    TextFormField(
+                                                      style: TextStyle(
+                                                        fontSize: Dimensions.fontSizeSmall
+                                                      ),
+                                                      cursorColor: ColorResources.backgroundBlueSecondary,
+                                                      validator: (val) {
+                                                        if(val == null || val.isEmpty) {
+                                                          focusNodeGroupName.requestFocus();
+                                                          return 'Name can`t empty';
+                                                        } else {
+                                                          return null;
+                                                        }
+                                                      },
+                                                      initialValue: groupName,
+                                                      onChanged: (val) {
+                                                        groupName = val;
+                                                      },
+                                                      autovalidateMode: AutovalidateMode.onUserInteraction,
+                                                      focusNode: focusNodeGroupName,
+                                                      decoration: const InputDecoration(
+                                                        filled: true,
+                                                        fillColor: ColorResources.white,
+                                                        floatingLabelBehavior: FloatingLabelBehavior.always,
+                                                        labelText: "Name",
+                                                        labelStyle: TextStyle(
+                                                          color: ColorResources.textBlackPrimary
+                                                        ),
+                                                        alignLabelWithHint: true,
+                                                        contentPadding: EdgeInsets.all(16.0),
+                                                        border: OutlineInputBorder(
+                                                          borderRadius: BorderRadius.all(Radius.circular(8.0)),
+                                                          borderSide: BorderSide(
+                                                            color: ColorResources.backgroundBlueSecondary,
+                                                            width: 2.0                                                             
+                                                          )
+                                                        ),
+                                                        enabledBorder: OutlineInputBorder(
+                                                          borderRadius: BorderRadius.all(Radius.circular(8.0)),
+                                                          borderSide: BorderSide(
+                                                            color: ColorResources.backgroundBlueSecondary,
+                                                            width: 2.0                                                             
+                                                          )
+                                                        ),
+                                                        errorBorder: OutlineInputBorder(
+                                                          borderRadius: BorderRadius.all(Radius.circular(8.0)),
+                                                          borderSide: BorderSide.none
+                                                        ),
+                                                        focusedErrorBorder: OutlineInputBorder(
+                                                          borderRadius: BorderRadius.all(Radius.circular(8.0)),
+                                                          borderSide: BorderSide(
+                                                            color: ColorResources.error,
+                                                            width: 2.0                                                             
+                                                          )
+                                                        ),
+                                                        disabledBorder: OutlineInputBorder(
+                                                          borderRadius: BorderRadius.all(Radius.circular(8.0)),
+                                                          borderSide: BorderSide(
+                                                            color: ColorResources.backgroundBlueSecondary,
+                                                            width: 2.0   
+                                                          )
+                                                        ),
+                                                        focusedBorder:  OutlineInputBorder(
+                                                          borderRadius: BorderRadius.all(Radius.circular(8.0)),
+                                                          borderSide: BorderSide(
+                                                            color: ColorResources.backgroundBlueSecondary,
+                                                            width: 2.0   
+                                                          )
+                                                        ),
+                                                      ),
+                                                    )
+                                                  ],  
+                                                ) 
+                                              ),
+                                            ],
+                                          )
+                                        ),
+                                        Expanded(
+                                          child: ListView.builder(
+                                            itemCount: users!.length,
+                                            itemBuilder: (BuildContext context, int i) {
+                                              return CustomListViewTile(
+                                                title: users[i].name!,
+                                                group: false,
+                                                subtitle: "Last Active: ${timeago.format(users[i].lastActive!)}",
+                                                height: deviceHeight * 0.10,  
+                                                imagePath: users[i].image!, 
+                                                isActive: users[i].isUserOnline(), 
+                                                isSelected: context.watch<UserProvider>().selectedUsers.contains(users[i]), 
+                                                onTap: () {
+                                                  context.read<UserProvider>().updateSelectedUsers(users[i]);
+                                                },
+                                              );   
+                                            },
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  Align(
+                                    alignment: Alignment.bottomCenter,
+                                    child: Container(
+                                      margin: EdgeInsets.all(Dimensions.marginSizeSmall),
+                                      child: Row(
+                                        children: [
+                                          Expanded(
+                                            child: CustomButton(
+                                              height: 40.0,
+                                              btnTxt: "Cancel", 
+                                              btnTextColor: ColorResources.backgroundBlueSecondary,
+                                              isBorder: true,
+                                              btnBorderColor: ColorResources.backgroundBlueSecondary,
+                                              btnColor: ColorResources.white,
+                                              onTap: () {
+                                                Navigator.of(context).pop();
+                                              }
+                                            )
+                                          ),
+                                          const SizedBox(width: 10.0),
+                                          Expanded(
+                                            child: CustomButton(
+                                              height: 40.0,
+                                              btnTxt: "Create", 
+                                              btnColor: ColorResources.backgroundBlueSecondary,
+                                              isLoading: context.watch<UserProvider>().createGroupStatus == CreateGroupStatus.loading ? true : false,
+                                              onTap: () async {
+                                                if(formKey.currentState!.validate()) {
+                                                  formKey.currentState!.save();
+                                                  if(file != null) {
+                                                    await context.read<UserProvider>().createChat(
+                                                      context, 
+                                                      groupName: groupName,
+                                                      groupImage: groupImage!
+                                                    );
+                                                  } else {
+                                                    await context.read<UserProvider>().createChat(
+                                                      context, 
+                                                      groupName: groupName,
+                                                    );
+                                                  }
+                                                } 
+                                              }
+                                            )
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  )
+                                ],
+                              );
+                            },
+                          ) 
+                        );
+                      },
                     );
                   }, 
                 ),
@@ -112,7 +424,7 @@ class _UsersPageState extends State<UsersPage> {
                   return usersList();
                 },
               ),
-              createChatButton()
+              // createChatButton()
             ],
           ),
         );
@@ -121,20 +433,20 @@ class _UsersPageState extends State<UsersPage> {
   }
 
   Widget usersList() {
-    List<ChatUser>? _users = context.read<UserProvider>().users;
+    List<ChatUser>? users = context.read<UserProvider>().users;
     return Expanded(
       child: () {
-      if(_users != null) {
-        if(_users.isNotEmpty) {
-          List<ChatUser> users = _users.where((el) => el.uid != context.read<AuthenticationProvider>().chatUser!.uid).toList();
+      if(users != null) {
+        if(users.isNotEmpty) {
           return ListView.builder(
             itemCount: users.length,
             itemBuilder: (BuildContext context, int i) {
               return CustomListViewTile(
                 title: users[i].name!,
+                group: false,
                 subtitle: "Last Active: ${timeago.format(users[i].lastActive!)}",
                 height: deviceHeight * 0.10,  
-                imagePath: users[i].imageUrl!, 
+                imagePath: users[i].image!, 
                 isActive: users[i].isUserOnline(), 
                 isSelected: context.watch<UserProvider>().selectedUsers.contains(users[i]), 
                 onTap: () async {
@@ -144,6 +456,10 @@ class _UsersPageState extends State<UsersPage> {
                       {
                         "is_group": false,
                         "is_activity": false,
+                        "group": {
+                          "name": "",
+                          "image": ""
+                        }
                         "on_screens": FieldValue.arrayUnion([ 
                           {
                             "userUid": context.read<AuthenticationProvider>().chatUser!.uid,
@@ -165,7 +481,7 @@ class _UsersPageState extends State<UsersPage> {
                           {
                             "uid": context.read<AuthenticationProvider>().chatUser!.uid,
                             "email": context.read<AuthenticationProvider>().chatUser!.email,
-                            "image": context.read<AuthenticationProvider>().chatUser!.imageUrl,
+                            "image": context.read<AuthenticationProvider>().chatUser!.image,
                             "isOnline": context.read<AuthenticationProvider>().chatUser!.isOnline,
                             "last_active": context.read<AuthenticationProvider>().chatUser!.lastActive,
                             "name": context.read<AuthenticationProvider>().chatUser!.name,
@@ -174,7 +490,7 @@ class _UsersPageState extends State<UsersPage> {
                           {
                             "uid": users[i].uid,
                             "email":users[i].email,
-                            "image": users[i].imageUrl,
+                            "image": users[i].image,
                             "isOnline": users[i].isOnline,
                             "last_active": users[i].lastActive,
                             "name": users[i].name,
@@ -187,6 +503,7 @@ class _UsersPageState extends State<UsersPage> {
                         senderId: context.read<AuthenticationProvider>().chatUser!.uid!,
                         receiverId: users[i].uid!,
                         title: users[i].name!,
+                        subtitle: users[i].isOnline.toString(),
                         token: users[i].token!,
                       ));
                   } else {
@@ -195,12 +512,10 @@ class _UsersPageState extends State<UsersPage> {
                       senderId: context.read<AuthenticationProvider>().chatUser!.uid!,
                       receiverId: users[i].uid!,
                       title: users[i].name!,
+                      subtitle: users[i].isOnline.toString(),
                       token: users[i].token!,
                     ));
                   }
-                },
-                onLongPress: () {
-                  context.read<UserProvider>().updateSelectedUsers(users[i]);
                 },
               );
             },
@@ -228,18 +543,18 @@ class _UsersPageState extends State<UsersPage> {
     }());
   }
 
-  Widget createChatButton() {
-    return Visibility(
-      visible:  context.watch<UserProvider>().selectedUsers.isNotEmpty,
-      child: CustomButton(
-        onTap: () {
-           context.read<UserProvider>().createChat(context);
-        }, 
-        isBoxShadow: false,
-        btnTxt: context.read<UserProvider>().selectedUsers.length == 1 
-        ? "Chat with ${context.read<UserProvider>().selectedUsers.first.name}"
-        : "Create Group Chat"
-      )
-    );
-  }
+  // Widget createChatButton() {
+  //   return Visibility(
+  //     visible:  context.watch<UserProvider>().selectedUsers.isNotEmpty,
+  //     child: CustomButton(
+  //       onTap: () {
+  //          context.read<UserProvider>().createChat(context, groupName: groupName);
+  //       }, 
+  //       isBoxShadow: false,
+  //       btnTxt: context.read<UserProvider>().selectedUsers.length == 1 
+  //       ? "Chat with ${context.read<UserProvider>().selectedUsers.first.name}"
+  //       : "Create Group Chat"
+  //     )
+  //   );
+  // }
 }

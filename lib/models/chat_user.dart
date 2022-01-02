@@ -2,7 +2,7 @@ class ChatUser {
   final String? uid;
   final String? name;
   final String? email;
-  final String? imageUrl;
+  final String? image;
   late final bool? isOnline;
   final DateTime? lastActive;
   final String? token;
@@ -12,7 +12,7 @@ class ChatUser {
     this.uid,
     this.name,
     this.email,
-    this.imageUrl,
+    this.image,
     this.isOnline,
     this.lastActive
   });
@@ -23,7 +23,7 @@ class ChatUser {
       uid: json["uid"], 
       name: json["name"],
       email: json["email"], 
-      imageUrl: json["image"], 
+      image: json["image"], 
       isOnline: json["isOnline"],
       lastActive: json["last_active"].toDate()
     );
@@ -33,8 +33,9 @@ class ChatUser {
     return {
       "email": email,
       "name": name,
+      "image": image,
+      "isOnline": isOnline,
       "last_active": lastActive,
-      "image": imageUrl
     };
   }
 

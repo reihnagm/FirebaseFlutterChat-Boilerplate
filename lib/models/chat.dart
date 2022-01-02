@@ -29,11 +29,37 @@ class ChatCountRead {
   }
 }
 
+class GroupData {
+  final String name;
+  final String? image;
+
+  GroupData({
+    required this.name,
+    required this.image
+  });
+
+  factory GroupData.fromJson(Map<String, dynamic> json) {
+    return GroupData(
+      name: json["name"],
+      image: json["image"]
+    );
+  }
+
+
+  Map<String, dynamic> toJson() {
+    return {
+      "name": name,
+      "image": image,
+    };
+  }
+}
+
 class Chat {
   final String uid;
   final String currentUserId;
   final bool activity;
   final bool group;
+  final GroupData groupData;
   final List<ChatUser> members;
   final List<ChatMessage> messages; 
   List<ChatCountRead> readers;
@@ -44,6 +70,7 @@ class Chat {
     required this.currentUserId,
     required this.activity,
     required this.group,
+    required this.groupData,
     required this.members,
     required this.messages,
     required this.readers,
@@ -60,6 +87,7 @@ class Chat {
   bool isRead() => readers.isEmpty ? true : false;
 
   bool isUsersOnline() => fetchListRecepients().any((el) => el.isUserOnline());
-  String title() => !group ? recepients.first.name! : recepients.map((user) => user.name!).join(", ");
-  String imageURL() => !group ? recepients.first.imageUrl! : "https://t4.ftcdn.net/jpg/03/99/12/41/360_F_399124149_L3lTd03yuk7b0lhOhoqbJ0dc6Wjw6WQH.jpg";
+  String title() => !group ? recepients.first.name! : groupData.name;
+  String subtitle() => !group ? isUsersOnline() ? "ONLINE" : "OFFLINE" : recepients.map((user) => user.name!).join(", ");
+  String image() => !group ? recepients.first.image! : groupData.image == "" ? "https://www.iconpacks.net/icons/1/free-user-group-icon-296-thumb.png" : groupData.image!;
 }

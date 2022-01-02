@@ -26,7 +26,8 @@ Future<void> init() async {
   getIt.registerFactory(() => UserProvider(
     authenticationProvider: getIt(),
     databaseService: getIt(),
-    navigationService: getIt()
+    navigationService: getIt(),
+    cloudStorageService: getIt()
   ));
   getIt.registerFactory(() => ChatsProvider(
     authenticationProvider: getIt(), 

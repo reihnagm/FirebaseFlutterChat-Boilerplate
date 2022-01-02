@@ -2,7 +2,7 @@
 
 import 'dart:async';
 
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:chatv28/models/chat_user.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -25,6 +25,8 @@ class ChatProvider extends ChangeNotifier {
   final MediaService mediaService;
   final NavigationService navigationService;
 
+  String? isOnline;
+
   List<ChatMessage>? messages;
 
   Soundpool pool = Soundpool.fromOptions(options: SoundpoolOptions.kDefault);
@@ -35,12 +37,14 @@ class ChatProvider extends ChangeNotifier {
   late ScrollController scrollController;
   late TextEditingController messageTextEditingController;
   late KeyboardVisibilityController keyboardVisibilityController; 
+  StreamSubscription? isUserOnlineStream;
   StreamSubscription? messageStream;
   StreamSubscription? keyboardTypeStream; 
   StreamSubscription? keyboardVisibilityStream; 
 
   @override
   void dispose() {
+    isUserOnlineStream!.cancel();
     messageStream!.cancel();
     keyboardTypeStream!.cancel();
     keyboardVisibilityStream!.cancel();
@@ -76,7 +80,7 @@ class ChatProvider extends ChangeNotifier {
             scrollController.animateTo(
               scrollController.position.maxScrollExtent, 
               duration: const Duration(
-                milliseconds: 300
+                milliseconds: 500
               ), 
               curve: Curves.easeInOut
             );
@@ -85,7 +89,6 @@ class ChatProvider extends ChangeNotifier {
         Future.delayed(Duration.zero, () => notifyListeners());
       });
     } catch(e) {
-      debugPrint("Error gettings messages");
       debugPrint(e.toString());
     }
   }
@@ -232,6 +235,23 @@ class ChatProvider extends ChangeNotifier {
     goBack(context);
     try {
       await databaseService.deleteChat(chatUid);
+    } catch(e) {
+      debugPrint(e.toString());
+    }
+  }
+
+  void isUserOnline({required String receiverId}) async {
+    try {
+      isUserOnlineStream = databaseService.getChatUserOnline(receiverId)!.listen((snapshot) {
+        Map<String, dynamic> data = snapshot.data() as Map<String, dynamic>;
+        ChatUser chatUser = ChatUser.fromJson(data);
+        if(chatUser.isOnline!) {
+          isOnline = "ONLINE";
+        } else {
+          isOnline = "OFFLINE";
+        }
+        Future.delayed(Duration.zero, () => notifyListeners());
+      });
     } catch(e) {
       debugPrint(e.toString());
     }

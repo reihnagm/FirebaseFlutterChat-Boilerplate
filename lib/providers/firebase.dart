@@ -41,6 +41,7 @@ class FirebaseProvider with ChangeNotifier {
         ChatPage(
           chatUid: chatUid,
           title: title,  
+          subtitle: "",
           token: token, 
           senderId: senderId,
           receiverId: receiverId

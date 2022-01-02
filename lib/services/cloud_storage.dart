@@ -7,6 +7,21 @@ import 'package:flutter/material.dart';
 
 class CloudStorageService {
   final FirebaseStorage storage = FirebaseStorage.instance;
+
+   Future<String?> saveGroupImageToStorage({
+     required String groupName, 
+     required PlatformFile groupImage
+    }) async {
+    try {
+      Reference ref = storage.ref().child("images/groups/$groupName.${groupImage.extension}");
+      UploadTask task = ref.putFile(File(groupImage.path!));
+      return await task.then((result) async {
+        return await result.ref.getDownloadURL();
+      });
+    } catch(e) {
+      debugPrint(e.toString());
+    }
+  }
  
   Future<String?> saveUserImageToStorage(String uid, PlatformFile file) async {
     try {

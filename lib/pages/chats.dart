@@ -59,7 +59,8 @@ class _ChatsPageState extends State<ChatsPage> {
             mainAxisAlignment: MainAxisAlignment.start,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              TopBar("Chats",
+              TopBar(
+                barTitle: "Chats",
                 barTitleColor: ColorResources.textBlackPrimary,
                 primaryAction: IconButton(
                   onPressed: () {
@@ -114,7 +115,7 @@ class _ChatsPageState extends State<ChatsPage> {
             ),
           );
         }
-      })() ,
+      })(),
     );
   }
 
@@ -127,9 +128,10 @@ class _ChatsPageState extends State<ChatsPage> {
     }
     return CustomListViewTileWithActivity(
       height: deviceHeight * 0.10, 
+      group: chat.group,
       title: chat.title(), 
       subtitle: subtitleText, 
-      imagePath: chat.imageURL(), 
+      imagePath: chat.image(), 
       isActive: chat.isUsersOnline(), 
       isActivity: chat.activity, 
       readCount: chat.readCount(),
@@ -137,6 +139,7 @@ class _ChatsPageState extends State<ChatsPage> {
       onTap: () {
         NavigationService.pushNav(context, ChatPage(
           title: chat.title(),
+          subtitle: chat.subtitle(),
           chatUid: chat.uid,
           senderId: chat.recepients.first.uid!,
           receiverId: chat.recepients.first.uid!,  

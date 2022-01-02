@@ -3,6 +3,7 @@ import 'package:grouped_list/grouped_list.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 
+import 'package:chatv28/basewidget/top_bar.dart';
 import 'package:chatv28/utils/box_shadow.dart';
 import 'package:chatv28/utils/color_resources.dart';
 import 'package:chatv28/utils/dimensions.dart';
@@ -10,17 +11,18 @@ import 'package:chatv28/models/chat_message.dart';
 import 'package:chatv28/providers/chat.dart';
 import 'package:chatv28/basewidget/custom_input_fields.dart';
 import 'package:chatv28/basewidget/custom_list_view_tiles.dart';
-import 'package:chatv28/basewidget/top_bar.dart';
 import 'package:chatv28/providers/authentication.dart';
 
 class ChatPage extends StatefulWidget {
   final String title;
+  final String subtitle;
   final String chatUid;
   final String senderId;
   final String token;
   final String receiverId;
   const ChatPage({ 
     required this.title,
+    required this.subtitle,
     required this.chatUid,
     required this.senderId,
     required this.token,
@@ -100,6 +102,9 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
       chatUid: widget.chatUid, 
       userUid: widget.receiverId
     );
+    Provider.of<ChatProvider>(context).isUserOnline(
+      receiverId: widget.receiverId, 
+    );
     deviceHeight = MediaQuery.of(context).size.height;
     deviceWidth = MediaQuery.of(context).size.width; 
     return buildUI();
@@ -108,28 +113,26 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   Widget buildUI() {
     return Builder(
       builder: (BuildContext context) {
-        return Scaffold(
-          body: SafeArea(
-            child: LayoutBuilder(
-              builder: (BuildContext context, BoxConstraints constraints) {
-                return Container(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: deviceWidth * 0.03,
-                    vertical: deviceHeight * 0.02
-                  ),
-                  width: double.infinity,
-                  height: deviceHeight,
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        return WillPopScope(
+          onWillPop: () {
+            Provider.of<ChatProvider>(context, listen: false).leaveScreen(
+              chatUid: widget.chatUid,
+            );
+            return Future.value(true);
+          },
+          child: Scaffold(
+            body: SafeArea(
+              child: LayoutBuilder(
+                builder: (BuildContext context, BoxConstraints constraints) {
+                  return Column(
                     children: [
-                      TopBar(
-                        widget.title,
-                        fontSize: Dimensions.fontSizeDefault,
-                        barTitleColor: ColorResources.textBlackPrimary,
+                      TopBarChat(
+                        barTitle: widget.title,
+                        subTitle: context.watch<ChatProvider>().isOnline == null ? "" : context.read<ChatProvider>().isOnline,
                         primaryAction: IconButton(
                           icon: const Icon(
                             Icons.delete,
-                            color: ColorResources.backgroundBlackPrimary
+                            color: ColorResources.white
                           ),
                           onPressed: () {
                             context.read<ChatProvider>().deleteChat(context, chatUid: widget.chatUid);
@@ -138,7 +141,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                         secondaryAction: IconButton(
                           icon: const Icon(
                             Icons.arrow_back,
-                            color: ColorResources.backgroundBlackPrimary
+                            color: ColorResources.white
                           ),
                           onPressed: () {
                             context.read<ChatProvider>().goBack(context);
@@ -151,10 +154,10 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                       messageList(),
                       sendMessageForm()
                     ],
-                  ),
-                );
-              },
-            )
+                  );
+                },
+              )
+            ),
           ),
         ); 
       }
@@ -172,7 +175,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
               controller: context.read<ChatProvider>().scrollController,
               elements: context.watch<ChatProvider>().messages!,
               groupBy: (el) => DateFormat('dd MMM yyyy').format(el.sentTime),
-              groupSeparatorBuilder: (date) {
+              groupSeparatorBuilder:(date) {
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
@@ -212,11 +215,13 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
           ),
         );
       } else {
-        return const Align(
-          alignment: Alignment.center,
-          child: Text("Be the first to say Hi!",
-            style: TextStyle(
-              color: ColorResources.textBlackPrimary
+        return const Expanded(
+          child: Align(
+            alignment: Alignment.center,
+            child: Text("Be the first to say Hi!",
+              style: TextStyle(
+                color: ColorResources.textBlackPrimary
+              ),
             ),
           ),
         );
@@ -232,9 +237,10 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
 
   Widget sendMessageForm() {
     return Container(
+      margin: EdgeInsets.only(bottom: Dimensions.marginSizeExtraSmall, left: Dimensions.marginSizeExtraSmall, right: Dimensions.marginSizeExtraSmall),
       decoration: BoxDecoration(
         boxShadow: boxShadow,
-        color: ColorResources.backgroundBlueSecondary,
+        color: ColorResources.grey,
         borderRadius: BorderRadius.circular(10.0)
       ),
       child: Row(

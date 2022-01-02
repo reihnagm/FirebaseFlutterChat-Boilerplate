@@ -1,17 +1,17 @@
 // import 'package:chatv28/widgets/message_bubble.dart';
-import 'package:chatv28/utils/box_shadow.dart';
-import 'package:chatv28/utils/color_resources.dart';
-import 'package:chatv28/utils/dimensions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 
+import 'package:chatv28/utils/box_shadow.dart';
+import 'package:chatv28/utils/color_resources.dart';
+import 'package:chatv28/utils/dimensions.dart';
 import 'package:chatv28/basewidget/message_bubble.dart';
 import 'package:chatv28/models/chat_message.dart';
-import 'package:chatv28/models/chat_user.dart';
 import 'package:chatv28/basewidget/rounded_image.dart';
 
 class CustomListViewTile extends StatelessWidget {
   final double height;
+  final bool group;
   final String title;
   final String subtitle;
   final String imagePath;
@@ -23,6 +23,7 @@ class CustomListViewTile extends StatelessWidget {
   const CustomListViewTile({
     Key? key, 
     required this.height,
+    required this.group,
     required this.title,
     required this.subtitle,
     required this.imagePath,
@@ -38,7 +39,7 @@ class CustomListViewTile extends StatelessWidget {
       trailing: isSelected 
       ? const Icon(
           Icons.check,
-          color: Colors.white,
+          color: ColorResources.backgroundBlueSecondary,
         )
       : null,
       onTap: () => onTap(),
@@ -47,6 +48,7 @@ class CustomListViewTile extends StatelessWidget {
       leading: RoundedImageNetworkWithStatusIndicator(
         imagePath: imagePath,
         isActive: isActive,
+        group: group,
         key: UniqueKey(),
         size: height / 2,
       ),
@@ -69,6 +71,7 @@ class CustomListViewTile extends StatelessWidget {
 
 class CustomListViewTileWithActivity extends StatelessWidget {
   final double height;
+  final bool group;
   final String title;
   final String subtitle;
   final String imagePath;
@@ -81,6 +84,7 @@ class CustomListViewTileWithActivity extends StatelessWidget {
   const CustomListViewTileWithActivity({
     Key? key, 
     required this.height,
+    required this.group,
     required this.title,
     required this.subtitle,
     required this.imagePath,
@@ -100,7 +104,8 @@ class CustomListViewTileWithActivity extends StatelessWidget {
         key: UniqueKey(),
         imagePath: imagePath, 
         size: height / 2, 
-        isActive: isActive
+        isActive: isActive,
+        group: group
       ),
       minVerticalPadding: height * 0.20,
       title: Text(title,
@@ -130,21 +135,22 @@ class CustomListViewTileWithActivity extends StatelessWidget {
       ),
       subtitle: isActivity 
       ? Row(
-        mainAxisSize: MainAxisSize.max,
-        mainAxisAlignment: MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          SpinKitThreeBounce(
-            color: Colors.white54,
-            size: height * 0.10,
+          mainAxisSize: MainAxisSize.max,
+          mainAxisAlignment: MainAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            SpinKitThreeBounce(
+              color: Colors.white54,
+              size: height * 0.10,
+            )
+          ],
+        ) 
+      : Text(subtitle, 
+          style: TextStyle(
+            color: ColorResources.textBlackPrimary,
+            fontSize: Dimensions.fontSizeExtraSmall,
           )
-        ],
-      ) : Text(subtitle, 
-        style: TextStyle(
-          color: ColorResources.textBlackPrimary,
-          fontSize: Dimensions.fontSizeExtraSmall,
-        )
-      )      
+        )      
     );
   }
 

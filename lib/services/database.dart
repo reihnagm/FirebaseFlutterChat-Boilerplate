@@ -18,6 +18,14 @@ class DatabaseService {
     }
   }
 
+  Stream<DocumentSnapshot>? getChatUserOnline(String uid) {
+    try{
+      return db.collection(userCollection).doc(uid).snapshots();
+    } catch(e) {
+      debugPrint(e.toString());
+    }
+  }
+
   Stream<QuerySnapshot> getChatsForUser(String userUid) {
     return db.collection(chatCollection)
     .where('relations', arrayContains: userUid)
@@ -174,6 +182,7 @@ class DatabaseService {
       return await db
       .collection(chatCollection)
       .where("relations", arrayContains: uid)
+      .where("is_group", isEqualTo: false)
       .get();
     } catch(e) {
       debugPrint(e.toString());

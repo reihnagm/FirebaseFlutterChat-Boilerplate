@@ -37,6 +37,7 @@ dependencies:
   grouped_list: ^4.1.0
 
   # I
+  image_cropper: ^1.4.1
   ionicons: ^0.1.2
 
   # P

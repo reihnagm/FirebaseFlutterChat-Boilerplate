@@ -32,12 +32,14 @@ class RoundedImageNetwork extends StatelessWidget {
 
 class RoundedImageNetworkWithStatusIndicator extends RoundedImageNetwork {
   final bool isActive;
+  final bool group;
 
   const RoundedImageNetworkWithStatusIndicator({
     required Key key,
     required String imagePath,
     required double size,
     required this.isActive,
+    required this.group,
   }) : super(key: key, imagePath: imagePath, size: size);
 
 
@@ -48,7 +50,9 @@ class RoundedImageNetworkWithStatusIndicator extends RoundedImageNetwork {
       alignment: Alignment.bottomRight,
       children: [
         super.build(context),
-        Container(
+        group 
+        ? const SizedBox() 
+        : Container(
           height: size * 0.20,
           width: size * 0.20,
           decoration: BoxDecoration(
