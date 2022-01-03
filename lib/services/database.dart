@@ -81,7 +81,7 @@ class DatabaseService {
               "seen": DateTime.now(),
               "message_id": doc.id,
               "reader_id": readerId,
-              "is_read": isGroup ? true : message.isRead
+              "is_read": isGroup ? true : message.isRead 
             }])
           });
         } catch(e) {
@@ -126,12 +126,11 @@ class DatabaseService {
       .get();
       Future.delayed(Duration.zero, () async {
         try {
-          QuerySnapshot<Map<String, dynamic>> chat = await db
+          DocumentSnapshot<Map<String, dynamic>> chatDoc = await db
           .collection(chatCollection)
-          .get();
-          for (QueryDocumentSnapshot<Map<String, dynamic>> chatDoc in chat.docs) {
-            List<dynamic> readers = chatDoc.data()["readers"];
-            List<dynamic> relations = chatDoc.data()["relations"];
+          .doc(chatUid).get();
+            List<dynamic> readers = chatDoc.data()!["readers"];
+            List<dynamic> relations = chatDoc.data()!["relations"];
             List<dynamic> chatCountRead = [];
             if(isGroup) {
               for (QueryDocumentSnapshot<Map<String, dynamic>> msgDoc in msg.docs) {
@@ -160,22 +159,6 @@ class DatabaseService {
               chatDoc.reference.update({
                 "readers": FieldValue.arrayUnion(chatCountRead)
               });     
-            } else {
-              List<dynamic> checkReaders = readers.where((el) => el["reader_id"] == userUid).toList();
-              if(checkReaders.isNotEmpty) {
-                for (var reader in checkReaders) {
-                  reader["is_read"] = true;
-                  chatCountRead.add({
-                    "message_id": reader["message_id"],
-                    "reader_id": reader["reader_id"],
-                    "seen": reader["seen"],
-                    "is_read": reader["is_read"],
-                  });  
-                }         
-                chatDoc.reference.update({
-                  "readers": chatCountRead
-                });  
-              }
             }
             for (QueryDocumentSnapshot<Map<String, dynamic>> msgDoc in msg.docs) {
               if(isGroup) {
@@ -183,13 +166,26 @@ class DatabaseService {
                   msgDoc.reference.update({"is_read": true});
                 }
               } else {
-                List<dynamic> checkReaders = readers.where((el) => el["reader_id"] == userUid).toList();
-                if(checkReaders.isNotEmpty) {
+                Map<String, dynamic> data = msgDoc.data();
+                if(data["sender_id"] == userUid) {
+                  List<dynamic> checkReaders = readers
+                  .where((el) => el["reader_id"] == userUid)
+                  .where((el) => el["message_id"] == msgDoc.id).toList();
+                  for (var reader in checkReaders) {
+                    chatCountRead.add({
+                      "message_id": reader["message_id"],
+                      "reader_id": reader["reader_id"],
+                      "seen": reader["seen"],
+                      "is_read": true,
+                    });  
+                  }         
+                  chatDoc.reference.update({
+                    "readers": chatCountRead
+                  });  
                   msgDoc.reference.update({"is_read": true});
                 }
               }
             }
-          }
         } catch(e) {
           debugPrint(e.toString());
         }

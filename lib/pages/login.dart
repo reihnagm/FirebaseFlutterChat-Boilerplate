@@ -91,7 +91,6 @@ class _LoginPageState extends State<LoginPage> {
 
   Widget loginForm() {
     return SizedBox(
-      height: 160.0,
       child: Form(
         key: loginFormKey,
         child: Column(
@@ -114,6 +113,7 @@ class _LoginPageState extends State<LoginPage> {
               ),
               obscureText: false
             ),
+            const SizedBox(height: 20.0),
             CustomTextPasswordFormField(
               onSaved: (val) {
                 setState(() {
