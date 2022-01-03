@@ -21,7 +21,7 @@ class UserProvider extends ChangeNotifier {
   CreateGroupStatus _createGroupStatus = CreateGroupStatus.idle;
   CreateGroupStatus get createGroupStatus => _createGroupStatus;
 
-  List<ChatUser>? _users;
+  List<ChatUser>? _users = [];
   List<ChatUser>? get users {
     if(_users != null && authenticationProvider.auth.currentUser != null) {
       return [..._users!].where((el) => el.uid != authenticationProvider.auth.currentUser!.uid).toList();

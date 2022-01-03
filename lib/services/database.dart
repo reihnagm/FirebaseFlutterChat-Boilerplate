@@ -44,13 +44,17 @@ class DatabaseService {
     .snapshots();
   }
 
-  Future<QuerySnapshot> getLastMessageForChat(String chatID) {
-    return db.collection(chatCollection)
-    .doc(chatID)
-    .collection(messageCollection)
-    .orderBy("sent_time", descending: true)
-    .limit(1)
+  Future<QuerySnapshot>? getLastMessageForChat(String chatID) {
+    try {
+      return db.collection(chatCollection)
+      .doc(chatID)
+      .collection(messageCollection)
+      .orderBy("sent_time", descending: true)
+      .limit(1)
     .get();
+    } catch(e) {
+      debugPrint(e.toString());
+    }
   }
 
   Stream<QuerySnapshot> getUsers({String? name}) {

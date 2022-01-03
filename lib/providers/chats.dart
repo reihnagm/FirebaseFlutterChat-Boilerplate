@@ -13,7 +13,7 @@ class ChatsProvider extends ChangeNotifier {
   final AuthenticationProvider authenticationProvider;
   final DatabaseService databaseService;
 
-  List<Chat>? _chats;
+  List<Chat>? _chats = [];
   List<Chat>? get chats {
     if(_chats != null) {
       return [..._chats!];
@@ -51,12 +51,10 @@ class ChatsProvider extends ChangeNotifier {
           }
           List<ChatMessage> messages = [];
           try {
-            QuerySnapshot chatMessage = await databaseService.getLastMessageForChat(d.id);
-            if(chatMessage.docs.isNotEmpty) {
-              Map<String, dynamic> messageData = chatMessage.docs.first.data() as Map<String, dynamic>;
-              ChatMessage message = ChatMessage.fromJSON(messageData);
-              messages.add(message);
-            }
+            QuerySnapshot<Object?>? chatMessage = await databaseService.getLastMessageForChat(d.id);
+            Map<String, dynamic> messageData = chatMessage!.docs.first.data() as Map<String, dynamic>;
+            ChatMessage message = ChatMessage.fromJSON(messageData);
+            messages.add(message);
           } catch(e) {
             debugPrint(e.toString());
           }
