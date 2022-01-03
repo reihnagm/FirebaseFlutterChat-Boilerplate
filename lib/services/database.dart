@@ -1,4 +1,3 @@
-import 'package:chatv28/models/chat.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
@@ -27,10 +26,14 @@ class DatabaseService {
     }
   }
 
-  Stream<QuerySnapshot> getChatsForUser(String userUid) {
-    return db.collection(chatCollection)
-    .where('relations', arrayContains: userUid)
-    .snapshots();
+  Stream<QuerySnapshot>? getChatsForUser(String userUid) {
+    try {
+      return db.collection(chatCollection)
+      .where('relations', arrayContains: userUid)
+      .snapshots();
+    } catch(e) {
+      debugPrint(e.toString());
+    } 
   }
 
   Stream<QuerySnapshot> streamMessagesForChat(String chatID) {
@@ -127,20 +130,21 @@ class DatabaseService {
             List<dynamic> relations = chatDoc.data()["relations"];
             List<dynamic> chatCountRead = [];
             if(isGroup) {
-              List<dynamic> checkReaders = readers
-              .where((el) => el["reader_id"] == userUid).toList();
-              if(checkReaders.isNotEmpty) {
-                for (var reader in checkReaders) {
-                  reader["is_read"] = true;
-                  chatCountRead.add({
-                    "seen": reader["seen"],
-                    "message_id": reader["message_id"],
-                    "reader_id": reader["reader_id"],
-                    "is_read": reader["is_read"],
-                  }); 
-                }    
-              } else {
-                for (QueryDocumentSnapshot<Map<String, dynamic>> msgDoc in msg.docs) {
+              for (QueryDocumentSnapshot<Map<String, dynamic>> msgDoc in msg.docs) {
+                List<dynamic> checkReaders = readers
+                .where((el) => el["reader_id"] == userUid)
+                .where((el) => el["message_id"] == msgDoc.id)  .toList();
+                if(checkReaders.isNotEmpty) {
+                  for (var reader in checkReaders) {
+                    reader["is_read"] = true;
+                    chatCountRead.add({
+                      "seen": reader["seen"],
+                      "message_id": reader["message_id"],
+                      "reader_id": reader["reader_id"],
+                      "is_read": reader["is_read"],
+                    }); 
+                  }    
+                } else {
                   chatCountRead.add({
                     "seen": DateTime.now(),
                     "message_id": msgDoc.id,
@@ -287,7 +291,7 @@ class DatabaseService {
       int index = onScreens.indexWhere((el) => el["userUid"] == userUid);
       if(index != -1) {
         onScreens[index]["on"] = true;
-        Future.delayed(const Duration(seconds: 1), () async {
+        Future.delayed(Duration.zero, () async {
           try {
             await db
             .collection(chatCollection)

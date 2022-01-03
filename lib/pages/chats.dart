@@ -30,7 +30,6 @@ class _ChatsPageState extends State<ChatsPage> {
   void initState() {
     super.initState();
     WidgetsBinding.instance!.addPostFrameCallback((timeStamp) {
-      Provider.of<AuthenticationProvider>(context, listen: false).initAuthStateChanges();
       Provider.of<ChatsProvider>(context, listen: false).getChats();
     });
   }

@@ -13,8 +13,13 @@ class ChatsProvider extends ChangeNotifier {
   final AuthenticationProvider authenticationProvider;
   final DatabaseService databaseService;
 
-  List<Chat>? chats;
-
+  List<Chat>? _chats;
+  List<Chat>? get chats {
+    if(_chats != null) {
+      return [..._chats!];
+    }
+    return null;
+  }
   StreamSubscription? chatsStream;
   ChatsProvider({
     required this.authenticationProvider,
@@ -29,10 +34,10 @@ class ChatsProvider extends ChangeNotifier {
 
   Future<void> getChats() async {
     try {
-      chatsStream = databaseService.getChatsForUser(authenticationProvider.auth.currentUser!.uid).listen((snapshot) async {
-        chats = await Future.wait(snapshot.docs.map((d) async {
+      chatsStream = databaseService.getChatsForUser(authenticationProvider.auth.currentUser!.uid)!.listen((snapshot) async {
+        _chats = await Future.wait(snapshot.docs.map((d) async {
           Map<String, dynamic> chatData = d.data() as Map<String, dynamic>;
-          GroupData groupData =  GroupData.fromJson(chatData["group"]);
+          GroupData groupData = GroupData.fromJson(chatData["group"]);
           List<ChatUser> members = [];
           for (Map<String, dynamic> member in chatData["members"]) {
             Map<String, dynamic> userData = member;
@@ -45,11 +50,15 @@ class ChatsProvider extends ChangeNotifier {
             readers.add(ChatCountRead.fromJson(reader));
           }
           List<ChatMessage> messages = [];
-          QuerySnapshot chatMessage = await databaseService.getLastMessageForChat(d.id);
-          if(chatMessage.docs.isNotEmpty) {
-            Map<String, dynamic> messageData = chatMessage.docs.first.data() as Map<String, dynamic>;
-            ChatMessage message = ChatMessage.fromJSON(messageData);
-            messages.add(message);
+          try {
+            QuerySnapshot chatMessage = await databaseService.getLastMessageForChat(d.id);
+            if(chatMessage.docs.isNotEmpty) {
+              Map<String, dynamic> messageData = chatMessage.docs.first.data() as Map<String, dynamic>;
+              ChatMessage message = ChatMessage.fromJSON(messageData);
+              messages.add(message);
+            }
+          } catch(e) {
+            debugPrint(e.toString());
           }
           return Chat(
             uid: d.id, 

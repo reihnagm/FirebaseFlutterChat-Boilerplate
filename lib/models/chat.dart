@@ -119,7 +119,7 @@ class Chat {
       )); 
     }
     peopleJoinGroup = chatUserAssign;
-    readers = readers.where((el) => el.isRead == false && el.readerId != currentUserId).toList();
+    readers = readers.where((el) => el.isRead == false && el.readerId == currentUserId).toList();
   }
 
   List<ChatUser> fetchListRecepients() {

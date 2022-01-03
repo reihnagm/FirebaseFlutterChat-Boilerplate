@@ -121,7 +121,7 @@ class ChatProvider extends ChangeNotifier {
       ChatMessage messageToSend = ChatMessage(
         content: messageTextEditingController.text, 
         senderName: senderName,
-        senderId: authenticationProvider.auth.currentUser!.uid, 
+        senderId: isGroup ? authenticationProvider.auth.currentUser!.uid : receiverId, 
         isRead: isRead ? true : false,
         type: MessageType.text, 
         sentTime: DateTime.now()

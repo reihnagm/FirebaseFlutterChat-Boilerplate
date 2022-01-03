@@ -9,7 +9,7 @@ enum MessageType {
 class ChatMessage {
   final String content;
   final String senderName;
-  final String senderId;
+  late final String senderId;
   final bool isRead;
   final MessageType type;
   final DateTime sentTime;  
