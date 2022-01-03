@@ -137,7 +137,7 @@ class DatabaseService {
               for (QueryDocumentSnapshot<Map<String, dynamic>> msgDoc in msg.docs) {
                 List<dynamic> checkReaders = readers
                 .where((el) => el["reader_id"] == userUid)
-                .where((el) => el["message_id"] == msgDoc.id)  .toList();
+                .where((el) => el["message_id"] == msgDoc.id).toList();
                 if(checkReaders.isNotEmpty) {
                   for (var reader in checkReaders) {
                     reader["is_read"] = true;
@@ -166,16 +166,16 @@ class DatabaseService {
                 for (var reader in checkReaders) {
                   reader["is_read"] = true;
                   chatCountRead.add({
-                    "seen": reader["seen"],
                     "message_id": reader["message_id"],
                     "reader_id": reader["reader_id"],
+                    "seen": reader["seen"],
                     "is_read": reader["is_read"],
                   });  
-                }     
+                }         
+                chatDoc.reference.update({
+                  "readers": chatCountRead
+                });  
               }
-              chatDoc.reference.update({
-                "readers": chatCountRead
-              }); 
             }
             for (QueryDocumentSnapshot<Map<String, dynamic>> msgDoc in msg.docs) {
               if(isGroup) {
@@ -183,7 +183,10 @@ class DatabaseService {
                   msgDoc.reference.update({"is_read": true});
                 }
               } else {
-                msgDoc.reference.update({"is_read": true});
+                List<dynamic> checkReaders = readers.where((el) => el["reader_id"] == userUid).toList();
+                if(checkReaders.isNotEmpty) {
+                  msgDoc.reference.update({"is_read": true});
+                }
               }
             }
           }

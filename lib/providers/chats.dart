@@ -13,28 +13,30 @@ class ChatsProvider extends ChangeNotifier {
   final AuthenticationProvider authenticationProvider;
   final DatabaseService databaseService;
 
-  List<Chat>? _chats = [];
-  List<Chat>? get chats {
-    if(_chats != null) {
-      return [..._chats!];
-    }
-    return null;
-  }
-  StreamSubscription? chatsStream;
   ChatsProvider({
     required this.authenticationProvider,
     required this.databaseService
   });
 
+  List<Chat>? _chats;
+  List<Chat>? get chats {
+    if(_chats != null) {
+      return _chats!;
+    }
+    return null;
+  }
+
+  StreamSubscription? chatsStream;
+  
   @override 
   void dispose() {
     chatsStream!.cancel();
     super.dispose();
   }
 
-  Future<void> getChats() async {
+  void getChats() async {
     try {
-      chatsStream = databaseService.getChatsForUser(authenticationProvider.auth.currentUser!.uid)!.listen((snapshot) async {
+      chatsStream = databaseService.getChatsForUser(authenticationProvider.userUid())!.listen((snapshot) async {
         _chats = await Future.wait(snapshot.docs.map((d) async {
           Map<String, dynamic> chatData = d.data() as Map<String, dynamic>;
           GroupData groupData = GroupData.fromJson(chatData["group"]);
@@ -44,6 +46,10 @@ class ChatsProvider extends ChangeNotifier {
             userData["uid"] = member["uid"];
             members.add(ChatUser.fromJson(userData));
           }
+          List<String> relations = [];
+          for (var member in chatData["relations"]) {
+            relations.add(member);
+          }
           List<ChatCountRead> readers = [];
           for (Map<String, dynamic> item in chatData["readers"]) {
             Map<String, dynamic> reader = item;
@@ -52,21 +58,24 @@ class ChatsProvider extends ChangeNotifier {
           List<ChatMessage> messages = [];
           try {
             QuerySnapshot<Object?>? chatMessage = await databaseService.getLastMessageForChat(d.id);
-            Map<String, dynamic> messageData = chatMessage!.docs.first.data() as Map<String, dynamic>;
-            ChatMessage message = ChatMessage.fromJSON(messageData);
-            messages.add(message);
+            if(chatMessage!.docs.isNotEmpty) {
+              Map<String, dynamic> messageData = chatMessage.docs.first.data() as Map<String, dynamic>;
+              ChatMessage message = ChatMessage.fromJSON(messageData);
+              messages.add(message);
+            } // Prevent Bad State No Element
           } catch(e) {
             debugPrint(e.toString());
           }
           return Chat(
             uid: d.id, 
-            currentUserId: authenticationProvider.auth.currentUser!.uid, 
+            currentUserId: authenticationProvider.userUid(), 
             activity: chatData["is_activity"], 
             group: chatData["is_group"], 
             groupData: GroupData(
               image: groupData.image,
               name: groupData.name
             ),
+            relations: relations,
             members: members, 
             readers: readers,
             messages: messages, 

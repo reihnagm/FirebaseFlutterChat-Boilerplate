@@ -1,11 +1,10 @@
-import 'package:chatv28/models/chat_user.dart';
 import 'package:flutter/material.dart';
 import 'package:grouped_list/grouped_list.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 
+import 'package:chatv28/providers/chats.dart';
 import 'package:chatv28/basewidget/top_bar.dart';
-import 'package:chatv28/utils/box_shadow.dart';
 import 'package:chatv28/utils/color_resources.dart';
 import 'package:chatv28/utils/dimensions.dart';
 import 'package:chatv28/models/chat_message.dart';
@@ -80,22 +79,22 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance!.addObserver(this);
-    WidgetsBinding.instance!.addPostFrameCallback((timeStamp) {
+    WidgetsBinding.instance!.addPostFrameCallback((_) {
+      Provider.of<ChatProvider>(context, listen: false).listenToMessages(chatUid: widget.chatUid);
+      Provider.of<ChatProvider>(context, listen: false).isUserOnline(receiverId: widget.receiverId);
       Provider.of<ChatProvider>(context, listen: false).seeMsg(
         chatUid: widget.chatUid, 
         senderId: widget.senderId,
         receiverId: widget.receiverId,
         isGroup: widget.isGroup,
       );
-      Provider.of<ChatProvider>(context, listen: false).joinScreen(
-        chatUid: widget.chatUid,
-        token: widget.token
-      );
-      Provider.of<ChatProvider>(context, listen: false).isUserOnline(receiverId: widget.receiverId);
-      Provider.of<ChatProvider>(context, listen: false).listenToMessages(chatUid: widget.chatUid);
       Provider.of<ChatProvider>(context, listen: false).isScreenOn(
         chatUid: widget.chatUid, 
         userUid: widget.receiverId
+      );
+      Provider.of<ChatProvider>(context, listen: false).joinScreen(
+        chatUid: widget.chatUid,
+        token: widget.token
       );
     });
   }
@@ -216,7 +215,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
               shrinkWrap: true,
               indexedItemBuilder: (BuildContext context, ChatMessage items, int i) {
                 ChatMessage chatMessage = context.read<ChatProvider>().messages![i];
-                bool isOwnMessage = chatMessage.senderId == context.read<AuthenticationProvider>().auth.currentUser!.uid;
+                bool isOwnMessage = chatMessage.senderId == context.read<AuthenticationProvider>().userUid();
                 return CustomChatListViewTile(
                   deviceWidth: deviceWidth * 0.80, 
                   deviceHeight: deviceHeight, 
@@ -241,9 +240,11 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
         );
       }
     } else {
-      return const Center(
-        child: CircularProgressIndicator(
-          color: ColorResources.backgroundBluePrimary,
+      return const Expanded(
+        child: Center(
+          child: CircularProgressIndicator(
+            color: ColorResources.backgroundBlueSecondary,
+          ),
         ),
       );
     }
@@ -314,8 +315,12 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
         backgroundColor: const Color.fromRGBO(0, 82, 218, 1.0),
         onPressed: () {
           context.read<ChatProvider>().sendImageMessage(
+            context,
+            subtitle: widget.subtitle,
             chatUid: widget.chatUid, 
-            receiverId: widget.receiverId
+            senderName: context.read<AuthenticationProvider>().chatUser!.name!,
+            receiverId: widget.receiverId,
+            isGroup: widget.isGroup,
           );
         },
         child: const Icon(

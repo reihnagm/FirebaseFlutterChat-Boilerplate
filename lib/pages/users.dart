@@ -73,10 +73,16 @@ class _UsersPageState extends State<UsersPage> {
   void initState() {
     super.initState();
     searchFieldTextEditingController = TextEditingController();
-    WidgetsBinding.instance!.addPostFrameCallback((timeStamp) {
+    WidgetsBinding.instance!.addPostFrameCallback((_) {
       Provider.of<AuthenticationProvider>(context, listen: false).initAuthStateChanges();
       Provider.of<UserProvider>(context, listen: false).getUsers();
     });
+  }
+
+  @override 
+  void dispose() {
+    searchFieldTextEditingController.dispose();
+    super.dispose();
   }
 
   @override
@@ -392,19 +398,14 @@ class _UsersPageState extends State<UsersPage> {
                   }, 
                 ),
               ),
-              Container(
-                decoration: BoxDecoration(
-                  boxShadow: boxShadow
-                ),
-                child: CustomTextSearchField(
-                  onEditingComplete: (val) {
-                    context.read<UserProvider>().getUsers(name: val);
-                    FocusScope.of(context).unfocus();
-                  },
-                  controller: searchFieldTextEditingController,
-                  icon: Icons.search,
-                  hintText: "Search", 
-                ),
+              CustomTextSearchField(
+                onEditingComplete: (val) {
+                  context.read<UserProvider>().getUsers(name: val);
+                  FocusScope.of(context).unfocus();
+                },
+                controller: searchFieldTextEditingController,
+                icon: Icons.search,
+                hintText: "Search", 
               ),
               Consumer<AuthenticationProvider>(
                 builder: (BuildContext context, AuthenticationProvider authenticationProvider, Widget? child) {

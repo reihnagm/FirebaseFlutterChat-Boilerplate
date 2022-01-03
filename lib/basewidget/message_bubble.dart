@@ -142,9 +142,9 @@ class ImageMessageBubble extends StatelessWidget {
     return Container(
       width: width,
       margin: const EdgeInsets.only(top: 15.0),
-      padding: EdgeInsets.symmetric(
-        horizontal: width * 0.02,
-        vertical: height * 0.00
+      padding: const EdgeInsets.symmetric(
+        horizontal: 8.0,
+        vertical: 8.0
       ),
       decoration: BoxDecoration(
         color: colorScheme,

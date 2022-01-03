@@ -51,13 +51,31 @@ class AuthenticationProvider extends ChangeNotifier {
 
   Future<void> initAuthStateChanges() async {
     try {
-      DocumentSnapshot<Object?> snapshot = await databaseService.getUser(auth.currentUser!.uid)!;
+      DocumentSnapshot<Object?> snapshot = await databaseService.getUser(userUid())!;
       Map<String, dynamic> userData = snapshot.data() as Map<String, dynamic>;
-      await databaseService.updateUserLastSeenTime(auth.currentUser!.uid);
-      await databaseService.updateUserOnline(auth.currentUser!.uid, true);
-      await databaseService.updateUserToken(auth.currentUser!.uid, await FirebaseMessaging.instance.getToken());
+      Future.delayed(Duration.zero, () async {
+        try {
+          await databaseService.updateUserLastSeenTime(userUid());
+        } catch(e) {
+          debugPrint(e.toString());
+        }
+      });
+      Future.delayed(Duration.zero, () async {
+        try {
+          await databaseService.updateUserOnline(userUid(), true);
+        } catch(e) {
+          debugPrint(e.toString());
+        }
+      });
+      Future.delayed(Duration.zero, () async {
+        try {
+          await databaseService.updateUserToken(userUid(), await FirebaseMessaging.instance.getToken());
+        } catch(e) {
+          debugPrint(e.toString());
+        }
+      });
       chatUser = ChatUser.fromJson({
-        "uid": auth.currentUser!.uid,
+        "uid": userUid(),
         "name": userData["name"],
         "email": userData["email"],
         "last_active": userData["last_active"],
@@ -65,6 +83,7 @@ class AuthenticationProvider extends ChangeNotifier {
         "image": userData["image"],
         "token": await FirebaseMessaging.instance.getToken()
       });  
+      sharedPreferences.setString("userName", userData["name"]);
       setStateAuthStatus(AuthStatus.loaded);
     } catch(e) {
       setStateAuthStatus(AuthStatus.error);
@@ -75,14 +94,15 @@ class AuthenticationProvider extends ChangeNotifier {
   Future<void> logout(BuildContext context) async {
     setStateLogoutStatus(LogoutStatus.loading);
     try {
-      await databaseService.updateUserOnline(auth.currentUser!.uid, false);
+      await databaseService.updateUserOnline(userUid(), false);
       Future.delayed(Duration.zero, () async {
         try {
           await auth.signOut();
-          sharedPreferences.setBool("login", false);
+          sharedPreferences.clear();
           setStateLogoutStatus(LogoutStatus.loaded);
           NavigationService.pushBackNavReplacement(context, const LoginPage());
-        } catch(_) {
+        } catch(e) {
+          debugPrint(e.toString());
           setStateLogoutStatus(LogoutStatus.error);
         }
       });
@@ -95,14 +115,15 @@ class AuthenticationProvider extends ChangeNotifier {
   Future<void> loginUsingEmailAndPassword(BuildContext context, String email, String password) async {
     setStateLoginStatus(LoginStatus.loading);
     try {
-      await auth.signInWithEmailAndPassword(email: email, password: password);
+      UserCredential uc = await auth.signInWithEmailAndPassword(email: email, password: password);
       Future.delayed(Duration.zero, () async {
         try {
-          await databaseService.updateUserOnline(auth.currentUser!.uid, true);
           sharedPreferences.setBool("login", true);
+          sharedPreferences.setString("userUid", uc.user!.uid);
           setStateLoginStatus(LoginStatus.loaded);
           NavigationService.pushNavReplacement(context, const HomePage());
-        } catch(_) {
+        } catch(e) {
+          debugPrint(e.toString());
           setStateLoginStatus(LoginStatus.error);
         }
       });
@@ -116,4 +137,6 @@ class AuthenticationProvider extends ChangeNotifier {
 
 
   bool isLogin() => sharedPreferences.getBool("login") ?? false;
+  String userName() => sharedPreferences.getString("userName") ?? "";
+  String userUid() => sharedPreferences.getString("userUid") ?? "";
 }

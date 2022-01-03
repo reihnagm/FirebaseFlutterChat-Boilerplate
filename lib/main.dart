@@ -54,19 +54,19 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
     // - Detached (View Destroyed - App Closed)
     if(state == AppLifecycleState.resumed) {
       debugPrint("=== APP RESUME ===");
-      await databaseService.updateUserOnline(Provider.of<AuthenticationProvider>(context, listen: false).auth.currentUser!.uid, true);
+      await databaseService.updateUserOnline(Provider.of<AuthenticationProvider>(context, listen: false).userUid(), true);
     }
     if(state == AppLifecycleState.inactive) {
       debugPrint("=== APP INACTIVE ===");
-      await databaseService.updateUserOnline(Provider.of<AuthenticationProvider>(context, listen: false).auth.currentUser!.uid, false);
+      await databaseService.updateUserOnline(Provider.of<AuthenticationProvider>(context, listen: false).userUid(), false);
     }
     if(state == AppLifecycleState.paused) {
       debugPrint("=== APP PAUSED ===");
-      await databaseService.updateUserOnline(Provider.of<AuthenticationProvider>(context, listen: false).auth.currentUser!.uid, false);
+      await databaseService.updateUserOnline(Provider.of<AuthenticationProvider>(context, listen: false).userUid(), false);
     }
     if(state == AppLifecycleState.detached) {
       debugPrint("=== APP CLOSED ===");
-      await databaseService.updateUserOnline(Provider.of<AuthenticationProvider>(context, listen: false).auth.currentUser!.uid, false);
+      await databaseService.updateUserOnline(Provider.of<AuthenticationProvider>(context, listen: false).userUid(), false);
     }
   }
 
@@ -74,6 +74,9 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance!.addObserver(this);
+    WidgetsBinding.instance!.addPostFrameCallback((_) async {
+      await databaseService.updateUserOnline(Provider.of<AuthenticationProvider>(context, listen: false).userUid(), true);
+    });
   }
 
   @override

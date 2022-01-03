@@ -2,7 +2,6 @@
 
 import 'dart:async';
 
-import 'package:chatv28/models/chat_user.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -10,6 +9,7 @@ import 'package:soundpool/soundpool.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
 
+import 'package:chatv28/models/chat_user.dart';
 import 'package:chatv28/providers/firebase.dart';
 import 'package:chatv28/models/chat_message.dart';
 import 'package:chatv28/providers/authentication.dart';
@@ -121,14 +121,14 @@ class ChatProvider extends ChangeNotifier {
       ChatMessage messageToSend = ChatMessage(
         content: messageTextEditingController.text, 
         senderName: senderName,
-        senderId: isGroup ? authenticationProvider.auth.currentUser!.uid : receiverId, 
+        senderId: isGroup ? authenticationProvider.userUid() : receiverId, 
         isRead: isRead ? true : false,
         type: MessageType.text, 
         sentTime: DateTime.now()
       );
       await databaseService.addMessageToChat(
         chatUid: chatUid, 
-        readerId: isGroup ? authenticationProvider.auth.currentUser!.uid : receiverId, 
+        readerId: isGroup ? authenticationProvider.userUid() : receiverId, 
         isGroup: isGroup,
         message: messageToSend
       );
@@ -140,39 +140,64 @@ class ChatProvider extends ChangeNotifier {
             subtitle: subtitle,
             body: messageToSend.content, 
             chatUid: chatUid,
-            senderId: authenticationProvider.auth.currentUser!.uid,
+            senderId: authenticationProvider.userUid(),
             receiverId: receiverId,
             isGroup: isGroup,
           );
         });
       }
-      Future.delayed(Duration.zero, () async {
-        await loadSoundSent();
-      });
+      await loadSoundSent();
       messageTextEditingController.text = "";
       Future.delayed(Duration.zero, () => notifyListeners());
     }
   }
 
-  Future sendImageMessage({required String chatUid, required String receiverId}) async {
+  Future sendImageMessage(
+    BuildContext context,
+  {
+    required String chatUid, 
+    required String senderName,
+    required String receiverId, 
+    required String subtitle,
+    required bool isGroup
+  }) async {
     try {
       PlatformFile? file = await mediaService.pickImageFromLibrary();
       if(file != null) { 
-        toggleIsActivity(isActive: true, chatUid: chatUid);
-        String? downloadUrl = await cloudStorageService.saveChatImageToStorage(chatUid, authenticationProvider.auth.currentUser!.uid, file);
-        toggleIsActivity(isActive: false, chatUid: chatUid);
+        // toggleIsActivity(isActive: true, chatUid: chatUid);
+        String? downloadUrl = await cloudStorageService.saveChatImageToStorage(chatUid, authenticationProvider.userUid(), file);
+        // toggleIsActivity(isActive: false, chatUid: chatUid);
         ChatMessage messageToSend = ChatMessage(
           content: downloadUrl!, 
-          senderName:  authenticationProvider.chatUser!.name!,
-          senderId: authenticationProvider.auth.currentUser!.uid, 
+          senderName: authenticationProvider.userName(),
+          senderId: authenticationProvider.userUid(),
           isRead: isRead ? true : false,
           type: MessageType.image, 
           sentTime: DateTime.now()
         );
-        // databaseService.addMessageToChat(chatUid, receiverId, messageToSend);
+        await databaseService.addMessageToChat(
+          chatUid: chatUid, 
+          readerId: isGroup ? authenticationProvider.userUid() : receiverId, 
+          isGroup: isGroup,
+          message: messageToSend
+        );
+        if(!isRead) {
+          Future.delayed(Duration.zero, () async {
+            await Provider.of<FirebaseProvider>(context, listen: false).sendNotification(
+              token: token, 
+              title: senderName,
+              subtitle: subtitle,
+              body: messageToSend.content, 
+              chatUid: chatUid,
+              senderId: authenticationProvider.userUid(),
+              receiverId: receiverId,
+              isGroup: isGroup,
+            );
+          });
+        }
+        await loadSoundSent();
       }
     } catch (e) {
-      debugPrint("Error sending image message.");
       debugPrint(e.toString());
     }
   }
@@ -180,8 +205,12 @@ class ChatProvider extends ChangeNotifier {
   Future<void> isScreenOn({required String chatUid, required String userUid}) async {
     try {
       List<dynamic>? onScreens = await databaseService.isScreenOn(chatUid: chatUid);
-      isRead = onScreens!.firstWhere((el) => el["userUid"] == userUid)["on"];
-      token = onScreens.firstWhere((el) => el["userUid"] != userUid)["token"];
+      if(onScreens!.where((el) => el["userUid"] == userUid).isNotEmpty) {
+        isRead = onScreens.firstWhere((el) => el["userUid"] == userUid)["on"]; 
+      }
+      if(onScreens.where((el) => el["userUid"] != userUid).isNotEmpty) {
+        token = onScreens.firstWhere((el) => el["userUid"] != userUid)["token"];
+      } 
       Future.delayed(Duration.zero, () => notifyListeners()); 
     } catch(e) {
       debugPrint(e.toString());
@@ -204,7 +233,7 @@ class ChatProvider extends ChangeNotifier {
         isGroup: isGroup,
         senderId: senderId,
         receiverId: receiverId,
-        userUid: authenticationProvider.auth.currentUser!.uid,
+        userUid: authenticationProvider.userUid(),
       );
     } catch(e) {
       debugPrint(e.toString());
@@ -216,7 +245,7 @@ class ChatProvider extends ChangeNotifier {
       await databaseService.joinScreen(
         token: token,
         chatUid: chatUid,
-        userUid: authenticationProvider.auth.currentUser!.uid
+        userUid: authenticationProvider.userUid()
       );
     } catch(e) {
       debugPrint(e.toString());
@@ -227,7 +256,7 @@ class ChatProvider extends ChangeNotifier {
     try {
       await databaseService.leaveScreen(
         chatUid: chatUid,
-        userUid: authenticationProvider.auth.currentUser!.uid
+        userUid: authenticationProvider.userUid()
       );
     } catch(e) {
       debugPrint(e.toString());
@@ -258,11 +287,7 @@ class ChatProvider extends ChangeNotifier {
       isUserOnlineStream = databaseService.getChatUserOnline(receiverId)!.listen((snapshot) {
         Map<String, dynamic> data = snapshot.data() as Map<String, dynamic>;
         ChatUser chatUser = ChatUser.fromJson(data);
-        if(chatUser.isOnline!) {
-          isOnline = "ONLINE";
-        } else {
-          isOnline = "OFFLINE";
-        }
+        chatUser.isUserOnline() ? isOnline = "ONLINE" : isOnline = "OFFLINE";
         Future.delayed(Duration.zero, () => notifyListeners());
       });
     } catch(e) {

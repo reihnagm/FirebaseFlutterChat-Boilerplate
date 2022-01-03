@@ -91,7 +91,7 @@ class _LoginPageState extends State<LoginPage> {
 
   Widget loginForm() {
     return SizedBox(
-      height: deviceHeight * 0.17,
+      height: 160.0,
       child: Form(
         key: loginFormKey,
         child: Column(
@@ -99,42 +99,32 @@ class _LoginPageState extends State<LoginPage> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Container(
-              decoration: BoxDecoration(
-                boxShadow: boxShadow
-              ),
-              child: CustomTextFormField(
-                onSaved: (val) {
-                  setState(() {
-                    email = val;
-                  });
-                }, 
-                regex: r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+", 
-                hintText: "", 
-                label: const Text("E-mail Address",
-                  style: TextStyle(
-                    color: ColorResources.textBlackPrimary
-                  ),
+            CustomTextFormField(
+              onSaved: (val) {
+                setState(() {
+                  email = val;
+                });
+              }, 
+              regex: r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+", 
+              hintText: "", 
+              label: const Text("E-mail Address",
+                style: TextStyle(
+                  color: ColorResources.textBlackPrimary
                 ),
-                obscureText: false
               ),
+              obscureText: false
             ),
-            Container(
-              decoration: BoxDecoration(
-                boxShadow: boxShadow
-              ),
-              child: CustomTextPasswordFormField(
-                onSaved: (val) {
-                  setState(() {
-                    password = val;
-                  });
-                }, 
-                regex: r".{8,}", 
-                hintText: "", 
-                label: const Text("Password",
-                  style: TextStyle(
-                    color: ColorResources.textBlackPrimary
-                  ),
+            CustomTextPasswordFormField(
+              onSaved: (val) {
+                setState(() {
+                  password = val;
+                });
+              }, 
+              regex: r".{8,}", 
+              hintText: "", 
+              label: const Text("Password",
+                style: TextStyle(
+                  color: ColorResources.textBlackPrimary
                 ),
               ),
             )

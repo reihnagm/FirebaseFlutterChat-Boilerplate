@@ -1,6 +1,7 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 import 'package:chatv28/models/chat_message.dart';
 import 'package:chatv28/models/chat_user.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 
 class ChatCountReadSees {
   final Timestamp id;
@@ -89,6 +90,7 @@ class Chat {
   final bool activity;
   final bool group;
   final GroupData groupData;
+  final List<String> relations;
   final List<ChatUser> members;
   final List<ChatMessage> messages; 
   List<ChatCountRead> readers;
@@ -101,6 +103,7 @@ class Chat {
     required this.activity,
     required this.group,
     required this.groupData,
+    required this.relations,
     required this.members,
     required this.messages,
     required this.readers,
@@ -122,14 +125,11 @@ class Chat {
     readers = readers.where((el) => el.isRead == false && el.readerId == currentUserId).toList();
   }
 
-  List<ChatUser> fetchListRecepients() {
-    return recepients;
-  }
  
   int readCount() => readers.length;
   bool isRead() => readers.isEmpty ? true : false;
 
-  bool isUsersOnline() => fetchListRecepients().any((el) => el.isUserOnline());
+  bool isUsersOnline() => recepients.any((el) => el.isUserOnline());
   String title() => !group ? recepients.first.name! : groupData.name;
   String subtitle() => !group ? isUsersOnline() ? "ONLINE" : "OFFLINE" : peopleJoinGroup.map((user) => user.name!).join(", ");
   String image() => !group ? recepients.first.image! : groupData.image == "" ? "https://www.iconpacks.net/icons/1/free-user-group-icon-296-thumb.png" : groupData.image!;

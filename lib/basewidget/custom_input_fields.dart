@@ -259,24 +259,28 @@ class CustomTextSearchField extends StatelessWidget {
       controller: controller,
       onEditingComplete: () => onEditingComplete(controller.value.text),
       cursorColor: ColorResources.textBlackPrimary,
-      style: const TextStyle(
+      style: TextStyle(
+        fontSize: Dimensions.fontSizeSmall,
         color: ColorResources.textBlackPrimary
       ),
       decoration: InputDecoration(
         alignLabelWithHint: true,
         fillColor: ColorResources.white,
         filled: true,
+        contentPadding: EdgeInsets.zero,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10.0),
           borderSide: BorderSide.none
         ),
         hintText: hintText,
-        hintStyle: const TextStyle(
+        hintStyle: TextStyle(
+          fontSize: Dimensions.fontSizeSmall,
           color: ColorResources.textBlackPrimary,
         ),
         prefixIcon: Icon(
           icon, 
           color: ColorResources.backgroundBlackPrimary,
+          size: 20.0,
         )
       )
     );

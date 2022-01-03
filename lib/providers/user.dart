@@ -21,10 +21,10 @@ class UserProvider extends ChangeNotifier {
   CreateGroupStatus _createGroupStatus = CreateGroupStatus.idle;
   CreateGroupStatus get createGroupStatus => _createGroupStatus;
 
-  List<ChatUser>? _users = [];
+  List<ChatUser>? _users;
   List<ChatUser>? get users {
-    if(_users != null && authenticationProvider.auth.currentUser != null) {
-      return [..._users!].where((el) => el.uid != authenticationProvider.auth.currentUser!.uid).toList();
+    if(_users != null) {
+      return _users!.where((el) => el.uid != authenticationProvider.userUid()).toList();
     }
     return null;
   }
@@ -80,9 +80,10 @@ class UserProvider extends ChangeNotifier {
     required String groupName,
     PlatformFile? groupImage,
   }) async {
-      List<String> relations = _selectedUsers!.map((user) => user.uid!).toList();
-      relations.add(authenticationProvider.auth.currentUser!.uid);
-      bool isGroup = selectedUsers.length > 1;
+    List<String> relations = _selectedUsers!.map((user) => user.uid!).toList();
+    relations.add(authenticationProvider.userUid());
+    bool isGroup = selectedUsers.length > 1;
+    if(isGroup) {
       List<Map<String, dynamic>> members = [];
       setStateCreateGroupStatus(CreateGroupStatus.loading);
       for (String uid in relations) {
@@ -123,7 +124,6 @@ class UserProvider extends ChangeNotifier {
                 "readers": [],
                 "members": members, 
               });
-              _selectedUsers = [];
               Navigator.of(context).pop();
               setStateCreateGroupStatus(CreateGroupStatus.loaded);
             });
@@ -134,14 +134,6 @@ class UserProvider extends ChangeNotifier {
           debugPrint(e.toString());
         }
       });
-      // ChatPage chatPage = ChatPage(
-      //   receiverId: "",
-      //   title: "",
-      //   token: "",
-      //   chatUid: "",
-      // );
-      // _selectedUsers = [];
-      // Future.delayed(Duration.zero, () => notifyListeners());
-      // NavigationService.pushNav(context, chatPage);
+    }
   }
 }
