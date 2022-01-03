@@ -76,7 +76,7 @@ class AuthenticationProvider extends ChangeNotifier {
     setStateLogoutStatus(LogoutStatus.loading);
     try {
       await databaseService.updateUserOnline(auth.currentUser!.uid, false);
-      Future.delayed(const Duration(seconds: 1), () async {
+      Future.delayed(Duration.zero, () async {
         try {
           await auth.signOut();
           sharedPreferences.setBool("login", false);
@@ -96,7 +96,7 @@ class AuthenticationProvider extends ChangeNotifier {
     setStateLoginStatus(LoginStatus.loading);
     try {
       await auth.signInWithEmailAndPassword(email: email, password: password);
-      Future.delayed(const Duration(seconds: 1), () async {
+      Future.delayed(Duration.zero, () async {
         try {
           await databaseService.updateUserOnline(auth.currentUser!.uid, true);
           sharedPreferences.setBool("login", true);

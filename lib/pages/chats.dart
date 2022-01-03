@@ -1,3 +1,4 @@
+import 'package:chatv28/providers/authentication.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -29,6 +30,7 @@ class _ChatsPageState extends State<ChatsPage> {
   void initState() {
     super.initState();
     WidgetsBinding.instance!.addPostFrameCallback((timeStamp) {
+      Provider.of<AuthenticationProvider>(context, listen: false).initAuthStateChanges();
       Provider.of<ChatsProvider>(context, listen: false).getChats();
     });
   }
@@ -140,6 +142,7 @@ class _ChatsPageState extends State<ChatsPage> {
         NavigationService.pushNav(context, ChatPage(
           title: chat.title(),
           subtitle: chat.subtitle(),
+          isGroup: chat.group,
           chatUid: chat.uid,
           senderId: chat.recepients.first.uid!,
           receiverId: chat.recepients.first.uid!,  

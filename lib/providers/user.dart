@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:file_picker/file_picker.dart';
@@ -104,14 +103,14 @@ class UserProvider extends ChangeNotifier {
           debugPrint(e.toString());
         }
       }
-      Future.delayed(const Duration(seconds: 1), () async {
+      Future.delayed(Duration.zero, () async {
         try {
           String? groupImageUrl = "";
           if(groupImage != null) {
             groupImageUrl = await cloudStorageService.saveGroupImageToStorage(groupName: groupName, groupImage: groupImage);
           }
           try {
-            Future.delayed(const Duration(seconds: 1), () async {
+            Future.delayed(Duration.zero, () async {
               await databaseService.createChat({
                 "is_group": isGroup,
                 "is_activity": false,

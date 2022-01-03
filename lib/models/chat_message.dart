@@ -8,14 +8,16 @@ enum MessageType {
 
 class ChatMessage {
   final String content;
-  final String senderID;
+  final String senderName;
+  final String senderId;
   final bool isRead;
   final MessageType type;
   final DateTime sentTime;  
 
   ChatMessage({
     required this.content,
-    required this.senderID,
+    required this.senderName,
+    required this.senderId,
     required this.isRead,
     required this.type,
     required this.sentTime
@@ -35,7 +37,8 @@ class ChatMessage {
     }
     return ChatMessage(
       content: data["content"], 
-      senderID: data["sender_id"], 
+      senderName: data["sender_name"],
+      senderId: data["sender_id"], 
       isRead: data["is_read"],
       type: messageType, 
       sentTime: data["sent_time"].toDate()
@@ -56,7 +59,8 @@ class ChatMessage {
     return {
       "content": content,
       "type": messageType,
-      "sender_id": senderID,
+      "sender_name": senderName,
+      "sender_id": senderId,
       "is_read": isRead,
       "sent_time": Timestamp.fromDate(sentTime)
     };

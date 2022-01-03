@@ -1,3 +1,5 @@
+import 'package:chatv28/utils/color_resources.dart';
+import 'package:chatv28/utils/dimensions.dart';
 import 'package:flutter/material.dart';
 import 'package:ionicons/ionicons.dart';
 import 'package:timeago/timeago.dart' as timeago;
@@ -5,12 +7,13 @@ import 'package:timeago/timeago.dart' as timeago;
 import 'package:chatv28/models/chat_message.dart';
 
 class TextMessageBubble extends StatelessWidget {
-
+  final bool isGroup;
   final bool isOwnMessage;
   final ChatMessage message;
 
   const TextMessageBubble({
     Key? key, 
+    required this.isGroup,
     required this.isOwnMessage,
     required this.message,
   }) : super(key: key);
@@ -47,13 +50,25 @@ class TextMessageBubble extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            isGroup 
+            ? Text(
+                isOwnMessage ? "You" : message.senderName,
+                style: TextStyle(
+                  color: isOwnMessage ? ColorResources.textBlackPrimary : ColorResources.white ,
+                  fontSize: Dimensions.fontSizeExtraSmall
+                ),
+              ) 
+            : const SizedBox(),
+            isGroup 
+            ? const SizedBox(height: 6.0) 
+            : const SizedBox(),
             Text(message.content,
               textAlign: TextAlign.justify,
-              style:  TextStyle(
+              style: TextStyle(
                 color: isOwnMessage 
                 ? Colors.black 
                 : Colors.white,
-                fontSize: 14.0,
+                fontSize: Dimensions.fontSizeExtraSmall,
                 height: 1.8
               ),
             ),
@@ -66,7 +81,7 @@ class TextMessageBubble extends StatelessWidget {
                     color: isOwnMessage 
                     ? Colors.black 
                     : Colors.white,
-                    fontSize: 11.0,
+                    fontSize:  Dimensions.fontSizeExtraSmall,
                   ),
                 ),
                 const SizedBox(width: 10.0),

@@ -34,6 +34,8 @@ class FirebaseProvider with ChangeNotifier {
       Map<String, dynamic> data = message.data;
       String chatUid = data["chatUid"];
       String title = data["title"];
+      String subtitle = data["subtitle"];
+      bool isGroup = data["isGroup"];
       String token = data["token"];
       String senderId = data["senderId"];
       String receiverId = data["receiverId"];
@@ -41,7 +43,8 @@ class FirebaseProvider with ChangeNotifier {
         ChatPage(
           chatUid: chatUid,
           title: title,  
-          subtitle: "",
+          subtitle: subtitle,
+          isGroup: isGroup,
           token: token, 
           senderId: senderId,
           receiverId: receiverId
@@ -60,10 +63,12 @@ class FirebaseProvider with ChangeNotifier {
   Future<void> sendNotification({
     required String token, 
     required String title, 
+    required String subtitle,
     required String body,
     required String chatUid,
     required String senderId,
-    required String receiverId
+    required String receiverId,
+    required bool isGroup,
   }) async {
     try {
       Dio dio = Dio();
@@ -79,9 +84,11 @@ class FirebaseProvider with ChangeNotifier {
           "data": {
             "chatUid": chatUid,
             "title": title,
+            "subtitle": subtitle,
             "token": token,
             "senderId": senderId,
             "receiverId": receiverId,
+            "isGroup": isGroup,
             "click_action": "FLUTTER_NOTIFICATION_CLICK"
           },
           "priority":"high"

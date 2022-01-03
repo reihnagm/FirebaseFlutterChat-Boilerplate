@@ -60,7 +60,6 @@ class ChatProvider extends ChangeNotifier {
     required this.cloudStorageService,
     required this.navigationService
   }) {
-    authenticationProvider.initAuthStateChanges();
     keyboardVisibilityController = KeyboardVisibilityController();
     scrollController = ScrollController();
     messageTextEditingController = TextEditingController();
@@ -113,26 +112,37 @@ class ChatProvider extends ChangeNotifier {
     BuildContext context,
   {
     required String chatUid, 
-    required String receiverId
+    required String senderName,
+    required String receiverId,
+    required String subtitle,
+    required bool isGroup
   }) async {
     if(messages != null) {
       ChatMessage messageToSend = ChatMessage(
         content: messageTextEditingController.text, 
-        senderID: authenticationProvider.auth.currentUser!.uid, 
+        senderName: senderName,
+        senderId: authenticationProvider.auth.currentUser!.uid, 
         isRead: isRead ? true : false,
         type: MessageType.text, 
         sentTime: DateTime.now()
       );
-      await databaseService.addMessageToChat(chatUid, receiverId, messageToSend);
+      await databaseService.addMessageToChat(
+        chatUid: chatUid, 
+        readerId: isGroup ? authenticationProvider.auth.currentUser!.uid : receiverId, 
+        isGroup: isGroup,
+        message: messageToSend
+      );
       if(!isRead) {
-        Future.delayed(const Duration(seconds: 1), () async {
+        Future.delayed(Duration.zero, () async {
           await Provider.of<FirebaseProvider>(context, listen: false).sendNotification(
             token: token, 
-            title: authenticationProvider.chatUser!.name!,
+            title: senderName,
+            subtitle: subtitle,
             body: messageToSend.content, 
             chatUid: chatUid,
-            senderId: authenticationProvider.chatUser!.uid!,
-            receiverId: receiverId
+            senderId: authenticationProvider.auth.currentUser!.uid,
+            receiverId: receiverId,
+            isGroup: isGroup,
           );
         });
       }
@@ -153,12 +163,13 @@ class ChatProvider extends ChangeNotifier {
         toggleIsActivity(isActive: false, chatUid: chatUid);
         ChatMessage messageToSend = ChatMessage(
           content: downloadUrl!, 
-          senderID:  authenticationProvider.auth.currentUser!.uid, 
+          senderName:  authenticationProvider.chatUser!.name!,
+          senderId: authenticationProvider.auth.currentUser!.uid, 
           isRead: isRead ? true : false,
           type: MessageType.image, 
           sentTime: DateTime.now()
         );
-        databaseService.addMessageToChat(chatUid, receiverId, messageToSend);
+        // databaseService.addMessageToChat(chatUid, receiverId, messageToSend);
       }
     } catch (e) {
       debugPrint("Error sending image message.");
@@ -186,11 +197,13 @@ class ChatProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> seeMsg({required String chatUid, required String senderId}) async {
+  Future<void> seeMsg({required String chatUid, required String senderId, required String receiverId, required bool isGroup}) async {
     try {
       await databaseService.seeMsg(
         chatUid: chatUid,
+        isGroup: isGroup,
         senderId: senderId,
+        receiverId: receiverId,
         userUid: authenticationProvider.auth.currentUser!.uid,
       );
     } catch(e) {

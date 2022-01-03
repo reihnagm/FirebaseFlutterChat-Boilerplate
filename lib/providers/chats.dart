@@ -13,13 +13,8 @@ class ChatsProvider extends ChangeNotifier {
   final AuthenticationProvider authenticationProvider;
   final DatabaseService databaseService;
 
-  List<Chat>? _chats;
-  List<Chat>? get chats {
-    if(_chats != null) {
-      return [..._chats!];
-    }
-    return null;
-  }
+  List<Chat>? chats;
+
   StreamSubscription? chatsStream;
   ChatsProvider({
     required this.authenticationProvider,
@@ -35,7 +30,7 @@ class ChatsProvider extends ChangeNotifier {
   Future<void> getChats() async {
     try {
       chatsStream = databaseService.getChatsForUser(authenticationProvider.auth.currentUser!.uid).listen((snapshot) async {
-        _chats = await Future.wait(snapshot.docs.map((d) async {
+        chats = await Future.wait(snapshot.docs.map((d) async {
           Map<String, dynamic> chatData = d.data() as Map<String, dynamic>;
           GroupData groupData =  GroupData.fromJson(chatData["group"]);
           List<ChatUser> members = [];

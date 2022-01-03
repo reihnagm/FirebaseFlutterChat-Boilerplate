@@ -159,12 +159,14 @@ class CustomListViewTileWithActivity extends StatelessWidget {
 class CustomChatListViewTile extends StatelessWidget {
   final double deviceWidth;
   final double deviceHeight;
+  final bool isGroup;
   final bool isOwnMessage;
   final ChatMessage message;
 
   const CustomChatListViewTile({
     required this.deviceWidth,
     required this.deviceHeight,
+    required this.isGroup,
     required this.isOwnMessage,
     required this.message,
     Key? key
@@ -177,6 +179,7 @@ class CustomChatListViewTile extends StatelessWidget {
       children: [
         message.type == MessageType.text 
         ? TextMessageBubble(
+            isGroup: isGroup,
             isOwnMessage: isOwnMessage, 
             message: message, 
           )

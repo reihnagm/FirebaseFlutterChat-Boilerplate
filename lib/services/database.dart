@@ -1,3 +1,4 @@
+import 'package:chatv28/models/chat.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
@@ -58,21 +59,22 @@ class DatabaseService {
     return query.snapshots();
   }
 
-  Future<void> addMessageToChat(String chatUid, String receiverId, ChatMessage message) async {
+  Future<void> addMessageToChat({required String chatUid, required String readerId, required ChatMessage message, required bool isGroup}) async {
     try { 
       DocumentReference doc = await db.collection(chatCollection)
       .doc(chatUid)
       .collection(messageCollection)
       .add(message.toJson());
-      Future.delayed(const Duration(seconds: 1), () async {
+      Future.delayed(Duration.zero, () async {
         try {
           await db.collection(chatCollection)
           .doc(chatUid)
           .update({
             "readers": FieldValue.arrayUnion([{
+              "seen": DateTime.now(),
               "message_id": doc.id,
-              "receiver_id": receiverId,
-              "is_read": message.isRead
+              "reader_id": readerId,
+              "is_read": isGroup ? true : message.isRead
             }])
           });
         } catch(e) {
@@ -102,38 +104,84 @@ class DatabaseService {
     }
   }
 
-  Future<void> seeMsg({required String chatUid, required String senderId, required String userUid}) async {
+  Future<void> seeMsg({
+    required String chatUid, 
+    required String senderId, 
+    required String receiverId, 
+    required String userUid,
+    required bool isGroup
+  }) async {
     try {
       QuerySnapshot<Map<String, dynamic>> msg = await db
       .collection(chatCollection)
       .doc(chatUid)
       .collection(messageCollection)
-      .where("sender_id", isEqualTo: senderId)
-      .where("is_read", isEqualTo: false)
       .get();
-      Future.delayed(const Duration(seconds: 1), () async {
+      Future.delayed(Duration.zero, () async {
         try {
           QuerySnapshot<Map<String, dynamic>> chat = await db
           .collection(chatCollection)
           .get();
-          for (QueryDocumentSnapshot<Map<String, dynamic>> doc in chat.docs) {
-            List<dynamic> readers = doc.data()["readers"];
+          for (QueryDocumentSnapshot<Map<String, dynamic>> chatDoc in chat.docs) {
+            List<dynamic> readers = chatDoc.data()["readers"];
+            List<dynamic> relations = chatDoc.data()["relations"];
             List<dynamic> chatCountRead = [];
-            List<dynamic> checkReaders = readers.where((el) => el["receiver_id"] == userUid).where((el) => el["is_read"] == false).toList();
-            if(checkReaders.isNotEmpty) {
-              for (var reader in checkReaders) {
-                reader["is_read"] = true;
-                chatCountRead.add(reader);  
-              }     
-              doc.reference.update({
+            if(isGroup) {
+              List<dynamic> checkReaders = readers
+              .where((el) => el["reader_id"] == userUid).toList();
+              if(checkReaders.isNotEmpty) {
+                for (var reader in checkReaders) {
+                  reader["is_read"] = true;
+                  chatCountRead.add({
+                    "seen": reader["seen"],
+                    "message_id": reader["message_id"],
+                    "reader_id": reader["reader_id"],
+                    "is_read": reader["is_read"],
+                  }); 
+                }    
+              } else {
+                for (QueryDocumentSnapshot<Map<String, dynamic>> msgDoc in msg.docs) {
+                  chatCountRead.add({
+                    "seen": DateTime.now(),
+                    "message_id": msgDoc.id,
+                    "reader_id": userUid,
+                    "is_read": true,
+                  }); 
+                }
+              }      
+              chatDoc.reference.update({
+                "readers": FieldValue.arrayUnion(chatCountRead)
+              });     
+            } else {
+              List<dynamic> checkReaders = readers.where((el) => el["reader_id"] == userUid).toList();
+              if(checkReaders.isNotEmpty) {
+                for (var reader in checkReaders) {
+                  reader["is_read"] = true;
+                  chatCountRead.add({
+                    "seen": reader["seen"],
+                    "message_id": reader["message_id"],
+                    "reader_id": reader["reader_id"],
+                    "is_read": reader["is_read"],
+                  });  
+                }     
+              }
+              chatDoc.reference.update({
                 "readers": chatCountRead
               }); 
             }
+            for (QueryDocumentSnapshot<Map<String, dynamic>> msgDoc in msg.docs) {
+              if(isGroup) {
+                if(readers.where((el) => el["message_id"] == msgDoc.id).toList().length == relations.length) {
+                  msgDoc.reference.update({"is_read": true});
+                }
+              } else {
+                msgDoc.reference.update({"is_read": true});
+              }
+            }
           }
-          for (QueryDocumentSnapshot<Map<String, dynamic>> doc in msg.docs) {
-            doc.reference.update({"is_read": true});
-          }
-        } catch(_) {}
+        } catch(e) {
+          debugPrint(e.toString());
+        }
       });
     } catch(e) {
       debugPrint(e.toString());
@@ -158,7 +206,7 @@ class DatabaseService {
       .update({
         "isOnline": isOnline
       });
-      Future.delayed(const Duration(seconds: 1), () async {
+      Future.delayed(Duration.zero, () async {
         QuerySnapshot<Map<String, dynamic>> data = await db
         .collection(chatCollection)
         .where("relations", arrayContains: userUid)
@@ -217,7 +265,7 @@ class DatabaseService {
         batch.delete(item.reference);
       }
       batch.commit();
-      Future.delayed(const Duration(seconds: 1), () async {
+      Future.delayed(Duration.zero, () async {
         try {
           await db.collection(chatCollection).doc(chatID).delete();
         } catch(e) {
@@ -252,7 +300,7 @@ class DatabaseService {
           }
         });
       } else {
-        Future.delayed(const Duration(seconds: 1), () async {
+        Future.delayed(Duration.zero, () async {
           try {
             await db
             .collection(chatCollection)

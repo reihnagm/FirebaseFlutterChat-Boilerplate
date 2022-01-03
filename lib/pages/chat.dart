@@ -1,3 +1,4 @@
+import 'package:chatv28/models/chat_user.dart';
 import 'package:flutter/material.dart';
 import 'package:grouped_list/grouped_list.dart';
 import 'package:provider/provider.dart';
@@ -16,6 +17,7 @@ import 'package:chatv28/providers/authentication.dart';
 class ChatPage extends StatefulWidget {
   final String title;
   final String subtitle;
+  final bool isGroup;
   final String chatUid;
   final String senderId;
   final String token;
@@ -23,6 +25,7 @@ class ChatPage extends StatefulWidget {
   const ChatPage({ 
     required this.title,
     required this.subtitle,
+    required this.isGroup,
     required this.chatUid,
     required this.senderId,
     required this.token,
@@ -81,12 +84,19 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
       Provider.of<ChatProvider>(context, listen: false).seeMsg(
         chatUid: widget.chatUid, 
         senderId: widget.senderId,
+        receiverId: widget.receiverId,
+        isGroup: widget.isGroup,
       );
       Provider.of<ChatProvider>(context, listen: false).joinScreen(
         chatUid: widget.chatUid,
         token: widget.token
       );
+      Provider.of<ChatProvider>(context, listen: false).isUserOnline(receiverId: widget.receiverId);
       Provider.of<ChatProvider>(context, listen: false).listenToMessages(chatUid: widget.chatUid);
+      Provider.of<ChatProvider>(context, listen: false).isScreenOn(
+        chatUid: widget.chatUid, 
+        userUid: widget.receiverId
+      );
     });
   }
 
@@ -98,13 +108,6 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    Provider.of<ChatProvider>(context).isScreenOn(
-      chatUid: widget.chatUid, 
-      userUid: widget.receiverId
-    );
-    Provider.of<ChatProvider>(context).isUserOnline(
-      receiverId: widget.receiverId, 
-    );
     deviceHeight = MediaQuery.of(context).size.height;
     deviceWidth = MediaQuery.of(context).size.width; 
     return buildUI();
@@ -115,6 +118,10 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
       builder: (BuildContext context) {
         return WillPopScope(
           onWillPop: () {
+            Provider.of<ChatProvider>(context, listen: false).isScreenOn(
+              chatUid: widget.chatUid, 
+              userUid: widget.receiverId
+            );
             Provider.of<ChatProvider>(context, listen: false).leaveScreen(
               chatUid: widget.chatUid,
             );
@@ -128,7 +135,9 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                     children: [
                       TopBarChat(
                         barTitle: widget.title,
-                        subTitle: context.watch<ChatProvider>().isOnline == null ? "" : context.read<ChatProvider>().isOnline,
+                        subTitle: widget.isGroup 
+                        ? widget.subtitle 
+                        : context.watch<ChatProvider>().isOnline == null ? "" : context.read<ChatProvider>().isOnline,
                         primaryAction: IconButton(
                           icon: const Icon(
                             Icons.delete,
@@ -145,6 +154,10 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                           ),
                           onPressed: () {
                             context.read<ChatProvider>().goBack(context);
+                            Provider.of<ChatProvider>(context, listen: false).isScreenOn(
+                              chatUid: widget.chatUid, 
+                              userUid: widget.receiverId
+                            );
                             Provider.of<ChatProvider>(context, listen: false).leaveScreen(
                               chatUid: widget.chatUid,
                             );
@@ -203,10 +216,11 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
               shrinkWrap: true,
               indexedItemBuilder: (BuildContext context, ChatMessage items, int i) {
                 ChatMessage chatMessage = context.read<ChatProvider>().messages![i];
-                bool isOwnMessage = chatMessage.senderID == context.read<AuthenticationProvider>().auth.currentUser!.uid;
+                bool isOwnMessage = chatMessage.senderId == context.read<AuthenticationProvider>().auth.currentUser!.uid;
                 return CustomChatListViewTile(
                   deviceWidth: deviceWidth * 0.80, 
                   deviceHeight: deviceHeight, 
+                  isGroup: widget.isGroup,
                   isOwnMessage: isOwnMessage, 
                   message: chatMessage, 
                 );                
@@ -237,10 +251,9 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
 
   Widget sendMessageForm() {
     return Container(
-      margin: EdgeInsets.only(bottom: Dimensions.marginSizeExtraSmall, left: Dimensions.marginSizeExtraSmall, right: Dimensions.marginSizeExtraSmall),
+      margin: EdgeInsets.only(bottom: Dimensions.marginSizeSmall, left: Dimensions.marginSizeSmall, right: Dimensions.marginSizeSmall),
       decoration: BoxDecoration(
-        boxShadow: boxShadow,
-        color: ColorResources.grey,
+        color: ColorResources.backgroundBlueSecondary,
         borderRadius: BorderRadius.circular(10.0)
       ),
       child: Row(
@@ -277,8 +290,11 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
         if(context.read<ChatProvider>().messageTextEditingController.text.isNotEmpty) {
           context.read<ChatProvider>().sendTextMessage(
             context,
+            subtitle: widget.subtitle,
             chatUid: widget.chatUid, 
+            senderName: context.read<AuthenticationProvider>().chatUser!.name!,
             receiverId: widget.receiverId,
+            isGroup: widget.isGroup,
           );
         }
         return;

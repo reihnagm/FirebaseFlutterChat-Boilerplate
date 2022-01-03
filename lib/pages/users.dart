@@ -433,7 +433,7 @@ class _UsersPageState extends State<UsersPage> {
   }
 
   Widget usersList() {
-    List<ChatUser>? users = context.read<UserProvider>().users;
+    List<ChatUser>? users = context.watch<UserProvider>().users;
     return Expanded(
       child: () {
       if(users != null) {
@@ -504,6 +504,7 @@ class _UsersPageState extends State<UsersPage> {
                         receiverId: users[i].uid!,
                         title: users[i].name!,
                         subtitle: users[i].isOnline.toString(),
+                        isGroup: false,
                         token: users[i].token!,
                       ));
                   } else {
@@ -513,6 +514,7 @@ class _UsersPageState extends State<UsersPage> {
                       receiverId: users[i].uid!,
                       title: users[i].name!,
                       subtitle: users[i].isOnline.toString(),
+                      isGroup: false,
                       token: users[i].token!,
                     ));
                   }
