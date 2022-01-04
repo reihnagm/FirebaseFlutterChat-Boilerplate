@@ -160,14 +160,16 @@ class DatabaseService {
                 "readers": FieldValue.arrayUnion(chatCountRead)
               });     
             }
-            for (QueryDocumentSnapshot<Map<String, dynamic>> msgDoc in msg.docs) {
-              if(isGroup) {
-                if(readers.where((el) => el["message_id"] == msgDoc.id).toList().length == relations.length) {
-                  msgDoc.reference.update({"is_read": true});
-                }
-              } else {
-                Map<String, dynamic> data = msgDoc.data();
-                if(data["sender_id"] == userUid) {
+            if(isGroup) {
+              if(readers.where((el) => el["message_id"] ==  msg.docs.last.id).toList().length == relations.length) {
+                msg.docs.last.reference.update({"is_read": true});
+              }
+            } else {
+              List<dynamic> data = msg.docs
+              .where((el) => el["sender_id"] == userUid)
+              .where((el) => el["is_read"] == false).toList();
+              if(data.isNotEmpty) {
+                for (QueryDocumentSnapshot<Map<String, dynamic>> msgDoc in msg.docs) {
                   List<dynamic> checkReaders = readers
                   .where((el) => el["reader_id"] == userUid)
                   .where((el) => el["message_id"] == msgDoc.id).toList();
@@ -186,9 +188,9 @@ class DatabaseService {
                 }
               }
             }
-        } catch(e) {
-          debugPrint(e.toString());
-        }
+          } catch(e) {
+            debugPrint(e.toString());
+          }
       });
     } catch(e) {
       debugPrint(e.toString());

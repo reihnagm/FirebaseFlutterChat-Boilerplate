@@ -273,8 +273,8 @@ class ChatProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> deleteChat(BuildContext context, {required String chatUid}) async {
-    goBack(context);
+  Future<void> deleteChat(BuildContext context, {required String chatUid, required String receiverId}) async {
+    goBack(context, chatUid: chatUid, receiverId: receiverId);
     try {
       await databaseService.deleteChat(chatUid);
     } catch(e) {
@@ -295,7 +295,14 @@ class ChatProvider extends ChangeNotifier {
     }
   }
   
-  void goBack(BuildContext context) {
+  void goBack(BuildContext context, {required String chatUid, required String receiverId}) {
     NavigationService.goBack(context);
+    Provider.of<ChatProvider>(context, listen: false).isScreenOn(
+      chatUid: chatUid, 
+      userUid: receiverId
+    );
+    Provider.of<ChatProvider>(context, listen: false).leaveScreen(
+      chatUid: chatUid,
+    );
   }
 }

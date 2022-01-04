@@ -46,10 +46,6 @@ class ChatsProvider extends ChangeNotifier {
             userData["uid"] = member["uid"];
             members.add(ChatUser.fromJson(userData));
           }
-          List<String> relations = [];
-          for (var member in chatData["relations"]) {
-            relations.add(member);
-          }
           List<ChatCountRead> readers = [];
           for (Map<String, dynamic> item in chatData["readers"]) {
             Map<String, dynamic> reader = item;
@@ -75,8 +71,7 @@ class ChatsProvider extends ChangeNotifier {
               image: groupData.image,
               name: groupData.name
             ),
-            relations: relations,
-            members: members, 
+            members: members.where((el) => el.uid != authenticationProvider.userUid()).toList(), 
             readers: readers,
             messages: messages, 
           );

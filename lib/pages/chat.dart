@@ -3,7 +3,6 @@ import 'package:grouped_list/grouped_list.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 
-import 'package:chatv28/providers/chats.dart';
 import 'package:chatv28/basewidget/top_bar.dart';
 import 'package:chatv28/utils/color_resources.dart';
 import 'package:chatv28/utils/dimensions.dart';
@@ -143,7 +142,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                             color: ColorResources.white
                           ),
                           onPressed: () {
-                            context.read<ChatProvider>().deleteChat(context, chatUid: widget.chatUid);
+                            context.read<ChatProvider>().deleteChat(context, chatUid: widget.chatUid, receiverId: widget.receiverId);
                           },
                         ),  
                         secondaryAction: IconButton(
@@ -152,14 +151,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                             color: ColorResources.white
                           ),
                           onPressed: () {
-                            context.read<ChatProvider>().goBack(context);
-                            Provider.of<ChatProvider>(context, listen: false).isScreenOn(
-                              chatUid: widget.chatUid, 
-                              userUid: widget.receiverId
-                            );
-                            Provider.of<ChatProvider>(context, listen: false).leaveScreen(
-                              chatUid: widget.chatUid,
-                            );
+                            context.read<ChatProvider>().goBack(context, chatUid: widget.chatUid, receiverId: widget.receiverId);
                           },
                         ),  
                       ),
