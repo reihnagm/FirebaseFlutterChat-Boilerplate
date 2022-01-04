@@ -461,23 +461,15 @@ class _UsersPageState extends State<UsersPage> {
                           "name": "",
                           "image": ""
                         }
-                        "on_screens": FieldValue.arrayUnion([ 
-                          {
-                            "userUid": context.read<AuthenticationProvider>().chatUser!.uid,
-                            "token": users[i].token 
-                            "on": true
-                          },
-                          {
-                            "userUid": users[i].uid,
-                            "token": context.read<AuthenticationProvider>().chatUser!.token,
-                            "on": false
-                          },
-                        ]),
                         "relations": [
                           context.read<AuthenticationProvider>().chatUser!.uid,
                           users[i].uid
                         ],
-                        "readers": [],
+                      }
+                    );
+                    await databaseService.createMembers(
+                      {
+                        "id": doc!.id,
                         "members": [
                           {
                             "uid": context.read<AuthenticationProvider>().chatUser!.uid,
@@ -497,17 +489,57 @@ class _UsersPageState extends State<UsersPage> {
                             "name": users[i].name,
                             "token": users[i].token
                           }
-                        ], 
-                      });
-                      NavigationService.pushNav(context, ChatPage(
-                        chatUid: doc!.id,
-                        senderId: context.read<AuthenticationProvider>().chatUser!.uid!,
-                        receiverId: users[i].uid!,
-                        title: users[i].name!,
-                        subtitle: users[i].isOnline.toString(),
-                        isGroup: false,
-                        token: users[i].token!,
-                      ));
+                        ],
+                      }
+                    );
+                    await databaseService.createOnScreens({
+                      "id": doc.id,
+                      "on_screens": FieldValue.arrayUnion([ 
+                        {
+                          "userUid": context.read<AuthenticationProvider>().chatUser!.uid,
+                          "token": users[i].token, 
+                          "on": true
+                        },
+                        {
+                          "userUid": users[i].uid,
+                          "token": context.read<AuthenticationProvider>().chatUser!.token,
+                          "on": false
+                        },
+                      ]),
+                    });
+                    await databaseService.createReaders({
+                      "id": doc.id,
+                      "readers": []
+                    });
+                    NavigationService.pushNav(context, ChatPage(
+                      chatUid: doc.id,
+                      senderId: context.read<AuthenticationProvider>().chatUser!.uid!,
+                      receiverId: users[i].uid!,
+                      title: users[i].name!,
+                      subtitle: users[i].isOnline.toString(),
+                      isGroup: false,
+                      token: users[i].token!,
+                    ));
+                    //  "members": [
+                    //   {
+                    //     "uid": context.read<AuthenticationProvider>().chatUser!.uid,
+                    //     "email": context.read<AuthenticationProvider>().chatUser!.email,
+                    //     "image": context.read<AuthenticationProvider>().chatUser!.image,
+                    //     "isOnline": context.read<AuthenticationProvider>().chatUser!.isOnline,
+                    //     "last_active": context.read<AuthenticationProvider>().chatUser!.lastActive,
+                    //     "name": context.read<AuthenticationProvider>().chatUser!.name,
+                    //     "token": context.read<AuthenticationProvider>().chatUser!.token
+                    //   },
+                    //   {
+                    //     "uid": users[i].uid,
+                    //     "email":users[i].email,
+                    //     "image": users[i].image,
+                    //     "isOnline": users[i].isOnline,
+                    //     "last_active": users[i].lastActive,
+                    //     "name": users[i].name,
+                    //     "token": users[i].token
+                    //   }
+                    // ],
                   } else {
                     NavigationService.pushNav(context, ChatPage(
                       chatUid: checkCreateChat.docs[0].id,

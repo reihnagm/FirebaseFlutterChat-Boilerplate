@@ -205,7 +205,7 @@ class ChatProvider extends ChangeNotifier {
   Future<void> isScreenOn({required String chatUid, required String userUid}) async {
     try {
       List<dynamic>? onScreens = await databaseService.isScreenOn(chatUid: chatUid);
-      if(onScreens!.where((el) => el["userUid"] == userUid).isNotEmpty) {
+      if(onScreens.where((el) => el["userUid"] == userUid).isNotEmpty) {
         isRead = onScreens.firstWhere((el) => el["userUid"] == userUid)["on"]; 
       }
       if(onScreens.where((el) => el["userUid"] != userUid).isNotEmpty) {

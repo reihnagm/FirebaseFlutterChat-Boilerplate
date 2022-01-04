@@ -1,9 +1,11 @@
 import 'dart:async';
 
+import 'package:chatv28/providers/chats.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:chatv28/pages/login.dart';
@@ -115,18 +117,12 @@ class AuthenticationProvider extends ChangeNotifier {
   Future<void> loginUsingEmailAndPassword(BuildContext context, String email, String password) async {
     setStateLoginStatus(LoginStatus.loading);
     try {
-      UserCredential uc = await auth.signInWithEmailAndPassword(email: email, password: password);
-      Future.delayed(Duration.zero, () async {
-        try {
-          sharedPreferences.setBool("login", true);
-          sharedPreferences.setString("userUid", uc.user!.uid);
-          setStateLoginStatus(LoginStatus.loaded);
-          NavigationService.pushNavReplacement(context, const HomePage());
-        } catch(e) {
-          debugPrint(e.toString());
-          setStateLoginStatus(LoginStatus.error);
-        }
-      });
+      await auth.signInWithEmailAndPassword(email: email, password: password);
+      sharedPreferences.setBool("login", true);
+      sharedPreferences.setString("userUid", auth.currentUser!.uid);
+      Provider.of<ChatsProvider>(context, listen: false).chats = null;
+      setStateLoginStatus(LoginStatus.loaded);
+      NavigationService.pushNavReplacement(context, const HomePage());   
     } on FirebaseAuthException {
       setStateLoginStatus(LoginStatus.error);
     } catch(e) {

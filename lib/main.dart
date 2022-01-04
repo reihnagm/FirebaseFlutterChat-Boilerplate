@@ -102,7 +102,6 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
           ),
           home: Builder(
             builder: (context) {
-              Provider.of<AuthenticationProvider>(context, listen: false).initAuthStateChanges();
               Provider.of<FirebaseProvider>(context, listen: false).initializeNotification(context);
               Provider.of<FirebaseProvider>(context, listen: false).listenNotification(context);
               return Consumer<AuthenticationProvider>(

@@ -29,6 +29,7 @@ class _ChatsPageState extends State<ChatsPage> {
     super.initState();
     WidgetsBinding.instance!.addPostFrameCallback((_) {
       Provider.of<AuthenticationProvider>(context, listen: false).initAuthStateChanges();
+      
     });
   }
 
@@ -42,7 +43,7 @@ class _ChatsPageState extends State<ChatsPage> {
   Widget buildUI() {
     return Builder(
       builder: (BuildContext context) {
-        context.watch<ChatsProvider>().getChats();
+        Provider.of<ChatsProvider>(context).getChats();
         return Container(
           decoration: const BoxDecoration(
             color: ColorResources.backgroundColor
@@ -83,38 +84,41 @@ class _ChatsPageState extends State<ChatsPage> {
   }
 
   Widget chatList() {
-    List<Chat>? chats = context.watch<ChatsProvider>().chats;
-    return Expanded(
-      child: (() {
-        if(chats != null) {
-          if(chats.isNotEmpty) {
-            return ListView.builder(
-              itemCount: chats.length ,
-              itemBuilder: (BuildContext context, int i) {
-                return chatTile(context, chats[i]);
-              } 
-            );
-          } else {
-            return const Center(
-              child: Text("No Chats Found.",
-                style: TextStyle(
-                  color: ColorResources.textBlackPrimary
+    return Consumer<ChatsProvider>(
+      builder: (BuildContext context, ChatsProvider chatsProvider, Widget? child) {
+        return Expanded(
+          child: (() {
+            if(chatsProvider.chats != null) {
+              if(chatsProvider.chats!.isNotEmpty) {
+                return ListView.builder(
+                  itemCount: chatsProvider.chats!.length,
+                  itemBuilder: (BuildContext context, int i) {
+                    return chatTile(context, chatsProvider.chats![i]);
+                  } 
+                );
+              } else {
+                return const Center(
+                  child: Text("No Chats Found.",
+                    style: TextStyle(
+                      color: ColorResources.textBlackPrimary
+                    ),
+                  ),
+                );
+              }
+            } else {
+              return const Center(
+                child: SizedBox(
+                  width: 16.0,
+                  height: 16.0,
+                  child: CircularProgressIndicator(
+                    color: ColorResources.backgroundBlueSecondary,
+                  ),
                 ),
-              ),
-            );
-          }
-        } else {
-          return const Center(
-            child: SizedBox(
-              width: 16.0,
-              height: 16.0,
-              child: CircularProgressIndicator(
-                color: ColorResources.backgroundBlueSecondary,
-              ),
-            ),
-          );
-        }
-      })(),
+              );
+            }
+          })(),
+        ); 
+      },
     );
   }
 

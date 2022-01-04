@@ -1,11 +1,11 @@
-import 'package:chatv28/models/chat.dart';
-import 'package:chatv28/pages/chat.dart';
-import 'package:chatv28/services/navigation.dart';
 import 'package:dio/dio.dart';
 
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+
+import 'package:chatv28/pages/chat.dart';
+import 'package:chatv28/services/navigation.dart';
 
 class FirebaseProvider with ChangeNotifier {
   
