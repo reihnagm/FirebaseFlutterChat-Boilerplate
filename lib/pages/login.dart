@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import 'package:chatv28/utils/box_shadow.dart';
 import 'package:chatv28/utils/dimensions.dart';
 import 'package:chatv28/utils/color_resources.dart';
 import 'package:chatv28/providers/authentication.dart';
@@ -59,7 +58,7 @@ class _LoginPageState extends State<LoginPage> {
             const SizedBox(height: 20.0),
             loginButton(),
             const SizedBox(height: 10.0),
-            registerAccountLink()
+            // registerAccountLink()
           ],
         ),
       ),

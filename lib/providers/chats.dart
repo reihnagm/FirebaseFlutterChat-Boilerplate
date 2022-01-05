@@ -43,40 +43,20 @@ class ChatsProvider extends ChangeNotifier {
         chats = await Future.wait(snapshot.docs.map((doc) async {
           Map<String, dynamic> chatData = doc.data() as Map<String, dynamic>;
           GroupData groupData = GroupData.fromJson(chatData["group"]);
-          // for (Map<String, dynamic> member in chatData["members"]) {
-          //   Map<String, dynamic> userData = member;
-          //   userData["uid"] = member["uid"];
-          //   members.add(ChatUser.fromJson(userData));
-          // }
-          List<dynamic>? membersChat = await databaseService.getMembersChat(doc.id);
           List<ChatUser> members = [];
-          for (var item in membersChat!) {
-            members.add(ChatUser.fromJson(item));
+          List<dynamic>? membersChat = await databaseService.getMembersChat(doc.id);
+          if(membersChat!.isNotEmpty) {
+            for (var item in membersChat) {
+              members.add(ChatUser.fromJson(item));
+            }
           }
-          // if(membersChat!.docs.isNotEmpty) {
-          //   for (QueryDocumentSnapshot<Object?> member in membersChat.docs) {
-          //     Map<String, dynamic> m = member.data() as Map<String, dynamic>;
-          //     List<dynamic> members = m["members"];
-          //     for (var item in members) {
-          //       Map<String, dynamic> user = item;
-          //       user["uid"] = item["uid"];
-          //       members.add(ChatUser.fromJson(user));
-          //     }
-          //     // members.add(ChatUser.fromJson(members));
-          //       // members.add(ChatUser.fromJson(item));
-          //     // userData["uid"] = member["uid"];
-          //     //
-          //   }
-          // }
-          List<dynamic>? readersChat = await databaseService.getReadersChat(doc.id);
           List<ChatCountRead> readers = [];
-          for (var item in readersChat) {
-            readers.add(ChatCountRead.fromJson(item));
+          List<dynamic>? readersChat = await databaseService.getReadersChat(doc.id);
+          if(readersChat.isNotEmpty) {
+            for (var item in readersChat) {
+              readers.add(ChatCountRead.fromJson(item));
+            }
           }
-          // for (Map<String, dynamic> item in chatData["readers"]) {
-          //   Map<String, dynamic> reader = item;
-          //   readers.add(ChatCountRead.fromJson(reader));
-          // }
           List<ChatMessage> messages = [];
           try {
             QuerySnapshot<Object?>? chatMessage = await databaseService.getLastMessageForChat(doc.id);
@@ -97,7 +77,7 @@ class ChatsProvider extends ChangeNotifier {
               image: groupData.image,
               name: groupData.name
             ),
-            members: members.where((el) => el.uid != authenticationProvider.userUid()).toList(),
+            members: members,
             readers: readers,
             messages: messages, 
           );

@@ -108,21 +108,33 @@ class UserProvider extends ChangeNotifier {
         try {
           String? groupImageUrl = "";
           if(groupImage != null) {
-            groupImageUrl = await cloudStorageService.saveGroupImageToStorage(groupName: groupName, groupImage: groupImage);
+            groupImageUrl = await cloudStorageService.saveGroupImageToStorage(
+              groupName: groupName, 
+              groupImage: groupImage
+            );
           }
           try {
             Future.delayed(Duration.zero, () async {
-              await databaseService.createChat({
+              DocumentReference? doc = await databaseService.createChat({
                 "is_group": isGroup,
                 "is_activity": false,
                 "group": {
                   "name": groupName,
                   "image": groupImageUrl
                 },  
-                "on_screens": [],
                 "relations": relations,
-                "readers": [],
-                "members": members, 
+              });
+              await databaseService.createMembers({
+                "id": doc!.id,
+                "members": members
+              });
+              await databaseService.createOnScreens({
+                "id": doc.id,
+                "on_screens": []
+              });
+              await databaseService.createReaders({
+                "id": doc.id,
+                "readers": []
               });
               Navigator.of(context).pop();
               setStateCreateGroupStatus(CreateGroupStatus.loaded);

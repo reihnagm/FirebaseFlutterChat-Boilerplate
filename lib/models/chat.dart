@@ -90,11 +90,11 @@ class Chat {
   final bool activity;
   final bool group;
   final GroupData groupData;
-  final List<ChatUser> members;
+  late final List<ChatUser> members;
   final List<ChatMessage> messages; 
   List<ChatCountRead> readers;
   late final List<ChatUser> peopleJoinGroup;
-  // late final List<ChatUser> recepients;
+  late final List<ChatUser> recepients;
 
   Chat({
     required this.uid,
@@ -106,7 +106,11 @@ class Chat {
     required this.messages,
     required this.readers,
   }) {
-    // recepients = members.where((el) => el.uid != currentUserId).toList();
+    if(members.isNotEmpty) {
+      recepients = members.where((el) => el.uid != currentUserId).toList();
+    } else {
+      members = [];
+    }
     List<ChatUser> chatUserAssign = [];
     for (ChatUser chatUser in members) {
       chatUserAssign.add(ChatUser(
@@ -126,8 +130,8 @@ class Chat {
   int readCount() => readers.length;
   bool isRead() => readers.isEmpty ? true : false;
 
-  bool isUsersOnline() => members.any((el) => el.isUserOnline());
-  String title() => !group ? members.first.name! : groupData.name;
+  bool isUsersOnline() => recepients.any((el) => el.isUserOnline());
+  String title() => !group ? recepients.first.name! : groupData.name;
   String subtitle() => !group ? isUsersOnline() ? "ONLINE" : "OFFLINE" : peopleJoinGroup.map((user) => user.name!).join(", ");
-  String image() => !group ? members.first.image! : groupData.image == "" ? "https://www.iconpacks.net/icons/1/free-user-group-icon-296-thumb.png" : groupData.image!;
+  String image() => !group ? recepients.first.image! : groupData.image == "" ? "https://www.iconpacks.net/icons/1/free-user-group-icon-296-thumb.png" : groupData.image!;
 }

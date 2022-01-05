@@ -145,9 +145,9 @@ class _ChatsPageState extends State<ChatsPage> {
           subtitle: chat.subtitle(),
           isGroup: chat.group,
           chatUid: chat.uid,
-          senderId: chat.members.first.uid!,
-          receiverId: chat.members.first.uid!,  
-          token: chat.members.first.token!,
+          senderId: chat.recepients.first.uid!,
+          receiverId: chat.recepients.first.uid!,  
+          token: chat.recepients.first.token!,
         ));
       }
     );

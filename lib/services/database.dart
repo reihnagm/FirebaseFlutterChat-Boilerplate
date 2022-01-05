@@ -5,7 +5,7 @@ import 'package:chatv28/models/chat_message.dart';
 
 const String userCollection = "Users";
 const String memberCollection = "Members";
-const String readersCollection = "readers";
+const String readersCollection = "Readers";
 const String onScreenCollection = "OnScreens";
 const String chatCollection = "Chats";
 const String messageCollection = "Messages"; 
@@ -204,11 +204,13 @@ class DatabaseService {
                         "is_read": true,
                       }); 
                     }
+                     
+                  reader.reference.update({
+                    "id": chatUid,
+                    "readers": FieldValue.arrayUnion(chatCountRead)
+                  }); 
                 }
-              }      
-              chatDoc.reference.update({
-                "readers": FieldValue.arrayUnion(chatCountRead)
-              });     
+              }         
             }
             if(isGroup) {
               for (QueryDocumentSnapshot<Map<String, dynamic>> reader in readersDoc.docs) {
