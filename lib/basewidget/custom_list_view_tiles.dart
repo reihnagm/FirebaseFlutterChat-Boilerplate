@@ -8,6 +8,7 @@ import 'package:chatv28/utils/dimensions.dart';
 import 'package:chatv28/basewidget/message_bubble.dart';
 import 'package:chatv28/models/chat_message.dart';
 import 'package:chatv28/basewidget/rounded_image.dart';
+import 'package:ionicons/ionicons.dart';
 
 class CustomListViewTile extends StatelessWidget {
   final double height;
@@ -117,6 +118,8 @@ class CustomListViewTileWithActivity extends StatelessWidget {
       ),
       trailing: isRead
       ? const SizedBox()
+      : readCount == 0 
+      ? const SizedBox() 
       : Container(
         width: 20.0,
         height: 20.0,
@@ -140,17 +143,141 @@ class CustomListViewTileWithActivity extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             SpinKitThreeBounce(
-              color: Colors.white54,
+              color: ColorResources.loaderBluePrimary,
               size: height * 0.10,
             )
           ],
         ) 
-      : Text(subtitle, 
+      : Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(subtitle, 
+            style: TextStyle(
+              color: ColorResources.textBlackPrimary,
+              fontSize: Dimensions.fontSizeExtraSmall,
+            )
+          ),
+          const SizedBox(width: 30.0),
+          subtitle.isNotEmpty ?
+          isRead
+          ? const Icon(
+              Ionicons.checkmark_done,
+              size: 20.0,
+              color: Colors.green,  
+            )  
+          : const Icon(
+              Ionicons.checkmark_done,
+              size: 20.0,
+              color: Colors.black,  
+            )
+          : const SizedBox()
+        ],
+      )     
+    );
+  }
+
+}
+
+class CustomListViewTileWithoutActivity extends StatelessWidget {
+  final double height;
+  final bool group;
+  final String title;
+  final String subtitle;
+  final String imagePath;
+  final bool isActivity;
+  final Function onTap;
+  final bool isRead;
+  final int readCount;
+
+  const CustomListViewTileWithoutActivity({
+    Key? key, 
+    required this.height,
+    required this.group,
+    required this.title,
+    required this.subtitle,
+    required this.imagePath,
+    required this.isActivity,
+    required this.onTap,
+    required this.isRead,
+    required this.readCount,
+  }) : super(key: key);
+
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      onTap: () => onTap(),
+      leading: RoundedImageNetworkWithoutStatusIndicator(
+        key: UniqueKey(),
+        imagePath: imagePath, 
+        size: height / 2, 
+        group: group
+      ),
+      minVerticalPadding: height * 0.20,
+      title: Text(title,
+        style: TextStyle(
+          color: ColorResources.textBlackPrimary,
+          fontSize: Dimensions.fontSizeSmall,
+          fontWeight: FontWeight.bold
+        )
+      ),
+      trailing: isRead
+      ? const SizedBox()
+      : readCount == 0 
+      ? const SizedBox() 
+      : Container(
+        width: 20.0,
+        height: 20.0,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: ColorResources.error,
+          boxShadow: boxShadow,
+          shape: BoxShape.circle
+        ),
+        child: Text((readCount).toString(),
           style: TextStyle(
-            color: ColorResources.textBlackPrimary,
-            fontSize: Dimensions.fontSizeExtraSmall,
-          )
-        )      
+            color: Colors.white,
+            fontSize: Dimensions.fontSizeExtraSmall
+          ),
+        ),
+      ),
+      subtitle: isActivity 
+      ? Row(
+          mainAxisSize: MainAxisSize.max,
+          mainAxisAlignment: MainAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            SpinKitThreeBounce(
+              color: ColorResources.loaderBluePrimary,
+              size: height * 0.10,
+            )
+          ],
+        ) 
+      : Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(subtitle, 
+            style: TextStyle(
+              color: ColorResources.textBlackPrimary,
+              fontSize: Dimensions.fontSizeExtraSmall,
+            )
+          ),
+          const SizedBox(width: 30.0),
+          subtitle.isNotEmpty ?
+          isRead
+          ? const Icon(
+              Ionicons.checkmark_done,
+              size: 20.0,
+              color: Colors.green,  
+            )  
+          : const Icon(
+              Ionicons.checkmark_done,
+              size: 20.0,
+              color: Colors.black,  
+            )
+          : const SizedBox()
+        ],
+      )    
     );
   }
 

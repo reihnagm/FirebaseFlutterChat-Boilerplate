@@ -35,21 +35,21 @@ class FirebaseProvider with ChangeNotifier {
       String chatUid = data["chatUid"];
       String title = data["title"];
       String subtitle = data["subtitle"];
-      bool isGroup = data["isGroup"];
-      String token = data["token"];
+      String isGroup = data["isGroup"];
       String senderId = data["senderId"];
       String receiverId = data["receiverId"];
-      NavigationService.pushNav(context, 
-        ChatPage(
-          chatUid: chatUid,
-          title: title,  
-          subtitle: subtitle,
-          isGroup: isGroup,
-          token: token, 
-          senderId: senderId,
-          receiverId: receiverId
-        )
-      );
+      WidgetsBinding.instance!.addPostFrameCallback((_) {
+        NavigationService.pushNav(context, 
+          ChatPage(
+            chatUid: chatUid,
+            title: title,  
+            subtitle: subtitle,
+            isGroup: isGroup == "true" ? true : false,
+            senderId: senderId,
+            receiverId: receiverId,
+          )
+        );
+      });
     });
   }
 
@@ -75,7 +75,7 @@ class FirebaseProvider with ChangeNotifier {
       Response res = await dio.post("https://fcm.googleapis.com/fcm/send", 
         data: {
           "to": token,
-          "collapse_key": "chat",
+          "collapse_key": "type_a",
           "notification": {
             "title": title,
             "body": body,
@@ -85,7 +85,6 @@ class FirebaseProvider with ChangeNotifier {
             "chatUid": chatUid,
             "title": title,
             "subtitle": subtitle,
-            "token": token,
             "senderId": senderId,
             "receiverId": receiverId,
             "isGroup": isGroup,

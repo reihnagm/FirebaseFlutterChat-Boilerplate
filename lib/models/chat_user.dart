@@ -29,16 +29,6 @@ class ChatUser {
     );
   }
 
-  Map<String, dynamic> toMap() {
-    return {
-      "email": email,
-      "name": name,
-      "image": image,
-      "isOnline": isOnline,
-      "last_active": lastActive,
-    };
-  }
-
   String lastDayActive() {
     return "${lastActive!.month}/${lastActive!.day}/${lastActive!.year}";
   }

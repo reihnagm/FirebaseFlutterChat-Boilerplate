@@ -96,7 +96,7 @@ class UserProvider extends ChangeNotifier {
             "name": userData["name"],
             "email": userData["email"],
             "imageUrl": userData["image"],
-            "isOnline": userData["isOnline"],
+            "isOnline": false,
             "last_active": userData["last_active"]
           });
         } catch(e) {
@@ -104,48 +104,34 @@ class UserProvider extends ChangeNotifier {
           debugPrint(e.toString());
         }
       }
-      Future.delayed(Duration.zero, () async {
+      try {
+        String? groupImageUrl = "";
+        if(groupImage != null) {
+          groupImageUrl = await cloudStorageService.saveGroupImageToStorage(
+            groupName: groupName, 
+            groupImage: groupImage
+          );
+        }
         try {
-          String? groupImageUrl = "";
-          if(groupImage != null) {
-            groupImageUrl = await cloudStorageService.saveGroupImageToStorage(
-              groupName: groupName, 
-              groupImage: groupImage
-            );
-          }
-          try {
-            Future.delayed(Duration.zero, () async {
-              DocumentReference? doc = await databaseService.createChat({
-                "is_group": isGroup,
-                "is_activity": false,
-                "group": {
-                  "name": groupName,
-                  "image": groupImageUrl
-                },  
-                "relations": relations,
-              });
-              await databaseService.createMembers({
-                "id": doc!.id,
-                "members": members
-              });
-              await databaseService.createOnScreens({
-                "id": doc.id,
-                "on_screens": []
-              });
-              await databaseService.createReaders({
-                "id": doc.id,
-                "readers": []
-              });
-              Navigator.of(context).pop();
-              setStateCreateGroupStatus(CreateGroupStatus.loaded);
-            });
-          } catch(e) {
-            debugPrint(e.toString());
-          }
+          await databaseService.createChat({
+            "is_group": isGroup,
+            "is_activity": false,
+            "group": {
+              "name": groupName,
+              "image": groupImageUrl
+            },  
+            "members": members,
+            "readers": [],
+            "relations": relations,
+          });
+          Navigator.of(context).pop();
+          setStateCreateGroupStatus(CreateGroupStatus.loaded);
         } catch(e) {
           debugPrint(e.toString());
         }
-      });
+      } catch(e) {
+        debugPrint(e.toString());
+      }
     }
   }
 }

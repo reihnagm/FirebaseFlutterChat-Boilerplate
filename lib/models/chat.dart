@@ -106,11 +106,9 @@ class Chat {
     required this.messages,
     required this.readers,
   }) {
-    if(members.isNotEmpty) {
-      recepients = members.where((el) => el.uid != currentUserId).toList();
-    } else {
-      members = [];
-    }
+  
+    recepients = members.where((el) => el.uid != currentUserId).toList();
+  
     List<ChatUser> chatUserAssign = [];
     for (ChatUser chatUser in members) {
       chatUserAssign.add(ChatUser(
@@ -128,7 +126,7 @@ class Chat {
   }
  
   int readCount() => readers.length;
-  bool isRead() => readers.isEmpty ? true : false;
+  bool isRead() => messages.any((m) => m.isRead);
 
   bool isUsersOnline() => recepients.any((el) => el.isUserOnline());
   String title() => !group ? recepients.first.name! : groupData.name;

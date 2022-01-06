@@ -67,6 +67,7 @@ class CustomTextFormField extends StatelessWidget {
 class CustomTextMessageFormField extends StatelessWidget {
   final TextEditingController? controller;
   final Function (String) onSaved;
+  final Function (String) onChange;
   final String regex;
   final String hintText;
   final Widget label;
@@ -77,6 +78,7 @@ class CustomTextMessageFormField extends StatelessWidget {
     Key? key, 
     this.controller,
     required this.onSaved,
+    required this.onChange,
     required this.regex,
     required this.hintText,
     required this.label,
@@ -89,6 +91,7 @@ class CustomTextMessageFormField extends StatelessWidget {
     return TextFormField(
       controller: controller,
       onSaved: (val) => onSaved(val!),
+      onChanged: (val) => onChange(val),
       cursorColor: ColorResources.white,
       style: TextStyle(
         color: ColorResources.white,

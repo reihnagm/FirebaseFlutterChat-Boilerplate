@@ -471,6 +471,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "2.0.2"
+  popover:
+    dependency: "direct main"
+    description:
+      name: popover
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "0.2.6+3"
   process:
     dependency: transitive
     description:
@@ -485,6 +492,20 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "6.0.1"
+  quds_popup_menu:
+    dependency: "direct main"
+    description:
+      name: quds_popup_menu
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "0.0.1+1"
+  quds_ui_kit:
+    dependency: transitive
+    description:
+      name: quds_ui_kit
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "0.0.7+5"
   shared_preferences:
     dependency: "direct main"
     description:

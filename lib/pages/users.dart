@@ -1,8 +1,8 @@
 import 'dart:io';
 
-import 'package:chatv28/providers/chats.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:provider/provider.dart';
@@ -461,7 +461,28 @@ class _UsersPageState extends State<UsersPage> {
                         "group": {
                           "name": "",
                           "image": ""
-                        }
+                        },
+                        "members": [
+                          {
+                            "uid": context.read<AuthenticationProvider>().chatUser!.uid,
+                            "email": context.read<AuthenticationProvider>().chatUser!.email,
+                            "name": context.read<AuthenticationProvider>().chatUser!.name,
+                            "image": context.read<AuthenticationProvider>().chatUser!.image,
+                            "isOnline": false,
+                            "last_active": context.read<AuthenticationProvider>().chatUser!.lastActive,
+                            "token": ""
+                          },
+                          {
+                            "uid": users[i].uid,
+                            "email":users[i].email,
+                            "name": users[i].name,
+                            "image": users[i].image,
+                            "isOnline": false,
+                            "last_active": users[i].lastActive,
+                            "token": ""
+                          }
+                        ],
+                        "readers": [],
                         "relations": [
                           context.read<AuthenticationProvider>().chatUser!.uid,
                           users[i].uid
@@ -475,61 +496,30 @@ class _UsersPageState extends State<UsersPage> {
                       title: users[i].name!,
                       subtitle: users[i].isOnline.toString(),
                       isGroup: false,
-                      token: users[i].token!,
                     ));
-                    await databaseService.createMembers(
-                      {
-                        "id": doc.id,
-                        "members": [
-                          {
-                            "uid": context.read<AuthenticationProvider>().chatUser!.uid,
-                            "email": context.read<AuthenticationProvider>().chatUser!.email,
-                            "image": context.read<AuthenticationProvider>().chatUser!.image,
-                            "isOnline": context.read<AuthenticationProvider>().chatUser!.isOnline,
-                            "last_active": context.read<AuthenticationProvider>().chatUser!.lastActive,
-                            "name": context.read<AuthenticationProvider>().chatUser!.name,
-                            "token": context.read<AuthenticationProvider>().chatUser!.token
-                          },
-                          {
-                            "uid": users[i].uid,
-                            "email":users[i].email,
-                            "image": users[i].image,
-                            "isOnline": users[i].isOnline,
-                            "last_active": users[i].lastActive,
-                            "name": users[i].name,
-                            "token": users[i].token
-                          }
-                        ],
-                      }
-                    );
                     await databaseService.createOnScreens({
                       "id": doc.id,
                       "on_screens": FieldValue.arrayUnion([ 
                         {
-                          "userUid": context.read<AuthenticationProvider>().chatUser!.uid,
-                          "token": users[i].token, 
+                          "userUid": context.read<AuthenticationProvider>().userUid(),
+                          "token":  await FirebaseMessaging.instance.getToken(), 
                           "on": true
                         },
                         {
                           "userUid": users[i].uid,
-                          "token": context.read<AuthenticationProvider>().chatUser!.token,
+                          "token": users[i].token,
                           "on": false
                         },
                       ]),
                     });
-                    await databaseService.createReaders({
-                      "id": doc.id,
-                      "readers": []
-                    });
                   } else {
                     NavigationService.pushNav(context, ChatPage(
                       chatUid: checkCreateChat.docs[0].id,
-                      senderId: context.read<AuthenticationProvider>().chatUser!.uid!,
+                      senderId: context.read<AuthenticationProvider>().userUid(),
                       receiverId: users[i].uid!,
                       title: users[i].name!,
                       subtitle: users[i].isOnline.toString(),
                       isGroup: false,
-                      token: users[i].token!,
                     ));
                   }
                 },

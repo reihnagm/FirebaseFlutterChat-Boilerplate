@@ -42,21 +42,38 @@ class ChatsProvider extends ChangeNotifier {
       chatsStream = databaseService.getChatsForUser(authenticationProvider.userUid())!.listen((snapshot) async {
         chats = await Future.wait(snapshot.docs.map((doc) async {
           Map<String, dynamic> chatData = doc.data() as Map<String, dynamic>;
+          List<dynamic> m = chatData["members"];
+          List<dynamic> r = chatData["readers"];
           GroupData groupData = GroupData.fromJson(chatData["group"]);
+          // DocumentSnapshot<Object?> snapshot = await databaseService.getUser(authenticationProvider.userUid())!;
+          // Map<String, dynamic> userData = snapshot.data() as Map<String, dynamic>;
           List<ChatUser> members = [];
-          List<dynamic>? membersChat = await databaseService.getMembersChat(doc.id);
-          if(membersChat!.isNotEmpty) {
-            for (var item in membersChat) {
-              members.add(ChatUser.fromJson(item));
+          if(m.isNotEmpty) {
+            for (var member in m) {
+              members.add(ChatUser.fromJson(member));
             }
           }
           List<ChatCountRead> readers = [];
-          List<dynamic>? readersChat = await databaseService.getReadersChat(doc.id);
-          if(readersChat.isNotEmpty) {
-            for (var item in readersChat) {
-              readers.add(ChatCountRead.fromJson(item));
+          if(r.isNotEmpty) {
+            for (var reader in r) {
+              readers.add(ChatCountRead.fromJson(reader));
             }
           }
+          // Optional 2
+          // List<dynamic>? membersChat = await databaseService.getMembersChat(doc.id);
+          // if(membersChat!.isNotEmpty) {
+          //   for (var item in membersChat) {
+          //     members.add(ChatUser.fromJson(item));
+          //   }
+          // }
+          
+           // Optional 2
+          // List<dynamic>? readersChat = await databaseService.getReadersChat(doc.id);
+          // if(readersChat.isNotEmpty) {
+          //   for (var item in readersChat) {
+          //     readers.add(ChatCountRead.fromJson(item));
+          //   }
+          // }
           List<ChatMessage> messages = [];
           try {
             QuerySnapshot<Object?>? chatMessage = await databaseService.getLastMessageForChat(doc.id);

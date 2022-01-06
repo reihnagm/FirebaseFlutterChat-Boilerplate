@@ -11,6 +11,7 @@ import 'package:chatv28/providers/chat.dart';
 import 'package:chatv28/basewidget/custom_input_fields.dart';
 import 'package:chatv28/basewidget/custom_list_view_tiles.dart';
 import 'package:chatv28/providers/authentication.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ChatPage extends StatefulWidget {
   final String title;
@@ -18,7 +19,6 @@ class ChatPage extends StatefulWidget {
   final bool isGroup;
   final String chatUid;
   final String senderId;
-  final String token;
   final String receiverId;
   const ChatPage({ 
     required this.title,
@@ -26,7 +26,6 @@ class ChatPage extends StatefulWidget {
     required this.isGroup,
     required this.chatUid,
     required this.senderId,
-    required this.token,
     required this.receiverId,
     Key? key 
   }) : super(key: key);
@@ -51,7 +50,6 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
       debugPrint("=== APP RESUME ===");
       Provider.of<ChatProvider>(context, listen: false).joinScreen(
         chatUid: widget.chatUid,
-        token: widget.token
       );
     }
     if(state == AppLifecycleState.inactive) {
@@ -87,13 +85,9 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
         receiverId: widget.receiverId,
         isGroup: widget.isGroup,
       );
-      Provider.of<ChatProvider>(context, listen: false).isScreenOn(
-        chatUid: widget.chatUid, 
-        userUid: widget.receiverId
-      );
+      // Provider.of<ChatProvider>(context, listen: false).listenToKeyboardType(chatUid: widget.chatUid);
       Provider.of<ChatProvider>(context, listen: false).joinScreen(
         chatUid: widget.chatUid,
-        token: widget.token
       );
     });
   }
@@ -106,6 +100,10 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
+    context.watch<ChatProvider>().isScreenOn(
+      chatUid: widget.chatUid, 
+      userUid: widget.receiverId,
+    ); // Listen Message is Read
     deviceHeight = MediaQuery.of(context).size.height;
     deviceWidth = MediaQuery.of(context).size.width; 
     return buildUI();
@@ -118,7 +116,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
           onWillPop: () {
             Provider.of<ChatProvider>(context, listen: false).isScreenOn(
               chatUid: widget.chatUid, 
-              userUid: widget.receiverId
+              userUid: widget.receiverId,
             );
             Provider.of<ChatProvider>(context, listen: false).leaveScreen(
               chatUid: widget.chatUid,
@@ -142,7 +140,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                             color: ColorResources.white
                           ),
                           onPressed: () {
-                            context.read<ChatProvider>().deleteChat(context, chatUid: widget.chatUid, receiverId: widget.receiverId);
+                             Provider.of<ChatProvider>(context, listen: false).deleteChat(context, chatUid: widget.chatUid, receiverId: widget.receiverId);
                           },
                         ),  
                         secondaryAction: IconButton(
@@ -152,6 +150,13 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                           ),
                           onPressed: () {
                             context.read<ChatProvider>().goBack(context, chatUid: widget.chatUid, receiverId: widget.receiverId);
+                            Provider.of<ChatProvider>(context, listen: false).isScreenOn(
+                              chatUid: widget.chatUid, 
+                              userUid: widget.receiverId,
+                            );
+                            Provider.of<ChatProvider>(context, listen: false).leaveScreen(
+                              chatUid: widget.chatUid,
+                            );
                           },
                         ),  
                       ),
@@ -270,6 +275,10 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
         label: Container(),
         controller: context.read<ChatProvider>().messageTextEditingController,
         onSaved: (val) {},
+        onChange: (val) async {
+          SharedPreferences prefs = await SharedPreferences.getInstance();
+          prefs.setString("msg", val);
+        },
         regex: r"^(?!\s*$).+", 
         hintText: "Type a message", 
         obscureText: false,

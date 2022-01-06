@@ -55,27 +55,21 @@ class AuthenticationProvider extends ChangeNotifier {
     try {
       DocumentSnapshot<Object?> snapshot = await databaseService.getUser(userUid())!;
       Map<String, dynamic> userData = snapshot.data() as Map<String, dynamic>;
-      Future.delayed(Duration.zero, () async {
-        try {
-          await databaseService.updateUserLastSeenTime(userUid());
-        } catch(e) {
-          debugPrint(e.toString());
-        }
-      });
-      Future.delayed(Duration.zero, () async {
-        try {
-          await databaseService.updateUserOnline(userUid(), true);
-        } catch(e) {
-          debugPrint(e.toString());
-        }
-      });
-      Future.delayed(Duration.zero, () async {
-        try {
-          await databaseService.updateUserToken(userUid(), await FirebaseMessaging.instance.getToken());
-        } catch(e) {
-          debugPrint(e.toString());
-        }
-      });
+      try {
+        await databaseService.updateUserLastSeenTime(userUid());
+      } catch(e) {
+        debugPrint(e.toString());
+      }
+      try {
+        await databaseService.updateUserOnline(userUid(), true);
+      } catch(e) {
+        debugPrint(e.toString());
+      }
+      try {
+        await databaseService.updateUserToken(userUid(), await FirebaseMessaging.instance.getToken());
+      } catch(e) {
+        debugPrint(e.toString());
+      }
       chatUser = ChatUser.fromJson({
         "uid": userUid(),
         "name": userData["name"],
@@ -97,17 +91,15 @@ class AuthenticationProvider extends ChangeNotifier {
     setStateLogoutStatus(LogoutStatus.loading);
     try {
       await databaseService.updateUserOnline(userUid(), false);
-      Future.delayed(Duration.zero, () async {
-        try {
-          await auth.signOut();
-          sharedPreferences.clear();
-          setStateLogoutStatus(LogoutStatus.loaded);
-          NavigationService.pushBackNavReplacement(context, const LoginPage());
-        } catch(e) {
-          debugPrint(e.toString());
-          setStateLogoutStatus(LogoutStatus.error);
-        }
-      });
+      try {
+        await auth.signOut();
+        sharedPreferences.clear();
+        setStateLogoutStatus(LogoutStatus.loaded);
+        NavigationService.pushBackNavReplacement(context, const LoginPage());
+      } catch(e) {
+        debugPrint(e.toString());
+        setStateLogoutStatus(LogoutStatus.error);
+      }
     } catch(e) {
       setStateLogoutStatus(LogoutStatus.error);
       debugPrint(e.toString());
@@ -120,7 +112,6 @@ class AuthenticationProvider extends ChangeNotifier {
       await auth.signInWithEmailAndPassword(email: email, password: password);
       sharedPreferences.setBool("login", true);
       sharedPreferences.setString("userUid", auth.currentUser!.uid);
-      Provider.of<ChatsProvider>(context, listen: false).chats = null;
       setStateLoginStatus(LoginStatus.loaded);
       NavigationService.pushNavReplacement(context, const HomePage());   
     } on FirebaseAuthException {

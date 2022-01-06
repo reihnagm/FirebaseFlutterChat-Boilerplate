@@ -29,10 +29,10 @@ class _ChatsPageState extends State<ChatsPage> {
     super.initState();
     WidgetsBinding.instance!.addPostFrameCallback((_) {
       Provider.of<AuthenticationProvider>(context, listen: false).initAuthStateChanges();
-      
+      Provider.of<ChatsProvider>(context, listen: false).getChats();
     });
   }
-
+  
   @override
   Widget build(BuildContext context) {
     deviceHeight = MediaQuery.of(context).size.height;
@@ -43,7 +43,6 @@ class _ChatsPageState extends State<ChatsPage> {
   Widget buildUI() {
     return Builder(
       builder: (BuildContext context) {
-        Provider.of<ChatsProvider>(context).getChats();
         return Container(
           decoration: const BoxDecoration(
             color: ColorResources.backgroundColor
@@ -84,42 +83,38 @@ class _ChatsPageState extends State<ChatsPage> {
   }
 
   Widget chatList() {
-    return Consumer<ChatsProvider>(
-      builder: (BuildContext context, ChatsProvider chatsProvider, Widget? child) {
-        return Expanded(
-          child: (() {
-            if(chatsProvider.chats != null) {
-              if(chatsProvider.chats!.isNotEmpty) {
-                return ListView.builder(
-                  itemCount: chatsProvider.chats!.length,
-                  itemBuilder: (BuildContext context, int i) {
-                    return chatTile(context, chatsProvider.chats![i]);
-                  } 
-                );
-              } else {
-                return const Center(
-                  child: Text("No Chats Found.",
-                    style: TextStyle(
-                      color: ColorResources.textBlackPrimary
-                    ),
-                  ),
-                );
-              }
-            } else {
-              return const Center(
-                child: SizedBox(
-                  width: 16.0,
-                  height: 16.0,
-                  child: CircularProgressIndicator(
-                    color: ColorResources.backgroundBlueSecondary,
-                  ),
+    return Expanded(
+      child: (() {
+        if(context.watch<ChatsProvider>().chats != null) {
+          if(context.watch<ChatsProvider>().chats!.isNotEmpty) {
+            return ListView.builder(
+              itemCount:context.watch<ChatsProvider>().chats!.length,
+              itemBuilder: (BuildContext context, int i) {
+                return chatTile(context, context.watch<ChatsProvider>().chats![i]);
+              } 
+            );
+          } else {
+            return const Center(
+              child: Text("No Chats Found.",
+                style: TextStyle(
+                  color: ColorResources.textBlackPrimary
                 ),
-              );
-            }
-          })(),
-        ); 
-      },
-    );
+              ),
+            );
+          }
+        } else {
+          return const Center(
+            child: SizedBox(
+              width: 16.0,
+              height: 16.0,
+              child: CircularProgressIndicator(
+                color: ColorResources.backgroundBlueSecondary,
+              ),
+            ),
+          );
+        }
+      })(),
+    ); 
   }
 
   Widget chatTile(BuildContext context, Chat chat) {
@@ -129,13 +124,13 @@ class _ChatsPageState extends State<ChatsPage> {
       ? "Media Attachment" 
       : chat.messages.first.content;
     }
-    return CustomListViewTileWithActivity(
+    
+    return CustomListViewTileWithoutActivity(
       height: deviceHeight * 0.10, 
       group: chat.group,
       title: chat.title(), 
       subtitle: subtitleText, 
       imagePath: chat.image(), 
-      isActive: chat.isUsersOnline(), 
       isActivity: chat.activity, 
       readCount: chat.readCount(),
       isRead: chat.isRead(),
@@ -145,9 +140,8 @@ class _ChatsPageState extends State<ChatsPage> {
           subtitle: chat.subtitle(),
           isGroup: chat.group,
           chatUid: chat.uid,
-          senderId: chat.recepients.first.uid!,
-          receiverId: chat.recepients.first.uid!,  
-          token: chat.recepients.first.token!,
+          senderId: context.read<AuthenticationProvider>().userUid(),
+          receiverId: chat.recepients.first.uid!, 
         ));
       }
     );

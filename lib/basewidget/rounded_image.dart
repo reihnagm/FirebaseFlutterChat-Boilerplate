@@ -1,6 +1,3 @@
-
-
-
 import 'package:flutter/material.dart';
 
 class RoundedImageNetwork extends StatelessWidget {
@@ -60,6 +57,28 @@ class RoundedImageNetworkWithStatusIndicator extends RoundedImageNetwork {
             borderRadius: BorderRadius.circular(size)
           ),
         )
+      ],
+    );
+  }
+}
+
+class RoundedImageNetworkWithoutStatusIndicator extends RoundedImageNetwork {
+  final bool group;
+
+  const RoundedImageNetworkWithoutStatusIndicator({
+    required Key key,
+    required String imagePath,
+    required double size,
+    required this.group,
+  }) : super(key: key, imagePath: imagePath, size: size);
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      clipBehavior: Clip.none,
+      alignment: Alignment.bottomRight,
+      children: [
+        super.build(context),
       ],
     );
   }

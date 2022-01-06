@@ -55,18 +55,22 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
     if(state == AppLifecycleState.resumed) {
       debugPrint("=== APP RESUME ===");
       await databaseService.updateUserOnline(Provider.of<AuthenticationProvider>(context, listen: false).userUid(), true);
+      // await databaseService.onlineMember(Provider.of<AuthenticationProvider>(context, listen: false).userUid());
     }
     if(state == AppLifecycleState.inactive) {
       debugPrint("=== APP INACTIVE ===");
       await databaseService.updateUserOnline(Provider.of<AuthenticationProvider>(context, listen: false).userUid(), false);
+      // await databaseService.offlineMember(Provider.of<AuthenticationProvider>(context, listen: false).userUid());
     }
     if(state == AppLifecycleState.paused) {
       debugPrint("=== APP PAUSED ===");
       await databaseService.updateUserOnline(Provider.of<AuthenticationProvider>(context, listen: false).userUid(), false);
+      // await databaseService.offlineMember(Provider.of<AuthenticationProvider>(context, listen: false).userUid());
     }
     if(state == AppLifecycleState.detached) {
       debugPrint("=== APP CLOSED ===");
       await databaseService.updateUserOnline(Provider.of<AuthenticationProvider>(context, listen: false).userUid(), false);
+      // await databaseService.offlineMember(Provider.of<AuthenticationProvider>(context, listen: false).userUid());
     }
   }
 
@@ -76,6 +80,7 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
     WidgetsBinding.instance!.addObserver(this);
     WidgetsBinding.instance!.addPostFrameCallback((_) async {
       await databaseService.updateUserOnline(Provider.of<AuthenticationProvider>(context, listen: false).userUid(), true);
+      // await databaseService.onlineMember(Provider.of<AuthenticationProvider>(context, listen: false).userUid());
     });
   }
 

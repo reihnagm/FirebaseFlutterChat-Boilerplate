@@ -5,6 +5,7 @@ import 'dart:async';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:soundpool/soundpool.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
@@ -47,9 +48,8 @@ class ChatProvider extends ChangeNotifier {
     isUserOnlineStream!.cancel();
     messageStream!.cancel();
     keyboardTypeStream!.cancel();
-    keyboardVisibilityStream!.cancel();
-    scrollController.dispose();
     messageTextEditingController.dispose();
+    scrollController.dispose();
     super.dispose();
   }
 
@@ -79,7 +79,7 @@ class ChatProvider extends ChangeNotifier {
             scrollController.animateTo(
               scrollController.position.maxScrollExtent, 
               duration: const Duration(
-                milliseconds: 500
+                milliseconds: 300
               ), 
               curve: Curves.easeInOut
             );
@@ -92,20 +92,25 @@ class ChatProvider extends ChangeNotifier {
     }
   }
 
-  void listenToKeyboardChanges() {
-    keyboardVisibilityStream = keyboardVisibilityController.onChange.listen((event) {
-      // OPTION 1
-    });
-  }
+  // void listenToKeyboardChanges({required String chatUid}) {
+  //   keyboardVisibilityStream = keyboardVisibilityController.onChange.listen((event) async {
+  //      await toggleIsActivity(
+  //       isActive: event, 
+  //       chatUid: chatUid
+  //     );
+  //   });
+  // }
 
   void listenToKeyboardType({required String chatUid}) {
-    // messageTextEditingController.addListener(() {
-    //   if(messageTextEditingController.text.isNotEmpty) {
-    //     toggleIsActivity(isActive: true, chatId: chatId);
-    //   } else {
-    //     toggleIsActivity(isActive: false, chatId: chatId);
-    //   }
-    // });
+    messageTextEditingController.addListener(() {
+      if(messageTextEditingController.hasListeners) {
+        if(messageTextEditingController.text.isNotEmpty) {
+          toggleIsActivity(isActive: true, chatUid: chatUid);
+        } else {
+          toggleIsActivity(isActive: false, chatUid: chatUid);
+        }
+      }
+    });
   }
 
   Future<void> sendTextMessage(
@@ -118,20 +123,23 @@ class ChatProvider extends ChangeNotifier {
     required bool isGroup
   }) async {
     if(messages != null) {
+      SharedPreferences prefs = await SharedPreferences.getInstance();
       ChatMessage messageToSend = ChatMessage(
-        content: messageTextEditingController.text, 
+        content: prefs.getString("msg")!, 
         senderName: senderName,
         senderId: isGroup ? authenticationProvider.userUid() : receiverId, 
         isRead: isRead ? true : false,
         type: MessageType.text, 
         sentTime: DateTime.now()
       );
+      messageTextEditingController.text = "";
       await databaseService.addMessageToChat(
         chatUid: chatUid, 
         readerId: isGroup ? authenticationProvider.userUid() : receiverId, 
         isGroup: isGroup,
         message: messageToSend
       );
+      Future.delayed(Duration.zero, () => notifyListeners());
       if(!isRead) {
         Future.delayed(Duration.zero, () async {
           await Provider.of<FirebaseProvider>(context, listen: false).sendNotification(
@@ -147,7 +155,6 @@ class ChatProvider extends ChangeNotifier {
         });
       }
       await loadSoundSent();
-      messageTextEditingController.text = "";
       Future.delayed(Duration.zero, () => notifyListeners());
     }
   }
@@ -164,9 +171,9 @@ class ChatProvider extends ChangeNotifier {
     try {
       PlatformFile? file = await mediaService.pickImageFromLibrary();
       if(file != null) { 
-        // toggleIsActivity(isActive: true, chatUid: chatUid);
+        toggleIsActivity(isActive: true, chatUid: chatUid);
         String? downloadUrl = await cloudStorageService.saveChatImageToStorage(chatUid, authenticationProvider.userUid(), file);
-        // toggleIsActivity(isActive: false, chatUid: chatUid);
+        toggleIsActivity(isActive: false, chatUid: chatUid);
         ChatMessage messageToSend = ChatMessage(
           content: downloadUrl!, 
           senderName: authenticationProvider.userName(),
@@ -206,10 +213,10 @@ class ChatProvider extends ChangeNotifier {
     try {
       List<dynamic>? onScreens = await databaseService.isScreenOn(chatUid: chatUid);
       if(onScreens.where((el) => el["userUid"] == userUid).isNotEmpty) {
-        isRead = onScreens.firstWhere((el) => el["userUid"] == userUid)["on"]; 
+        token = onScreens.firstWhere((el) => el["userUid"] == userUid)["token"];
       }
-      if(onScreens.where((el) => el["userUid"] != userUid).isNotEmpty) {
-        token = onScreens.firstWhere((el) => el["userUid"] != userUid)["token"];
+      if(onScreens.where((el) => el["userUid"] == userUid).isNotEmpty) {
+        isRead = onScreens.firstWhere((el) => el["userUid"] == userUid)["on"];
       } 
       Future.delayed(Duration.zero, () => notifyListeners()); 
     } catch(e) {
@@ -233,6 +240,7 @@ class ChatProvider extends ChangeNotifier {
         isGroup: isGroup,
         senderId: senderId,
         receiverId: receiverId,
+        userName: authenticationProvider.userName(),
         userUid: authenticationProvider.userUid(),
       );
     } catch(e) {
@@ -240,10 +248,9 @@ class ChatProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> joinScreen({required String token, required String chatUid}) async {
+  Future<void> joinScreen({required String chatUid}) async {
     try {
       await databaseService.joinScreen(
-        token: token,
         chatUid: chatUid,
         userUid: authenticationProvider.userUid()
       );
@@ -297,12 +304,5 @@ class ChatProvider extends ChangeNotifier {
   
   void goBack(BuildContext context, {required String chatUid, required String receiverId}) {
     NavigationService.goBack(context);
-    Provider.of<ChatProvider>(context, listen: false).isScreenOn(
-      chatUid: chatUid, 
-      userUid: receiverId
-    );
-    Provider.of<ChatProvider>(context, listen: false).leaveScreen(
-      chatUid: chatUid,
-    );
   }
 }
