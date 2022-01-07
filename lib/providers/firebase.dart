@@ -4,11 +4,12 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
-import 'package:chatv28/pages/chat.dart';
 import 'package:chatv28/services/navigation.dart';
+import 'package:chatv28/utils/constant.dart';
+import 'package:chatv28/pages/chat.dart';
 
 class FirebaseProvider with ChangeNotifier {
-  
+      
   FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin(); 
   AndroidInitializationSettings? androidInitializationSettings;
   IOSInitializationSettings? iosInitializationSettings;
@@ -38,18 +39,16 @@ class FirebaseProvider with ChangeNotifier {
       String isGroup = data["isGroup"];
       String senderId = data["senderId"];
       String receiverId = data["receiverId"];
-      WidgetsBinding.instance!.addPostFrameCallback((_) {
-        NavigationService.pushNav(context, 
-          ChatPage(
-            chatUid: chatUid,
-            title: title,  
-            subtitle: subtitle,
-            isGroup: isGroup == "true" ? true : false,
-            senderId: senderId,
-            receiverId: receiverId,
-          )
-        );
-      });
+      NavigationService().pushNav(context, 
+        ChatPage(
+          chatUid: chatUid,
+          title: title,  
+          subtitle: subtitle,
+          isGroup: isGroup == "true" ? true : false,
+          senderId: senderId,
+          receiverId: receiverId,
+        )
+      );
     });
   }
 
@@ -94,7 +93,7 @@ class FirebaseProvider with ChangeNotifier {
         },
         options: Options(
           headers: {
-            "Authorization": "key=AAAALAULPvE:APA91bH3xGzHcM3tWs5CKOyzdcfmjt8_z_htqRTSqlE47Cx6BmY8oTTQJ5QJngIlYzz5w-sbSyB1iigaQIonS3yDZVSVlvwDzH7rk4tIegawxlwjlt3_9rOnolDlsGh_Dnk1THSRKmnq"
+            "Authorization": "key=${AppConstants.firebaseKey}"
           }
         )
       );

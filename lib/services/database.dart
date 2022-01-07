@@ -102,23 +102,29 @@ class DatabaseService {
     }
   }
 
-  Future<void>? getReaderMessage(String chatId) async {
+  Future<List<dynamic>>? getReaderMessage({required String chatUid}) async {
+    List<dynamic> readersAssign = [];
     try {
       DocumentSnapshot chatDoc = await db
-      .collection(chatCollection).doc(chatId)
+      .collection(chatCollection).doc(chatUid)
       .get();
       Map<String, dynamic> data = chatDoc.data() as Map<String, dynamic>;
       List<dynamic> readers = data["readers"];
       QuerySnapshot<Map<String, dynamic>> msgDoc = await db.collection(chatCollection)
-      .doc(chatId)
+      .doc(chatUid)
       .collection(messageCollection)
       .get();
       for (QueryDocumentSnapshot<Map<String, dynamic>> doc in msgDoc.docs) {
-        readers.where((el) => el["message_id"] == doc.id).toList();
+        var tests = readers.where((el) => el["message_id"] == doc.id).toList();
+        for (var item in tests) {
+          readersAssign.add(item);
+        }
       }
+      return readersAssign;
     } catch(e) {
       debugPrint(e.toString());
     }
+    return readersAssign;
   }
 
   Stream<QuerySnapshot> getUsers({String? name}) {
@@ -199,6 +205,24 @@ class DatabaseService {
             List<dynamic> chatCountRead = [];
             if(isGroup) {
               for (QueryDocumentSnapshot<Map<String, dynamic>> msgDoc in msg.docs) {
+                DocumentSnapshot<Map<String, dynamic>> q = await db
+                .collection(chatCollection)
+                .doc(chatUid)
+                .collection(messageCollection)
+                .doc(msgDoc.id).get();
+                Map<String, dynamic> qq = q.data() as Map<String, dynamic>;
+                msgDoc.reference.update({
+                  "content": qq["content"],
+                  "type": qq["type"],
+                  "sender_name": qq["sender_name"],
+                  "sender_id": qq["sender_id"],
+                  "is_read": qq["is_read"],
+                  "sent_time": Timestamp.fromDate(qq["sent_time"].toDate()),
+                  "readers": FieldValue.arrayUnion([{
+                    "uid": userUid,
+                    "name": userName,
+                  }])               
+                });
                 List<dynamic> checkReaders = readers
                   .where((el) => el["reader_id"] == userUid)
                   .where((el) => el["message_id"] == msgDoc.id).toList();

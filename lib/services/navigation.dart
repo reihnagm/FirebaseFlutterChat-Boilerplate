@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 
 class NavigationService {
-  static pushNav(BuildContext context, Widget pushNav) {
+  pushNav(BuildContext context, Widget pushNav) {
     Navigator.push(context,
       PageRouteBuilder(pageBuilder: (BuildContext context, Animation<double> animation, Animation<double> secondaryAnimation) {
         return pushNav;
@@ -19,7 +19,7 @@ class NavigationService {
       })
     );
   }
-  static pushNavReplacement(BuildContext context, Widget pushNav) {
+  pushNavReplacement(BuildContext context, Widget pushNav) {
     Navigator.pushReplacement(context,
       PageRouteBuilder(pageBuilder: (BuildContext context, Animation<double> animation, Animation<double> secondaryAnimation) {
         return pushNav;
@@ -36,7 +36,7 @@ class NavigationService {
       })
     );
   }
-  static pushBackNavReplacement(BuildContext context, Widget pushNav) {
+  pushBackNavReplacement(BuildContext context, Widget pushNav) {
     Navigator.pushReplacement(context,
       PageRouteBuilder(pageBuilder: (BuildContext context, Animation<double> animation, Animation<double> secondaryAnimation) {
         return pushNav;

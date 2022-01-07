@@ -135,7 +135,7 @@ class _ChatsPageState extends State<ChatsPage> {
       readCount: chat.readCount(),
       isRead: chat.isRead(),
       onTap: () {
-        NavigationService.pushNav(context, ChatPage(
+         NavigationService().pushNav(context, ChatPage(
           title: chat.title(),
           subtitle: chat.subtitle(),
           isGroup: chat.group,

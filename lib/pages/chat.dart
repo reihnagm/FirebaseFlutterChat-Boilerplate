@@ -219,6 +219,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                   isGroup: widget.isGroup,
                   isOwnMessage: isOwnMessage, 
                   message: chatMessage, 
+                  chatUid: widget.chatUid,
                 );                
               },
             ),

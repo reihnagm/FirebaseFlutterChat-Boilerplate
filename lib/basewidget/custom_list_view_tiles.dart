@@ -289,6 +289,7 @@ class CustomChatListViewTile extends StatelessWidget {
   final bool isGroup;
   final bool isOwnMessage;
   final ChatMessage message;
+  final String chatUid;
 
   const CustomChatListViewTile({
     required this.deviceWidth,
@@ -296,6 +297,7 @@ class CustomChatListViewTile extends StatelessWidget {
     required this.isGroup,
     required this.isOwnMessage,
     required this.message,
+    required this.chatUid,
     Key? key
   }) : super(key: key);
   
@@ -309,6 +311,7 @@ class CustomChatListViewTile extends StatelessWidget {
             isGroup: isGroup,
             isOwnMessage: isOwnMessage, 
             message: message, 
+            chatUid: chatUid
           )
         : ImageMessageBubble(
             isOwnMessage: isOwnMessage, 

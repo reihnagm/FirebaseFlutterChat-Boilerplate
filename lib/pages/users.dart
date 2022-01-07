@@ -489,7 +489,7 @@ class _UsersPageState extends State<UsersPage> {
                         ],
                       }
                     );
-                    NavigationService.pushNav(context, ChatPage(
+                    NavigationService().pushNav(context, ChatPage(
                       chatUid: doc!.id,
                       senderId: context.read<AuthenticationProvider>().userUid(),
                       receiverId: users[i].uid!,
@@ -513,7 +513,7 @@ class _UsersPageState extends State<UsersPage> {
                       ]),
                     });
                   } else {
-                    NavigationService.pushNav(context, ChatPage(
+                     NavigationService().pushNav(context, ChatPage(
                       chatUid: checkCreateChat.docs[0].id,
                       senderId: context.read<AuthenticationProvider>().userUid(),
                       receiverId: users[i].uid!,

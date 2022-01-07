@@ -1,7 +1,9 @@
 import 'package:chatv28/basewidget/animated_dialog/show_animate_dialog.dart';
+import 'package:chatv28/providers/chat.dart';
 import 'package:flutter/material.dart';
 import 'package:ionicons/ionicons.dart';
 import 'package:popover/popover.dart';
+import 'package:provider/provider.dart';
 import 'package:quds_popup_menu/quds_popup_menu.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
@@ -13,12 +15,14 @@ class TextMessageBubble extends StatelessWidget {
   final bool isGroup;
   final bool isOwnMessage;
   final ChatMessage message;
+  final String chatUid;
 
   const TextMessageBubble({
     Key? key, 
     required this.isGroup,
     required this.isOwnMessage,
     required this.message,
+    required this.chatUid
   }) : super(key: key);
 
   @override
@@ -79,51 +83,59 @@ class TextMessageBubble extends StatelessWidget {
                         ),
                         context: context, 
                         builder: (context) {
-                          return Container(
-                            margin: EdgeInsets.all(Dimensions.marginSizeDefault),
-                            child: ListView.builder(
-                              shrinkWrap: true,
-                              itemCount: 5,
-                              itemBuilder: (BuildContext context, int i) {
-                                return Container(
-                                  margin: const EdgeInsets.only(bottom: 10.0),
-                                  child: ListTile(
-                                    contentPadding: EdgeInsets.zero,
-                                    dense: true,
-                                    leading: Container(
-                                      width: 40.0,
-                                      height: 40.0,
-                                      decoration: BoxDecoration(
-                                        image: const DecorationImage(
-                                          fit: BoxFit.cover,
-                                          image: NetworkImage("https://i.pravatar.cc/300"),
+                          return Consumer<ChatProvider>(
+                            builder: (BuildContext context, ChatProvider chatProvider, Widget? child) {
+                              if(chatProvider.seeReads.isEmpty) {
+                                return Container();
+                              }
+                              return Container(
+                                margin: EdgeInsets.all(Dimensions.marginSizeDefault),
+                                child: ListView.builder(
+                                  shrinkWrap: true,
+                                  itemCount: chatProvider.seeReads.length,
+                                  itemBuilder: (BuildContext context, int i) {
+                                    return Container(
+                                      margin: const EdgeInsets.only(bottom: 10.0),
+                                      child: ListTile(
+                                        contentPadding: EdgeInsets.zero,
+                                        dense: true,
+                                        leading: Container(
+                                          width: 40.0,
+                                          height: 40.0,
+                                          decoration: BoxDecoration(
+                                            image: const DecorationImage(
+                                              fit: BoxFit.cover,
+                                              image: NetworkImage("https://i.pravatar.cc/300"),
+                                            ),
+                                            borderRadius: BorderRadius.circular(30.0),
+                                            color: Colors.black,
+                                          ),
                                         ),
-                                        borderRadius: BorderRadius.circular(30.0),
-                                        color: Colors.black,
-                                      ),
-                                    ),
-                                    title: Text("Ridwan",
-                                      style: TextStyle(
-                                        fontSize: Dimensions.fontSizeDefault,
-                                        color: ColorResources.textBlackPrimary
-                                      ),
-                                    ),
-                                    subtitle: Container(
-                                      margin: const EdgeInsets.only(top: 8.0),
-                                      child: Text("10:00",
-                                        style: TextStyle(
-                                          fontSize: Dimensions.fontSizeSmall,
-                                          color: ColorResources.grey
+                                        title: Text(chatProvider.seeReads[i]["reader_name"].toString(),
+                                          style: TextStyle(
+                                            fontSize: Dimensions.fontSizeDefault,
+                                            color: ColorResources.textBlackPrimary
+                                          ),
+                                        ),
+                                        subtitle: Container(
+                                          margin: const EdgeInsets.only(top: 8.0),
+                                          child: Text("10:00",
+                                            style: TextStyle(
+                                              fontSize: Dimensions.fontSizeSmall,
+                                              color: ColorResources.grey
+                                            ),
+                                          ),
                                         ),
                                       ),
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-                          );  
+                                    );
+                                  },
+                                ),
+                              );
+                            },
+                          );
                         },
                       );
+                      Provider.of<ChatProvider>(context, listen: false).fetchSeeReads(chatUid: chatUid);
                     },
                     child: const Icon(
                       Icons.more_vert,

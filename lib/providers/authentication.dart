@@ -80,6 +80,7 @@ class AuthenticationProvider extends ChangeNotifier {
         "token": await FirebaseMessaging.instance.getToken()
       });  
       sharedPreferences.setString("userName", userData["name"]);
+      sharedPreferences.setString("userImage", userData["image"]);
       setStateAuthStatus(AuthStatus.loaded);
     } catch(e) {
       setStateAuthStatus(AuthStatus.error);
@@ -95,7 +96,7 @@ class AuthenticationProvider extends ChangeNotifier {
         await auth.signOut();
         sharedPreferences.clear();
         setStateLogoutStatus(LogoutStatus.loaded);
-        NavigationService.pushBackNavReplacement(context, const LoginPage());
+        NavigationService().pushBackNavReplacement(context, const LoginPage());
       } catch(e) {
         debugPrint(e.toString());
         setStateLogoutStatus(LogoutStatus.error);
@@ -113,7 +114,7 @@ class AuthenticationProvider extends ChangeNotifier {
       sharedPreferences.setBool("login", true);
       sharedPreferences.setString("userUid", auth.currentUser!.uid);
       setStateLoginStatus(LoginStatus.loaded);
-      NavigationService.pushNavReplacement(context, const HomePage());   
+      NavigationService().pushNavReplacement(context, const HomePage());   
     } on FirebaseAuthException {
       setStateLoginStatus(LoginStatus.error);
     } catch(e) {
@@ -125,5 +126,6 @@ class AuthenticationProvider extends ChangeNotifier {
 
   bool isLogin() => sharedPreferences.getBool("login") ?? false;
   String userName() => sharedPreferences.getString("userName") ?? "";
+  String userImage() => sharedPreferences.getString("userImage") ?? "";
   String userUid() => sharedPreferences.getString("userUid") ?? "";
 }

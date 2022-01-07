@@ -62,7 +62,8 @@ class ChatMessage {
       "sender_name": senderName,
       "sender_id": senderId,
       "is_read": isRead,
-      "sent_time": Timestamp.fromDate(sentTime)
+      "sent_time": Timestamp.fromDate(sentTime),
+      "readers": []
     };
   }
 }

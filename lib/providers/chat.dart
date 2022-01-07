@@ -26,6 +26,8 @@ class ChatProvider extends ChangeNotifier {
   final MediaService mediaService;
   final NavigationService navigationService;
 
+  List<dynamic> seeReads = [];
+
   String? isOnline;
 
   List<ChatMessage>? messages;
@@ -254,6 +256,18 @@ class ChatProvider extends ChangeNotifier {
         chatUid: chatUid,
         userUid: authenticationProvider.userUid()
       );
+    } catch(e) {
+      debugPrint(e.toString());
+    }
+  }
+
+  Future<void> fetchSeeReads({required String chatUid}) async {
+    try {
+      seeReads = [];
+      List<dynamic>? data = await databaseService.getReaderMessage(chatUid: chatUid);
+      seeReads = data!;
+      print(seeReads);
+      Future.delayed(Duration.zero, () => notifyListeners());
     } catch(e) {
       debugPrint(e.toString());
     }
