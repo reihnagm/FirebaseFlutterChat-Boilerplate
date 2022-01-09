@@ -5,6 +5,7 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:soundpool/soundpool.dart';
@@ -43,7 +44,9 @@ class ChatProvider extends ChangeNotifier {
   StreamSubscription? isScreenOnStream;
   StreamSubscription? isUserOnlineStream;
   StreamSubscription? messageStream;
-  StreamSubscription? keyboardTypeStream; 
+  StreamSubscription? keyboardTypeStream;
+
+  KeyboardVisibilityController keyboardVisibilityController = KeyboardVisibilityController(); 
 
   @override
   void dispose() {
@@ -65,7 +68,6 @@ class ChatProvider extends ChangeNotifier {
   }) {
     scrollController = ScrollController();
     messageTextEditingController = TextEditingController();
-    // OPTION 1 listenToKeyboardChanges(); 
   }
 
   void listenToMessages({required String chatUid}) {
@@ -94,25 +96,25 @@ class ChatProvider extends ChangeNotifier {
     }
   }
 
-  // void listenToKeyboardChanges({required String chatUid}) {
-  //   keyboardVisibilityStream = keyboardVisibilityController.onChange.listen((event) async {
-  //      await toggleIsActivity(
-  //       isActive: event, 
-  //       chatUid: chatUid
-  //     );
-  //   });
-  // }
+  void listenToKeyboardChanges({required String chatUid}) {
+    keyboardTypeStream = keyboardVisibilityController.onChange.listen((event) async {
+       await toggleIsActivity(
+        isActive: event, 
+        chatUid: chatUid
+      );
+    });
+  }
 
   void listenToKeyboardType({required String chatUid}) {
-    messageTextEditingController!.addListener(() {
-      if(messageTextEditingController!.hasListeners) {
-        if(messageTextEditingController!.text.isNotEmpty) {
-          toggleIsActivity(isActive: true, chatUid: chatUid);
-        } else {
-          toggleIsActivity(isActive: false, chatUid: chatUid);
-        }
-      }
-    });
+    // messageTextEditingController!.addListener(() {
+    //   if(messageTextEditingController!.text.trim().isNotEmpty) {
+    //     toggleIsActivity(isActive: true, chatUid: chatUid);
+    //   }
+    //   if(messageTextEditingController!.text.trim().isEmpty) {
+    //     toggleIsActivity(isActive: false, chatUid: chatUid);
+    //   }
+      
+    // });
   }
 
   Future<void> sendTextMessage(
@@ -132,6 +134,12 @@ class ChatProvider extends ChangeNotifier {
       SharedPreferences prefs = await SharedPreferences.getInstance();
       List<dynamic> readers = [];
       List<String> uids = [];
+      List<String> registrationIds = [];
+      for (Token item in tokens) {
+        if(item.userUid != authenticationProvider.userUid()) {
+          registrationIds.add(item.token);
+        }
+      }
       if(isGroup) {
         for (ChatUser member in members) {
           if(member.uid != authenticationProvider.userUid()) {
@@ -167,7 +175,7 @@ class ChatProvider extends ChangeNotifier {
         content: prefs.getString("msg")!, 
         senderId: authenticationProvider.userUid(),
         senderName: authenticationProvider.userName(),
-        receiverId: isGroup ? authenticationProvider.userUid() : receiverId, 
+        receiverId: receiverId, 
         isRead: isRead ? true : false,
         readers: [],
         readerCountIds: [],
@@ -177,7 +185,8 @@ class ChatProvider extends ChangeNotifier {
       messageTextEditingController!.text = "";
       try {
         await databaseService.addMessageToChat(
-          chatUid: chatUid, 
+          context,
+          chatId: chatUid, 
           isGroup: isGroup,
           message: messageToSend,
           uids: uids,
@@ -189,13 +198,13 @@ class ChatProvider extends ChangeNotifier {
       if(!isRead) {
         try {
           await Provider.of<FirebaseProvider>(context, listen: false).sendNotification(
+            chatUid: chatUid,
             tokens: tokens,
+            registrationIds: registrationIds,
             token: token, 
             title: title,
             subtitle: subtitle,
             body: messageToSend.content, 
-            chatUid: chatUid,
-            senderId: authenticationProvider.userUid(),
             receiverId: receiverId,
             receiverName: receiverName,
             receiverImage: receiverImage,
@@ -223,14 +232,53 @@ class ChatProvider extends ChangeNotifier {
     required String receiverId, 
     required String receiverName,
     required String receiverImage,
+    required List<ChatUser> members,
+    required List<Token> tokens,
     required bool isGroup
   }) async {
     try {
       PlatformFile? file = await mediaService.pickImageFromLibrary();
       if(file != null) { 
-        toggleIsActivity(isActive: true, chatUid: chatUid);
+        List<dynamic> readers = [];
+        List<String> uids = [];
+        List<String> registrationIds = [];
+        for (Token item in tokens) {
+          if(item.userUid != authenticationProvider.userUid()) {
+            registrationIds.add(item.token);
+          }
+        }
+        if(isGroup) {
+          for (ChatUser member in members) {
+            if(member.uid != authenticationProvider.userUid()) {
+              readers.add({
+                "uid": member.uid,
+                "name": member.name,
+                "image": member.image,
+                "is_read": false,
+                "seen": DateTime.now()
+              });
+              uids.add(member.uid!);
+            }
+          }
+        } else {
+          readers = [
+            {
+              "uid": authenticationProvider.userUid(),
+              "name": authenticationProvider.userName(),
+              "image": authenticationProvider.userImage(),
+              "is_read": true,
+              "seen": DateTime.now()
+            },
+            {
+              "uid": receiverId,
+              "name": receiverName,
+              "image": receiverImage,
+              "is_read": isRead,
+              "seen": DateTime.now()
+            }
+          ];
+        }
         String? downloadUrl = await cloudStorageService.saveChatImageToStorage(chatUid, authenticationProvider.userUid(), file);
-        toggleIsActivity(isActive: false, chatUid: chatUid);
         ChatMessage messageToSend = ChatMessage(
           content: downloadUrl!, 
           senderId: authenticationProvider.userUid(),
@@ -244,25 +292,27 @@ class ChatProvider extends ChangeNotifier {
         );
         try {
           await databaseService.addMessageToChat(
-            chatUid: chatUid,  
+            context,
+            chatId: chatUid,  
             isGroup: isGroup,
             message: messageToSend,
-            uids: [],
-            readers: []
+            uids: uids,
+            readers: readers
           );
         } catch(e) {
           debugPrint(e.toString());
         }
         if(!isRead) {
+          debugPrint(receiverName);
           try {
             await Provider.of<FirebaseProvider>(context, listen: false).sendNotification(
               chatUid: chatUid,
-              tokens: [],
+              tokens: tokens,
+              registrationIds: registrationIds,
               token: token, 
               title: title,
               subtitle: subtitle,
               body: messageToSend.content, 
-              senderId: authenticationProvider.userUid(),
               receiverId: receiverId,
               receiverName: receiverName,
               receiverImage: receiverImage,
@@ -315,7 +365,7 @@ class ChatProvider extends ChangeNotifier {
   Future<void> seeMsg({required String chatUid, required String receiverId, required bool isGroup}) async {
     try {
       await databaseService.seeMsg(
-        chatUid: chatUid,
+        chatId: chatUid,
         isGroup: isGroup,
         receiverId: receiverId,
         userImage: authenticationProvider.userImage(),

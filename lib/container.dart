@@ -40,7 +40,9 @@ Future<void> init() async {
     mediaService: getIt(),
     navigationService: getIt(),
   ));
-  getIt.registerFactory(() => FirebaseProvider());
+  getIt.registerFactory(() => FirebaseProvider(
+    authenticationProvider: getIt()
+  ));
   
    // External
   SharedPreferences sharedPreferences = await SharedPreferences.getInstance();

@@ -37,6 +37,11 @@ class ChatsProvider extends ChangeNotifier {
     super.dispose();
   }
 
+  void clearChats() {
+    chats = null;
+    Future.delayed(Duration.zero, () => notifyListeners());
+  }
+
   void getChats() {
     try {
       chatsStream = databaseService.getChatsForUser(authenticationProvider.userUid())!.listen((snapshot) async {

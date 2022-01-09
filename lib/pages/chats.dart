@@ -29,12 +29,12 @@ class _ChatsPageState extends State<ChatsPage> {
     super.initState();
     WidgetsBinding.instance!.addPostFrameCallback((_) {
       Provider.of<AuthenticationProvider>(context, listen: false).initAuthStateChanges();
+      Provider.of<ChatsProvider>(context, listen: false).getChats();
     });
   }
   
   @override
   Widget build(BuildContext context) {
-    Provider.of<ChatsProvider>(context).getChats();
     deviceHeight = MediaQuery.of(context).size.height;
     deviceWidth = MediaQuery.of(context).size.width;
     return buildUI();
@@ -92,7 +92,7 @@ class _ChatsPageState extends State<ChatsPage> {
               width: 16.0,
               height: 16.0,
               child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(ColorResources.loaderBluePrimary),
+                color: ColorResources.loaderBluePrimary,
               ),
             ),
           );

@@ -451,8 +451,8 @@ class _UsersPageState extends State<UsersPage> {
                 imagePath: users[i].image!, 
                 isActive: users[i].isUserOnline(),  
                 onTap: () async {
-                  QuerySnapshot<Map<String, dynamic>> checkCreateChat = (await databaseService.checkCreateChat(users[i].uid!))!;
-                  if(checkCreateChat.docs.isEmpty) {
+                  QuerySnapshot<Map<String, dynamic>> checkCreateChat = (await databaseService.checkCreateChat(context.read<AuthenticationProvider>().userUid(), users[i].uid!))!;
+                  if(checkCreateChat.docs.length == 1 || checkCreateChat.docs.isEmpty) {
                     DocumentReference? doc = await databaseService.createChat(
                       {
                         "is_group": false,

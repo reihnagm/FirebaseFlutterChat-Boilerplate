@@ -1,5 +1,6 @@
+import 'package:chatv28/providers/authentication.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dio/dio.dart';
-
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -8,8 +9,16 @@ import 'package:chatv28/models/chat.dart';
 import 'package:chatv28/utils/constant.dart';
 import 'package:chatv28/pages/chat.dart';
 
+const String chatCollection = "Chats";
+
 class FirebaseProvider with ChangeNotifier {
-      
+  final AuthenticationProvider authenticationProvider; 
+  final FirebaseFirestore db = FirebaseFirestore.instance;
+
+  FirebaseProvider({
+    required this.authenticationProvider
+  });
+
   FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin(); 
   AndroidInitializationSettings? androidInitializationSettings;
   IOSInitializationSettings? iosInitializationSettings;
@@ -25,18 +34,17 @@ class FirebaseProvider with ChangeNotifier {
   void handleMessage(RemoteMessage message, BuildContext context) {
     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
       Map<String, dynamic> data = message.data;
-      String chatUid = data["chatUid"];
+      String chatId = data["chatUid"];
       String title = data["title"];
       String subtitle = data["subtitle"];
       String isGroup = data["isGroup"];
-      String senderId = data["senderId"];
       String receiverId = data["receiverId"];
       String receiverName = data["receiverName"];
       String receiverImage = data["receiverImage"];
       Navigator.push(context,
         PageRouteBuilder(pageBuilder: (BuildContext context, Animation<double> animation, Animation<double> secondaryAnimation) {
           return ChatPage(
-            chatUid: chatUid,
+            chatUid: chatId,
             title: title,  
             subtitle: subtitle,
             isGroup: isGroup == "true" ? true : false,
@@ -58,6 +66,10 @@ class FirebaseProvider with ChangeNotifier {
           );
         })
       );
+      db.collection(chatCollection)
+      .doc(chatId).update({
+        "updated_at": DateTime.now()
+      });
     }); 
   }
 
@@ -89,12 +101,12 @@ class FirebaseProvider with ChangeNotifier {
 
   Future<void> sendNotification({
     required List<Token> tokens,
+    required List<String> registrationIds,
     required String token, 
     required String title, 
     required String subtitle,
     required String body,
     required String chatUid,
-    required String senderId,
     required String receiverId,
     required String receiverName,
     required String receiverImage,
@@ -102,25 +114,18 @@ class FirebaseProvider with ChangeNotifier {
   }) async {
     Object data = {};
     if(isGroup) {
-      List<String> registrationIds = [];
-      for (Token item in tokens) {
-        if(item.userUid != senderId) {
-          registrationIds.add(item.token);
-        }
-      }
       data = {
         "registration_ids": registrationIds,
         "collapse_key": "type_a",
         "notification": {
           "title": title,
-          "body": body,
+          "body": "${authenticationProvider.userName()} : $body",
           "sound":"default"
         },
         "data": {
           "chatUid": chatUid,
           "title": title,
           "subtitle": subtitle,
-          "senderId": senderId,
           "receiverId": receiverId,
           "receiverName": receiverName,
           "receiverImage": receiverImage,
@@ -134,15 +139,14 @@ class FirebaseProvider with ChangeNotifier {
         "to": token,
         "collapse_key": "type_a",
         "notification": {
-          "title": title,
+          "title":authenticationProvider.userName(),
           "body": body,
           "sound":"default"
         },
         "data": {
           "chatUid": chatUid,
-          "title": title,
+          "title": authenticationProvider.userName(),
           "subtitle": subtitle,
-          "senderId": senderId,
           "receiverId": receiverId,
           "receiverName": receiverName,
           "receiverImage": receiverImage,

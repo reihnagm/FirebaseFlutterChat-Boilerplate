@@ -1,4 +1,4 @@
-import 'package:chatv28/models/chat_user.dart';
+import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
 import 'package:intl/intl.dart';
 
 import 'package:flutter/material.dart';
@@ -6,6 +6,7 @@ import 'package:grouped_list/grouped_list.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:chatv28/models/chat_user.dart';
 import 'package:chatv28/models/chat.dart';
 import 'package:chatv28/basewidget/top_bar.dart';
 import 'package:chatv28/utils/color_resources.dart';
@@ -93,6 +94,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     WidgetsBinding.instance!.addPostFrameCallback((_) {
       Provider.of<ChatProvider>(context, listen: false).listenToMessages(chatUid: widget.chatUid);
       Provider.of<ChatProvider>(context, listen: false).isUserOnline(receiverId: widget.receiverId);
+      // Provider.of<ChatProvider>(context, listen: false).listenToKeyboardChanges(chatUid: widget.chatUid);
       Provider.of<ChatProvider>(context, listen: false).isScreenOn(
         chatUid: widget.chatUid, 
         userUid: widget.receiverId
@@ -102,7 +104,6 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
         receiverId: widget.receiverId,
         isGroup: widget.isGroup,
       );
-      // Provider.of<ChatProvider>(context, listen: false).listenToKeyboardType(chatUid: widget.chatUid);
       Provider.of<ChatProvider>(context, listen: false).joinScreen(
         chatUid: widget.chatUid,
       );
@@ -132,45 +133,47 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
             );
             return Future.value(true);
           },
-          child: Scaffold(
-            body: SafeArea(
-              child: LayoutBuilder(
-                builder: (BuildContext context, BoxConstraints constraints) {
-                  return Column(
-                    children: [
-                      TopBarChat(
-                        barTitle: widget.title,
-                        subTitle: widget.isGroup 
-                        ? widget.subtitle 
-                        : context.watch<ChatProvider>().isOnline == null ? "" : context.read<ChatProvider>().isOnline,
-                        primaryAction: IconButton(
-                          icon: const Icon(
-                            Icons.delete,
-                            color: ColorResources.white
-                          ),
-                          onPressed: () {
-                             Provider.of<ChatProvider>(context, listen: false).deleteChat(context, chatUid: widget.chatUid, receiverId: widget.receiverId);
-                          },
-                        ),  
-                        secondaryAction: IconButton(
-                          icon: const Icon(
-                            Icons.arrow_back,
-                            color: ColorResources.white
-                          ),
-                          onPressed: () {
-                            Provider.of<ChatProvider>(context, listen: false).goBack(context, chatUid: widget.chatUid, receiverId: widget.receiverId);
-                            Provider.of<ChatProvider>(context, listen: false).leaveScreen(
-                              chatUid: widget.chatUid,
-                            );
-                          },
-                        ),  
-                      ),
-                      messageList(),
-                      sendMessageForm()
-                    ],
-                  );
-                },
-              )
+          child: KeyboardDismissOnTap(
+            child: Scaffold(
+              body: SafeArea(
+                child: LayoutBuilder(
+                  builder: (BuildContext context, BoxConstraints constraints) {
+                    return Column(
+                      children: [
+                        TopBarChat(
+                          barTitle: widget.title,
+                          subTitle: widget.isGroup 
+                          ? widget.subtitle 
+                          : context.watch<ChatProvider>().isOnline == null ? "" : context.read<ChatProvider>().isOnline,
+                          primaryAction: IconButton(
+                            icon: const Icon(
+                              Icons.delete,
+                              color: ColorResources.white
+                            ),
+                            onPressed: () {
+                               Provider.of<ChatProvider>(context, listen: false).deleteChat(context, chatUid: widget.chatUid, receiverId: widget.receiverId);
+                            },
+                          ),  
+                          secondaryAction: IconButton(
+                            icon: const Icon(
+                              Icons.arrow_back,
+                              color: ColorResources.white
+                            ),
+                            onPressed: () {
+                              Provider.of<ChatProvider>(context, listen: false).goBack(context, chatUid: widget.chatUid, receiverId: widget.receiverId);
+                              Provider.of<ChatProvider>(context, listen: false).leaveScreen(
+                                chatUid: widget.chatUid,
+                              );
+                            },
+                          ),  
+                        ),
+                        messageList(),
+                        sendMessageForm()
+                      ],
+                    );
+                  },
+                )
+              ),
             ),
           ),
         ); 
@@ -218,7 +221,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
               shrinkWrap: true,
               indexedItemBuilder: (BuildContext context, ChatMessage items, int i) {
                 ChatMessage chatMessage = messages[i];
-                bool isOwnMessage = chatMessage.receiverId == context.read<AuthenticationProvider>().userUid();
+                bool isOwnMessage = context.read<AuthenticationProvider>().userUid() == chatMessage.receiverId;
                 return CustomChatListViewTile(
                   deviceWidth: deviceWidth * 0.80, 
                   deviceHeight: deviceHeight, 
@@ -247,8 +250,12 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     } else {
       return const Expanded(
         child: Center(
-          child: CircularProgressIndicator(
-            color: ColorResources.backgroundBlueSecondary,
+          child: SizedBox(
+            width: 16.0,
+            height: 16.0,
+            child: CircularProgressIndicator(
+              color: ColorResources.backgroundBlueSecondary,
+            ),
           ),
         ),
       );
@@ -333,8 +340,10 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
             subtitle: widget.subtitle,
             chatUid: widget.chatUid, 
             receiverId: widget.receiverId,
-            receiverImage: widget.receiverImage,
             receiverName: widget.receiverName,
+            receiverImage: widget.receiverImage,
+            members: widget.members,
+            tokens: widget.tokens,
             isGroup: widget.isGroup,
           );
         },

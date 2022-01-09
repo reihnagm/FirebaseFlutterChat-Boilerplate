@@ -272,7 +272,6 @@ class CustomListViewTileWithoutActivity extends StatelessWidget {
         size: height / 2, 
         group: group
       ),
-      minVerticalPadding: height * 0.20,
       title: Text(title,
         style: TextStyle(
           color: ColorResources.textBlackPrimary,
@@ -331,20 +330,24 @@ class CustomListViewTileWithoutActivity extends StatelessWidget {
                     )
                   ),
                   const SizedBox(width: 5.0),
-                  Text(":",
-                    style: TextStyle(
-                      color: ColorResources.textBlackPrimary,
-                      fontSize: Dimensions.fontSizeExtraSmall,
+                  if(subtitle.isNotEmpty)
+                    Text(":",
+                      style: TextStyle(
+                        color: ColorResources.textBlackPrimary,
+                        fontSize: Dimensions.fontSizeExtraSmall,
+                      ),
                     ),
-                  ),
                   const SizedBox(width: 5.0),
-                  Text(contentGroup, 
-                    softWrap: true,
-                    style: TextStyle(
-                      overflow: TextOverflow.ellipsis,
-                      color: ColorResources.textBlackPrimary,
-                      fontSize: Dimensions.fontSizeExtraSmall,
-                    )
+                  SizedBox(
+                    width: MediaQuery.of(context).size.width * 0.30,
+                    child: Text(contentGroup, 
+                      softWrap: true,
+                      style: TextStyle(
+                        overflow: TextOverflow.ellipsis,
+                        color: ColorResources.textBlackPrimary,
+                        fontSize: Dimensions.fontSizeExtraSmall,
+                      )
+                    ),
                   ),
                 ],
               ) 
@@ -403,7 +406,7 @@ class CustomChatListViewTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
-      mainAxisAlignment: isOwnMessage ? MainAxisAlignment.end : MainAxisAlignment.start,
+      mainAxisAlignment: isOwnMessage ? MainAxisAlignment.start : MainAxisAlignment.end, 
       children: [
         message.type == MessageType.text 
         ? TextMessageBubble(

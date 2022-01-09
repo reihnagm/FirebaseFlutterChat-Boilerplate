@@ -95,6 +95,7 @@ class AuthenticationProvider extends ChangeNotifier {
       try {
         await auth.signOut();
         sharedPreferences.clear();
+        Provider.of<ChatsProvider>(context, listen: false).clearChats();
         setStateLogoutStatus(LogoutStatus.loaded);
         NavigationService().pushBackNavReplacement(context, const LoginPage());
       } catch(e) {
