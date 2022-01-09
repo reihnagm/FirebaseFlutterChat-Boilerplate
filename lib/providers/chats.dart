@@ -19,7 +19,7 @@ class ChatsProvider extends ChangeNotifier {
     required this.authenticationProvider,
     required this.databaseService
   });
-
+  
   ChatsStatus _chatsStatus = ChatsStatus.loading;
   ChatsStatus get chatsStatus => _chatsStatus;
 
@@ -43,48 +43,41 @@ class ChatsProvider extends ChangeNotifier {
         chats = await Future.wait(snapshot.docs.map((doc) async {
           Map<String, dynamic> chatData = doc.data() as Map<String, dynamic>;
           List<dynamic> m = chatData["members"];
-          List<dynamic> r = chatData["readers"];
           GroupData groupData = GroupData.fromJson(chatData["group"]);
-          // DocumentSnapshot<Object?> snapshot = await databaseService.getUser(authenticationProvider.userUid())!;
-          // Map<String, dynamic> userData = snapshot.data() as Map<String, dynamic>;
           List<ChatUser> members = [];
-          if(m.isNotEmpty) {
-            for (var member in m) {
-              members.add(ChatUser.fromJson(member));
-            }
+          for (var member in m) {
+            members.add(ChatUser.fromJson(member));
           }
-          List<ChatCountRead> readers = [];
-          if(r.isNotEmpty) {
-            for (var reader in r) {
-              readers.add(ChatCountRead.fromJson(reader));
-            }
-          }
-          // Optional 2
-          // List<dynamic>? membersChat = await databaseService.getMembersChat(doc.id);
-          // if(membersChat!.isNotEmpty) {
-          //   for (var item in membersChat) {
-          //     members.add(ChatUser.fromJson(item));
-          //   }
-          // }
-          
-           // Optional 2
-          // List<dynamic>? readersChat = await databaseService.getReadersChat(doc.id);
-          // if(readersChat.isNotEmpty) {
-          //   for (var item in readersChat) {
-          //     readers.add(ChatCountRead.fromJson(item));
-          //   }
-          // }
+          List<ChatMessage> messagesPersonalCount = [];
+          List<dynamic> messagesGroupCount = [];
           List<ChatMessage> messages = [];
-          try {
-            QuerySnapshot<Object?>? chatMessage = await databaseService.getLastMessageForChat(doc.id);
-            if(chatMessage!.docs.isNotEmpty) {
-              Map<String, dynamic> messageData = chatMessage.docs.first.data() as Map<String, dynamic>;
-              ChatMessage message = ChatMessage.fromJSON(messageData);
-              messages.add(message);
-            } // Prevent Bad State No Element
-          } catch(e) {
-            debugPrint(e.toString());
+      
+          QuerySnapshot<Object?>? readerCountIds = await databaseService.readerCountIds(
+            chatUid: doc.id, 
+            userUid: authenticationProvider.userUid()
+          );
+
+          if(readerCountIds!.docs.isNotEmpty) {
+            for (QueryDocumentSnapshot<Object?> item in readerCountIds.docs) {
+              Map<String, dynamic> readerDataCount = item.data() as Map<String, dynamic>;
+              List<dynamic> readerCountIds = readerDataCount["readerCountIds"];
+              int readerCount = readerCountIds.where((uids) => uids == authenticationProvider.userUid()).toList().length; 
+              messagesGroupCount.add(readerCount);
+            }
           }
+
+          QuerySnapshot<Object?>? chatMessageCount = await databaseService.getMessageCountForChat(doc.id);
+          QuerySnapshot<Object?>? chatMessage = await databaseService.getLastMessageForChat(doc.id);
+          if(chatMessage!.docs.isNotEmpty) {
+            for (QueryDocumentSnapshot<Object?> item in chatMessageCount!.docs) {
+              Map<String, dynamic> messageDataCount = item.data() as Map<String, dynamic>;
+              ChatMessage message = ChatMessage.fromJSON(messageDataCount);
+              messagesPersonalCount.add(message);
+            }
+            Map<String, dynamic> messageData = chatMessage.docs.first.data() as Map<String, dynamic>;
+            ChatMessage message = ChatMessage.fromJSON(messageData);
+            messages.add(message);
+          } // Prevent Bad State No Element
           return Chat(
             uid: doc.id, 
             currentUserId: authenticationProvider.userUid(), 
@@ -92,11 +85,13 @@ class ChatsProvider extends ChangeNotifier {
             group: chatData["is_group"], 
             groupData: GroupData(
               image: groupData.image,
-              name: groupData.name
+              name: groupData.name,
+              tokens: groupData.tokens
             ),
             members: members,
-            readers: readers,
             messages: messages, 
+            messagesPersonalCount: messagesPersonalCount,
+            messagesGroupCount: messagesGroupCount,
           );
         }).toList());
         setStateChatsStatus(ChatsStatus.loaded);

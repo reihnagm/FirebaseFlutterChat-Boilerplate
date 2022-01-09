@@ -79,6 +79,7 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
     super.initState();
     WidgetsBinding.instance!.addObserver(this);
     WidgetsBinding.instance!.addPostFrameCallback((_) async {
+      await Provider.of<FirebaseProvider>(context, listen: false).setupInteractedMessage(context);
       await databaseService.updateUserOnline(Provider.of<AuthenticationProvider>(context, listen: false).userUid(), true);
       // await databaseService.onlineMember(Provider.of<AuthenticationProvider>(context, listen: false).userUid());
     });

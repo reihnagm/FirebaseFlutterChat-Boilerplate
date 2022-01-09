@@ -29,12 +29,12 @@ class _ChatsPageState extends State<ChatsPage> {
     super.initState();
     WidgetsBinding.instance!.addPostFrameCallback((_) {
       Provider.of<AuthenticationProvider>(context, listen: false).initAuthStateChanges();
-      Provider.of<ChatsProvider>(context, listen: false).getChats();
     });
   }
   
   @override
   Widget build(BuildContext context) {
+    Provider.of<ChatsProvider>(context).getChats();
     deviceHeight = MediaQuery.of(context).size.height;
     deviceWidth = MediaQuery.of(context).size.width;
     return buildUI();
@@ -83,64 +83,74 @@ class _ChatsPageState extends State<ChatsPage> {
   }
 
   Widget chatList() {
+    List<Chat>? chats = context.watch<ChatsProvider>().chats;
     return Expanded(
       child: (() {
-        if(context.watch<ChatsProvider>().chats != null) {
-          if(context.watch<ChatsProvider>().chats!.isNotEmpty) {
-            return ListView.builder(
-              itemCount:context.watch<ChatsProvider>().chats!.length,
-              itemBuilder: (BuildContext context, int i) {
-                return chatTile(context, context.watch<ChatsProvider>().chats![i]);
-              } 
-            );
-          } else {
-            return const Center(
-              child: Text("No Chats Found.",
-                style: TextStyle(
-                  color: ColorResources.textBlackPrimary
-                ),
-              ),
-            );
-          }
-        } else {
+        if(chats == null) {
           return const Center(
             child: SizedBox(
               width: 16.0,
               height: 16.0,
               child: CircularProgressIndicator(
-                color: ColorResources.backgroundBlueSecondary,
+                valueColor: AlwaysStoppedAnimation<Color>(ColorResources.loaderBluePrimary),
               ),
             ),
           );
-        }
-      })(),
-    ); 
-  }
+        } 
+        if(chats.isNotEmpty) {
+          return ListView.builder(
+            itemCount: chats.length,
+            itemBuilder: (BuildContext context, int i) {
+              return chatTile(context, chats[i]);
+            } 
+          );
+        } else {
+          return const Center(
+            child: Text("No Chats Found.",
+              style: TextStyle(
+                color: ColorResources.textBlackPrimary
+              ),
+            ),
+          );
+        } 
+      }
+    )()
+  );}
 
   Widget chatTile(BuildContext context, Chat chat) {
-    String subtitleText = "";
+    String subtitle = "";
+    String content = "";
     if(chat.messages.isNotEmpty) {
-      subtitleText = chat.messages.first.type == MessageType.image 
+      subtitle = chat.messages.first.type == MessageType.image 
       ? "Media Attachment" 
       : chat.messages.first.content;
     }
-    
+    content = chat.group 
+    ? chat.messages.isNotEmpty 
+    ? chat.messages.first.senderName 
+    : subtitle 
+    : subtitle;
+
     return CustomListViewTileWithoutActivity(
       height: deviceHeight * 0.10, 
       group: chat.group,
       title: chat.title(), 
-      subtitle: subtitleText, 
+      subtitle: content,
+      contentGroup: subtitle,
       imagePath: chat.image(), 
       isActivity: chat.activity, 
       readCount: chat.readCount(),
       isRead: chat.isRead(),
       onTap: () {
-         NavigationService().pushNav(context, ChatPage(
+        NavigationService().pushNav(context, ChatPage(
           title: chat.title(),
           subtitle: chat.subtitle(),
           isGroup: chat.group,
+          tokens: chat.groupData.tokens,
           chatUid: chat.uid,
-          senderId: context.read<AuthenticationProvider>().userUid(),
+          members: chat.members,
+          receiverName: chat.recepients.first.name!,
+          receiverImage: chat.group ? "" : chat.recepients.first.image!,
           receiverId: chat.recepients.first.uid!, 
         ));
       }

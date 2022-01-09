@@ -9,6 +9,7 @@ const String usersOnlineCollection = "UsersOnline";
 // const String memberCollection = "Members";
 // const String readersCollection = "Readers";
 const String onScreenCollection = "OnScreens";
+const String badgeCountCollection = "BadgeCount";
 const String chatCollection = "Chats";
 const String messageCollection = "Messages"; 
 
@@ -102,29 +103,16 @@ class DatabaseService {
     }
   }
 
-  Future<List<dynamic>>? getReaderMessage({required String chatUid}) async {
-    List<dynamic> readersAssign = [];
+  Future<QuerySnapshot>? getMessageCountForChat(String chatId) {
     try {
-      DocumentSnapshot chatDoc = await db
-      .collection(chatCollection).doc(chatUid)
-      .get();
-      Map<String, dynamic> data = chatDoc.data() as Map<String, dynamic>;
-      List<dynamic> readers = data["readers"];
-      QuerySnapshot<Map<String, dynamic>> msgDoc = await db.collection(chatCollection)
-      .doc(chatUid)
+      return db.collection(chatCollection)
+      .doc(chatId)
       .collection(messageCollection)
-      .get();
-      for (QueryDocumentSnapshot<Map<String, dynamic>> doc in msgDoc.docs) {
-        var tests = readers.where((el) => el["message_id"] == doc.id).toList();
-        for (var item in tests) {
-          readersAssign.add(item);
-        }
-      }
-      return readersAssign;
+      .orderBy("sent_time", descending: true)
+    .get();
     } catch(e) {
       debugPrint(e.toString());
     }
-    return readersAssign;
   }
 
   Stream<QuerySnapshot> getUsers({String? name}) {
@@ -136,28 +124,53 @@ class DatabaseService {
     return query.snapshots();
   }
 
-  Future<void> addMessageToChat({required String chatUid, required String readerId, required ChatMessage message, required bool isGroup}) async {
-    try { 
-      DocumentReference doc = await db.collection(chatCollection)
+  Future<QuerySnapshot?> readerCountIds({required String chatUid, required String userUid}) async {
+    try {
+      QuerySnapshot readerCountIds = await db
+      .collection(chatCollection)
       .doc(chatUid)
       .collection(messageCollection)
-      .add(message.toJson());
-      try {
-        await db
-        .collection(chatCollection)
-        .doc(chatUid)
-        .update({
-          "readers": FieldValue.arrayUnion([{
-            "seen": DateTime.now(),
-            "message_id": doc.id,
-            "reader_id": readerId,
-            "reader_name": "",
-            "is_read": isGroup ? true : message.isRead 
-          }])
-        });
-      } catch(e) {
-        debugPrint(e.toString());
-      }
+      .where("readerCountIds", arrayContains: userUid)
+      .get();
+      return readerCountIds;
+    } catch(e) {  
+      debugPrint(e.toString());
+    }
+  }
+
+  Future<void> addMessageToChat({
+    required List<String> uids, 
+    required String chatUid, 
+    required ChatMessage message, 
+    required bool isGroup, 
+    required List<dynamic> readers
+  }) async {
+    String messageType;
+    switch (message.type) {
+      case MessageType.text: 
+        messageType = "text";
+      break;
+      case MessageType.image:
+        messageType = "image";
+      break;
+      default:
+        messageType = "";
+    }
+    try { 
+      await db.collection(chatCollection)
+      .doc(chatUid)
+      .collection(messageCollection)
+      .add({
+        "content": message.content,
+        "type": messageType,
+        "sender_id": message.senderId,
+        "sender_name": message.senderName,
+        "receiver_id": message.receiverId,
+        "is_read": message.isRead,
+        "sent_time": Timestamp.fromDate(message.sentTime),
+        "readers": readers,
+        "readerCountIds": uids
+      }); // .add(message.toJson());
     } catch(e) {
       debugPrint(e.toString());
     }
@@ -183,10 +196,10 @@ class DatabaseService {
 
   Future<void> seeMsg({
     required String chatUid, 
-    required String senderId, 
     required String receiverId, 
-    required String userName,
     required String userUid,
+    required String userName,
+    required String userImage,
     required bool isGroup
   }) async {
     try {
@@ -195,96 +208,94 @@ class DatabaseService {
       .doc(chatUid)
       .collection(messageCollection)
       .get();
-      Future.delayed(Duration.zero, () async {
-        try {
-          DocumentSnapshot<Map<String, dynamic>> chatDoc = await db
-          .collection(chatCollection)
-          .doc(chatUid).get();
-            List<dynamic> relations = chatDoc.data()!["relations"];
-            List<dynamic> readers = chatDoc.data()!["readers"];
-            List<dynamic> chatCountRead = [];
-            if(isGroup) {
-              for (QueryDocumentSnapshot<Map<String, dynamic>> msgDoc in msg.docs) {
-                DocumentSnapshot<Map<String, dynamic>> q = await db
-                .collection(chatCollection)
-                .doc(chatUid)
-                .collection(messageCollection)
-                .doc(msgDoc.id).get();
-                Map<String, dynamic> qq = q.data() as Map<String, dynamic>;
-                msgDoc.reference.update({
-                  "content": qq["content"],
-                  "type": qq["type"],
-                  "sender_name": qq["sender_name"],
-                  "sender_id": qq["sender_id"],
-                  "is_read": qq["is_read"],
-                  "sent_time": Timestamp.fromDate(qq["sent_time"].toDate()),
-                  "readers": FieldValue.arrayUnion([{
-                    "uid": userUid,
-                    "name": userName,
-                  }])               
-                });
-                List<dynamic> checkReaders = readers
-                  .where((el) => el["reader_id"] == userUid)
-                  .where((el) => el["message_id"] == msgDoc.id).toList();
-                  if(checkReaders.isNotEmpty) {
-                    for (var reader in checkReaders) {
-                      chatCountRead.add({
-                        "seen": reader["seen"],
-                        "message_id": reader["message_id"],
-                        "reader_id": reader["reader_id"],
-                        "reader_name": userName,
-                        "is_read": true,
-                      }); 
-                    }    
-                  } else {
-                    chatCountRead.add({
-                      "seen": DateTime.now(),
-                      "message_id": msgDoc.id,
-                      "reader_id": userUid,
-                      "reader_name": userName,
-                      "is_read": true,
-                    }); 
-                  }
-                chatDoc.reference.update({
-                  "readers": FieldValue.arrayUnion(chatCountRead)
-                }); 
-              }         
-            }
-            if(isGroup) {
-              for (QueryDocumentSnapshot<Map<String, dynamic>> msgDoc in msg.docs) {
-                if(readers.where((el) => el["message_id"] == msgDoc.id).toList().length == relations.length) {
-                  msgDoc.reference.update({"is_read": true});
+      try {
+        if(isGroup) {
+          for (QueryDocumentSnapshot<Map<String, dynamic>> msgDoc in msg.docs) {
+            DocumentSnapshot<Map<String, dynamic>> msgDoc1 = await db
+            .collection(chatCollection)
+            .doc(chatUid)
+            .collection(messageCollection)
+            .doc(msgDoc.id).get();
+            Map<String, dynamic> msgObj = msgDoc1.data() as Map<String, dynamic>;
+
+            List<dynamic> readers = msgObj["readers"];
+            int indexReader = readers.indexWhere((el) => el["uid"] == userUid);
+
+            if(msgObj["sender_id"] != userUid) {         
+              if(indexReader != -1) {  
+                if(readers[indexReader]["is_read"] == false) {
+                  readers[indexReader]["seen"] = DateTime.now();
                 }
+                readers[indexReader]["is_read"] = true;
+                msgDoc.reference.update({
+                  "readerCountIds": FieldValue.arrayRemove([userUid]),
+                  "readers": readers               
+                }); // Update existing data
+              } else {
+                msgDoc.reference.update({
+                  "readerCountIds": FieldValue.arrayRemove([userUid]),
+                  "readers": [{
+                    "uid": readers[indexReader]["uid"],
+                    "name": readers[indexReader]["name"],
+                    "image": readers[indexReader]["image"],
+                    "is_read": readers[indexReader]["is_read"],
+                    "seen": readers[indexReader]["seen"]
+                  }]
+                });
               }
             } else {
-              List<dynamic> data = msg.docs
-              .where((el) => el["sender_id"] == userUid)
-              .where((el) => el["is_read"] == false).toList();
-              if(data.isNotEmpty) {
-                for (QueryDocumentSnapshot<Map<String, dynamic>> msgDoc in msg.docs) {
-                  List<dynamic> checkReaders = readers
-                  .where((el) => el["reader_id"] == userUid)
-                  .where((el) => el["message_id"] == msgDoc.id).toList();
-                  for (var reader in checkReaders) {
-                    chatCountRead.add({
-                      "seen": reader["seen"],
-                      "message_id": reader["message_id"],
-                      "reader_id": reader["reader_id"],
-                      "reader_name": userName,
-                      "is_read": true,
-                    });  
-                  }         
-                  chatDoc.reference.update({
-                    "readers": chatCountRead
-                  });  
-                  msgDoc.reference.update({"is_read": true});
-                }
+                msgDoc.reference.update({
+                "content": msgObj["content"],
+                "type": msgObj["type"],
+                "sender_name": msgObj["sender_name"],
+                "receiver_id": msgObj["receiver_id"],
+                "is_read": msgObj["is_read"],
+                "sent_time": Timestamp.fromDate(msgObj["sent_time"].toDate()),             
+              });
+            }
+          }         
+        }
+        if(isGroup) {
+          for (QueryDocumentSnapshot<Map<String, dynamic>> msgDoc in msg.docs) {
+            Map<String, dynamic> msgObj = msgDoc.data();
+            List<dynamic> readers = msgObj["readers"];
+            if(readers.every((el) => el["is_read"] == true)) {
+              msgDoc.reference.update({"is_read": true});
+            }
+          }
+        } else {
+          List<dynamic> data = msg.docs
+          .where((el) => el["receiver_id"] == userUid)
+          .where((el) => el["is_read"] == false).toList();
+          if(data.isNotEmpty) {
+            for (QueryDocumentSnapshot<Map<String, dynamic>> msgDoc in msg.docs) {
+              Map<String, dynamic> msgObj = msgDoc.data();
+              List<dynamic> readers = msgObj["readers"];
+              int readerIndex = readers.indexWhere((el) => el["uid"] == userUid);
+              if(readerIndex != -1) {
+                readers[readerIndex]["is_read"] = true;
+                msgDoc.reference.update({
+                  "is_read": true,
+                  "readers": readers                      
+                }); // Update existing data
+              } else {
+                msgDoc.reference.update({
+                  "is_read": true,
+                  "readers": [{
+                    "uid": readers[readerIndex]["uid"],
+                    "name": readers[readerIndex]["name"],
+                    "image": readers[readerIndex]["image"],
+                    "is_read": readers[readerIndex]["is_read"],
+                    "seen": readers[readerIndex]["seen"]
+                  }]
+                });
               }
             }
-          } catch(e) {
-            debugPrint(e.toString());
           }
-      });
+        }
+      } catch(e) {
+        debugPrint(e.toString());
+      }
     } catch(e) {
       debugPrint(e.toString());
     }
@@ -294,21 +305,44 @@ class DatabaseService {
     try {
       await db
       .collection(userCollection)
-      .doc(userUid).update({
+      .doc(userUid)
+      .update({
         "token": token
       });
       try {
-        QuerySnapshot<Map<String, dynamic>> data = await db
+        QuerySnapshot<Map<String, dynamic>> onscreens = await db
         .collection(onScreenCollection)
         .get();
-        if(data.docs.isNotEmpty) {
-          for (QueryDocumentSnapshot<Map<String, dynamic>> screenDoc in data.docs) {
-            List<dynamic> onscreens = screenDoc.data()["on_screens"];
-            int idx = onscreens.indexWhere((el) => el["userUid"] == userUid);
-            onscreens[idx]["token"] = token;
-            screenDoc.reference.update({
-              "on_screens": onscreens
-            });
+         QuerySnapshot<Map<String, dynamic>> chats = await db
+        .collection(chatCollection)
+        .get();
+        if(onscreens.docs.isNotEmpty) {
+          for (QueryDocumentSnapshot<Map<String, dynamic>> screenDoc in onscreens.docs) {
+            List<dynamic> onscreensList = screenDoc.data()["on_screens"];
+            int index = onscreensList.indexWhere((el) => el["userUid"] == userUid);
+            if(index != -1) {
+              onscreensList[index]["token"] = token;
+              screenDoc.reference.update({
+                "on_screens": onscreensList
+              }); // Update existing data
+            } 
+          }
+        }
+        if(chats.docs.isNotEmpty) {
+          for (QueryDocumentSnapshot<Map<String, dynamic>> chatDoc in chats.docs) {
+            Map<String, dynamic> group = chatDoc.data()["group"];
+            List<dynamic> tokens = group["tokens"];
+            int index = tokens.indexWhere((el) => el["userUid"] == userUid);
+            if(index != -1) {
+              tokens[index]["token"] = token;
+              chatDoc.reference.update({
+                "group": {
+                  "name": group["name"],
+                  "image": group["image"],
+                  "tokens": tokens
+                }
+              });
+            } 
           }
         }
       } catch(e) {
@@ -332,46 +366,6 @@ class DatabaseService {
     }
   }
 
-  Future<void> onlineMember(String userUid) async {
-    try {
-      Future.delayed(const Duration(seconds: 1), () async {
-        QuerySnapshot<Map<String, dynamic>> data = await db
-        .collection(chatCollection)
-        .get();
-        for (QueryDocumentSnapshot<Map<String, dynamic>> doc in data.docs) {
-          List<dynamic> membersData = doc.data()["members"];
-          int idx = membersData.indexWhere((el) => el["uid"] == userUid);
-          membersData[idx]["isOnline"] = true;
-          doc.reference.update({
-            "members": membersData
-          });
-        }
-      });
-    } catch(e) {
-      debugPrint(e.toString());
-    }
-  }
-
-  Future<void> offlineMember(String userUid) async {
-    try {
-      Future.delayed(const Duration(seconds: 1), () async {
-        QuerySnapshot<Map<String, dynamic>> data = await db
-        .collection(chatCollection)
-        .get();
-        for (QueryDocumentSnapshot<Map<String, dynamic>> doc in data.docs) {
-          List<dynamic> membersData = doc.data()["members"];
-          int idx = membersData.indexWhere((el) => el["uid"] == userUid);
-          membersData[idx]["isOnline"] = false;
-          doc.reference.update({
-            "members": membersData
-          });
-        }
-      });
-    } catch(e) {
-      debugPrint(e.toString());
-    }
-  }
-
   Future<QuerySnapshot<Map<String, dynamic>>?> checkCreateChat(String uid) async {
     try {
       return await db
@@ -384,24 +378,15 @@ class DatabaseService {
     }
   }
 
-  Future<List<dynamic>> isScreenOn({required String chatUid}) async {
-    List<dynamic> onScreensAssign = [];
+  Stream<QuerySnapshot>? isScreenOn({required String chatUid}) {
     try {
-      QuerySnapshot<Map<String, dynamic>> data = await db
+      return db
       .collection(onScreenCollection)
       .where("id", isEqualTo: chatUid)
-      .get();
-      for (QueryDocumentSnapshot<Map<String, dynamic>> item in data.docs) {
-        Map<String, dynamic> data = item.data();
-        List<dynamic> onScreens = data["on_screens"];
-        for (var onScreen in onScreens) {
-          onScreensAssign.add(onScreen);
-        }
-      }
+      .snapshots();
     } catch(e) {
       debugPrint(e.toString());
     }
-    return onScreensAssign;
   }
 
   Future<DocumentReference?> createChat(Map<String, dynamic> data) async {
@@ -409,6 +394,14 @@ class DatabaseService {
       return await db
       .collection(chatCollection)
       .add(data);
+    } catch(e) {
+      debugPrint(e.toString());
+    }
+  }
+
+  Future<DocumentReference?> createC(String chatId) async {
+    try {
+    
     } catch(e) {
       debugPrint(e.toString());
     }
@@ -482,13 +475,13 @@ class DatabaseService {
           onScreens[index]["token"] = await FirebaseMessaging.instance.getToken();
           item.reference.update({
             "on_screens": onScreens
-          });
+          }); // Update existing data
         } else {
           item.reference.update({
-            "on_screens": FieldValue.arrayUnion([{
+            "on_screens": [{
               "userUid": userUid,
               "on": true,
-            }])
+            }]
           });
         }
       }
@@ -507,10 +500,22 @@ class DatabaseService {
         for (QueryDocumentSnapshot<Map<String, dynamic>> item in data.docs) {
           List<dynamic> onScreens = item.data()["on_screens"];
           int index = onScreens.indexWhere((el) => el["userUid"] == userUid);
-          onScreens[index]["on"] = false;
-          item.reference.update({
-            "on_screens": onScreens
-          }); 
+          if(index != -1) {
+            onScreens[index]["on"] = false;
+            item.reference.update({
+              "id": chatUid,
+              "on_screens": onScreens
+            }); // Update existing data
+          } else {
+            item.reference.update({
+              "id": chatUid,
+              "on_screens": {
+                "on": onScreens[index]["on"],
+                "token": onScreens[index]["token"],
+                "userUid": onScreens[index]["userUid"] 
+              }
+            }); 
+          }
         }
       }
     } catch(e) {

@@ -1,17 +1,14 @@
-import 'package:chatv28/basewidget/animated_dialog/show_animate_dialog.dart';
-import 'package:chatv28/providers/chat.dart';
+import 'package:intl/intl.dart';
+
 import 'package:flutter/material.dart';
 import 'package:ionicons/ionicons.dart';
-import 'package:popover/popover.dart';
-import 'package:provider/provider.dart';
-import 'package:quds_popup_menu/quds_popup_menu.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
 import 'package:chatv28/utils/color_resources.dart';
 import 'package:chatv28/utils/dimensions.dart';
 import 'package:chatv28/models/chat_message.dart';
 
-class TextMessageBubble extends StatelessWidget {
+class TextMessageBubble extends StatefulWidget {
   final bool isGroup;
   final bool isOwnMessage;
   final ChatMessage message;
@@ -26,6 +23,11 @@ class TextMessageBubble extends StatelessWidget {
   }) : super(key: key);
 
   @override
+  State<TextMessageBubble> createState() => _TextMessageBubbleState();
+}
+
+class _TextMessageBubbleState extends State<TextMessageBubble> {
+  @override
   Widget build(BuildContext context) {
     // List<Color> colorScheme = isOwnMessage 
     // ? [
@@ -36,160 +38,174 @@ class TextMessageBubble extends StatelessWidget {
     //   const Color.fromRGBO(51, 49, 68, 1.0),
     //   const Color.fromRGBO(51, 49, 68, 1.0)
     // ];
-    Color colorScheme = isOwnMessage 
+    Color colorScheme = widget.isOwnMessage 
     ? const Color.fromRGBO(250, 250, 250, 1.0) 
     : const Color.fromRGBO(51, 49, 68, 1.0);
     
-    return  ConstrainedBox(
-      constraints: BoxConstraints(
-        maxWidth: MediaQuery.of(context).size.width - 60,
+    return  Container(
+      margin: const EdgeInsets.only(top: 15.0),
+      padding: const EdgeInsets.symmetric(
+        horizontal: 10.0,
+        vertical:  10.0
       ),
-      child: Container(
-        margin: const EdgeInsets.only(top: 15.0),
-        padding:  EdgeInsets.symmetric(
-          horizontal: isGroup ? 10.0 : 15.0,
-          vertical: isGroup ? 10.0 : 15.0
-        ),
-        decoration: BoxDecoration(
-          color: colorScheme,
-          borderRadius: BorderRadius.circular(15.0)
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            isGroup 
-            ? Row(
-                mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    isOwnMessage ? "You" : message.senderName,
-                    style: TextStyle(
-                      color: isOwnMessage ? ColorResources.textBlackPrimary : ColorResources.white,
-                      fontSize: Dimensions.fontSizeExtraSmall
-                    ),
+      decoration: BoxDecoration(
+        color: colorScheme,
+        borderRadius: BorderRadius.circular(15.0)
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          widget.isGroup 
+          ? Row(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  widget.isOwnMessage ? "You" : widget.message.senderName,
+                  style: TextStyle(
+                    color: widget.isOwnMessage ? ColorResources.textBlackPrimary : ColorResources.white,
+                    fontSize: Dimensions.fontSizeExtraSmall
                   ),
-                  const SizedBox(width: 30.0),
-                  InkWell(
-                    onTap: () {
-                      showModalBottomSheet(
-                        isScrollControlled: true,
-                        shape: const RoundedRectangleBorder(
-                          borderRadius: BorderRadius.only(
-                            topLeft: Radius.circular(10.0), 
-                            topRight: Radius.circular(10.0)
+                ),
+                const SizedBox(width: 80.0),
+                widget.isOwnMessage ? PopupMenuButton(
+                  icon: const Icon(
+                    Icons.keyboard_arrow_down,
+                    color: ColorResources.black,
+                    size: 16.0,
+                  ),
+                  itemBuilder: (BuildContext context) { 
+                    setState(() {});
+                    return <PopupMenuItem<String>>[
+                      PopupMenuItem<String>(
+                        child: Text('Info',
+                          style: TextStyle(
+                            fontSize: Dimensions.fontSizeExtraSmall
                           ),
                         ),
-                        context: context, 
-                        builder: (context) {
-                          return Consumer<ChatProvider>(
-                            builder: (BuildContext context, ChatProvider chatProvider, Widget? child) {
-                              if(chatProvider.seeReads.isEmpty) {
-                                return Container();
-                              }
+                        value: 'info'
+                      ),
+                    ];
+                  },
+                onSelected: (String value) {
+                  if(value == "info") {
+                    showModalBottomSheet(
+                      isScrollControlled: true,
+                      shape: const RoundedRectangleBorder(
+                        borderRadius: BorderRadius.only(
+                          topLeft: Radius.circular(10.0), 
+                          topRight: Radius.circular(10.0)
+                        ),
+                      ),
+                      context: context, 
+                      builder: (BuildContext context) {
+                        List<Readers> readers = widget.message.readers.where((el) => el.isRead == true).toList();
+                        if(readers.isEmpty) {
+                          return SizedBox(
+                            height: 80.0,
+                            child: Center(
+                              child: Text("No Views",
+                                style: TextStyle(
+                                  color: Colors.black,
+                                  fontSize: Dimensions.fontSizeSmall
+                                ),
+                              ),
+                            ),
+                          );
+                        }
+                        return Container(
+                          margin: EdgeInsets.all(Dimensions.marginSizeDefault),
+                          child: ListView.builder(
+                            shrinkWrap: true,
+                            itemCount: readers.length,
+                            itemBuilder: (BuildContext context, int i) {
                               return Container(
-                                margin: EdgeInsets.all(Dimensions.marginSizeDefault),
-                                child: ListView.builder(
-                                  shrinkWrap: true,
-                                  itemCount: chatProvider.seeReads.length,
-                                  itemBuilder: (BuildContext context, int i) {
-                                    return Container(
-                                      margin: const EdgeInsets.only(bottom: 10.0),
-                                      child: ListTile(
-                                        contentPadding: EdgeInsets.zero,
-                                        dense: true,
-                                        leading: Container(
-                                          width: 40.0,
-                                          height: 40.0,
-                                          decoration: BoxDecoration(
-                                            image: const DecorationImage(
-                                              fit: BoxFit.cover,
-                                              image: NetworkImage("https://i.pravatar.cc/300"),
-                                            ),
-                                            borderRadius: BorderRadius.circular(30.0),
-                                            color: Colors.black,
-                                          ),
-                                        ),
-                                        title: Text(chatProvider.seeReads[i]["reader_name"].toString(),
-                                          style: TextStyle(
-                                            fontSize: Dimensions.fontSizeDefault,
-                                            color: ColorResources.textBlackPrimary
-                                          ),
-                                        ),
-                                        subtitle: Container(
-                                          margin: const EdgeInsets.only(top: 8.0),
-                                          child: Text("10:00",
-                                            style: TextStyle(
-                                              fontSize: Dimensions.fontSizeSmall,
-                                              color: ColorResources.grey
-                                            ),
-                                          ),
-                                        ),
+                                margin: const EdgeInsets.only(bottom: 10.0),
+                                child: ListTile(
+                                  contentPadding: EdgeInsets.zero,
+                                  dense: true,
+                                  leading: Container(
+                                    width: 40.0,
+                                    height: 40.0,
+                                    decoration: BoxDecoration(
+                                      image: DecorationImage(
+                                        fit: BoxFit.cover,
+                                        image: NetworkImage(readers[i].image),
                                       ),
-                                    );
-                                  },
+                                      borderRadius: BorderRadius.circular(30.0),
+                                      color: Colors.black,
+                                    ),
+                                  ),
+                                  title: Text(readers[i].name,
+                                    style: TextStyle(
+                                      fontSize: Dimensions.fontSizeDefault,
+                                      color: ColorResources.textBlackPrimary
+                                    ),
+                                  ),
+                                  subtitle: Container(
+                                    margin: const EdgeInsets.only(top: 8.0),
+                                    child: Text(DateFormat.Hm().format(readers[i].seen),
+                                      style: TextStyle(
+                                        fontSize: Dimensions.fontSizeSmall,
+                                        color: ColorResources.grey
+                                      ),
+                                    ),
+                                  ),
                                 ),
                               );
                             },
-                          );
-                        },
-                      );
-                      Provider.of<ChatProvider>(context, listen: false).fetchSeeReads(chatUid: chatUid);
-                    },
-                    child: const Icon(
-                      Icons.more_vert,
-                      color: ColorResources.white,
-                      size: 20.0,
-                    ),
-                  ),
-                ],
-              ) 
-            : const SizedBox(),
-            Text(message.content,
-              textAlign: TextAlign.justify,
-              style: TextStyle(
-                color: isOwnMessage 
-                ? Colors.black 
-                : Colors.white,
-                fontSize: Dimensions.fontSizeExtraSmall,
-                height: 1.8
-              ),
-            ),
-            const SizedBox(height: 6.0),
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(timeago.format(message.sentTime),
-                  style: TextStyle(
-                    color: isOwnMessage 
-                    ? Colors.black 
-                    : Colors.white,
-                    fontSize:  Dimensions.fontSizeExtraSmall,
-                  ),
-                ),
-                const SizedBox(width: 10.0),
-                message.isRead
-                ? const Icon(
-                    Ionicons.checkmark_done,
-                    size: 20.0,
-                    color: Colors.green,  
-                  )  
-                : Icon(
-                    Ionicons.checkmark_done,
-                    size: 20.0,
-                    color: isOwnMessage 
-                    ? Colors.black 
-                    : Colors.white  
-                  ),
+                          ),
+                        );
+                      },
+                    );
+                  }
+                }) : const SizedBox(),
               ],
-            ), 
-          ],
-        )
-      ),
+            ) 
+          : const SizedBox(),
+          Text(widget.message.content,
+            textAlign: TextAlign.justify,
+            style: TextStyle(
+              color: widget.isOwnMessage 
+              ? Colors.black 
+              : Colors.white,
+              fontSize: Dimensions.fontSizeExtraSmall,
+              height: 1.8
+            ),
+          ),
+          const SizedBox(height: 6.0),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(timeago.format(widget.message.sentTime),
+                style: TextStyle(
+                  color: widget.isOwnMessage 
+                  ? Colors.black 
+                  : Colors.white,
+                  fontSize: Dimensions.fontSizeExtraSmall,
+                ),
+              ),
+              const SizedBox(width: 10.0),
+              widget.message.isRead
+              ? const Icon(
+                  Ionicons.checkmark_done,
+                  size: 16.0,
+                  color: Colors.green,  
+                )  
+              : Icon(
+                  Ionicons.checkmark_done,
+                  size: 16.0,
+                  color: widget.isOwnMessage 
+                  ? Colors.black 
+                  : Colors.white  
+                ),
+            ],
+          ), 
+        ],
+      )
     );
   }
-
 }
 
 class ImageMessageBubble extends StatelessWidget {
@@ -227,8 +243,8 @@ class ImageMessageBubble extends StatelessWidget {
       width: width,
       margin: const EdgeInsets.only(top: 15.0),
       padding: const EdgeInsets.symmetric(
-        horizontal: 8.0,
-        vertical: 8.0
+        horizontal: 10.0,
+        vertical:  10.0
       ),
       decoration: BoxDecoration(
         color: colorScheme,
@@ -256,7 +272,7 @@ class ImageMessageBubble extends StatelessWidget {
                   color: isOwnMessage 
                   ? Colors.black 
                   : Colors.white,
-                  fontSize: 11.0,
+                  fontSize: Dimensions.fontSizeExtraSmall,
                 ),
               ),
               const SizedBox(width: 10.0),
@@ -277,56 +293,4 @@ class ImageMessageBubble extends StatelessWidget {
       ),
     );
   }
-}
-
-class ListItems extends StatelessWidget {
-  const ListItems({Key? key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Scrollbar(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        child: ListView(
-          padding: const EdgeInsets.all(8),
-          children: [
-            InkWell(
-              onTap: () {
-               
-              },
-              child: Container(
-                height: 50,
-                color: Colors.amber[100],
-                child: const Center(child: Text('Entry A')),
-              ),
-            ),
-            const Divider(),
-            Container(
-              height: 50,
-              color: Colors.amber[200],
-              child: const Center(child: Text('Entry B')),
-            ),
-            const Divider(),
-            Container(
-              height: 50,
-              color: Colors.amber[300],
-              child: const Center(child: Text('Entry C')),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-List<QudsPopupMenuBase> getMenuItems() {
-  return [
-    QudsPopupMenuWidget(
-      builder: (BuildContext context) => Container(
-        width: 40.0,
-        height: 40.0,
-        child: Text("Info")
-      )
-    )
-  ];
 }

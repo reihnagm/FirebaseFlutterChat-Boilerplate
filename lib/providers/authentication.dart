@@ -123,7 +123,6 @@ class AuthenticationProvider extends ChangeNotifier {
     }
   } 
 
-
   bool isLogin() => sharedPreferences.getBool("login") ?? false;
   String userName() => sharedPreferences.getString("userName") ?? "";
   String userImage() => sharedPreferences.getString("userImage") ?? "";

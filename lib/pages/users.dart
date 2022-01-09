@@ -443,14 +443,13 @@ class _UsersPageState extends State<UsersPage> {
           return ListView.builder(
             itemCount: users.length,
             itemBuilder: (BuildContext context, int i) {
-              return CustomListViewTile(
+              return CustomListViewUsersTile(
                 title: users[i].name!,
                 group: false,
                 subtitle: "Last Active: ${timeago.format(users[i].lastActive!)}",
                 height: deviceHeight * 0.10,  
                 imagePath: users[i].image!, 
-                isActive: users[i].isUserOnline(), 
-                isSelected: context.watch<UserProvider>().selectedUsers.contains(users[i]), 
+                isActive: users[i].isUserOnline(),  
                 onTap: () async {
                   QuerySnapshot<Map<String, dynamic>> checkCreateChat = (await databaseService.checkCreateChat(users[i].uid!))!;
                   if(checkCreateChat.docs.isEmpty) {
@@ -460,7 +459,8 @@ class _UsersPageState extends State<UsersPage> {
                         "is_activity": false,
                         "group": {
                           "name": "",
-                          "image": ""
+                          "image": "",
+                          "tokens": []
                         },
                         "members": [
                           {
@@ -468,21 +468,20 @@ class _UsersPageState extends State<UsersPage> {
                             "email": context.read<AuthenticationProvider>().chatUser!.email,
                             "name": context.read<AuthenticationProvider>().chatUser!.name,
                             "image": context.read<AuthenticationProvider>().chatUser!.image,
-                            "isOnline": false,
+                            "isOnline": context.read<AuthenticationProvider>().chatUser!.isOnline,
                             "last_active": context.read<AuthenticationProvider>().chatUser!.lastActive,
-                            "token": ""
                           },
                           {
                             "uid": users[i].uid,
                             "email":users[i].email,
                             "name": users[i].name,
                             "image": users[i].image,
-                            "isOnline": false,
+                            "isOnline": users[i].isOnline,
                             "last_active": users[i].lastActive,
-                            "token": ""
                           }
                         ],
-                        "readers": [],
+                        "created_at": DateTime.now(),
+                        "updated_at": DateTime.now(),
                         "relations": [
                           context.read<AuthenticationProvider>().chatUser!.uid,
                           users[i].uid
@@ -491,11 +490,14 @@ class _UsersPageState extends State<UsersPage> {
                     );
                     NavigationService().pushNav(context, ChatPage(
                       chatUid: doc!.id,
-                      senderId: context.read<AuthenticationProvider>().userUid(),
-                      receiverId: users[i].uid!,
                       title: users[i].name!,
                       subtitle: users[i].isOnline.toString(),
+                      receiverId: users[i].uid!,
+                      receiverName: users[i].name!,
+                      receiverImage: users[i].image!,
                       isGroup: false,
+                      tokens: const [],
+                      members: const [],
                     ));
                     await databaseService.createOnScreens({
                       "id": doc.id,
@@ -515,11 +517,14 @@ class _UsersPageState extends State<UsersPage> {
                   } else {
                      NavigationService().pushNav(context, ChatPage(
                       chatUid: checkCreateChat.docs[0].id,
-                      senderId: context.read<AuthenticationProvider>().userUid(),
-                      receiverId: users[i].uid!,
                       title: users[i].name!,
                       subtitle: users[i].isOnline.toString(),
+                      receiverId: users[i].uid!,
+                      receiverName: users[i].name!,
+                      receiverImage: users[i].image!,
                       isGroup: false,
+                      tokens: const [],
+                      members: const [],
                     ));
                   }
                 },

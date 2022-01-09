@@ -84,6 +84,7 @@ class UserProvider extends ChangeNotifier {
     relations.add(authenticationProvider.userUid());
     bool isGroup = selectedUsers.length > 1;
     if(isGroup) {
+      List<dynamic> tokens = [];
       List<Map<String, dynamic>> members = [];
       setStateCreateGroupStatus(CreateGroupStatus.loading);
       for (String uid in relations) {
@@ -95,9 +96,13 @@ class UserProvider extends ChangeNotifier {
             "token": userData["token"],
             "name": userData["name"],
             "email": userData["email"],
-            "imageUrl": userData["image"],
+            "image": userData["image"],
             "isOnline": false,
             "last_active": userData["last_active"]
+          });
+          tokens.add({
+            "userUid": snapshot.id,
+            "token": userData["token"]
           });
         } catch(e) {
           setStateCreateGroupStatus(CreateGroupStatus.error);
@@ -118,18 +123,22 @@ class UserProvider extends ChangeNotifier {
             "is_activity": false,
             "group": {
               "name": groupName,
-              "image": groupImageUrl
+              "image": groupImageUrl,
+              "tokens": FieldValue.arrayUnion(tokens)
             },  
             "members": members,
-            "readers": [],
+            "created_at": DateTime.now(),
+            "updated_at": DateTime.now(),
             "relations": relations,
           });
           Navigator.of(context).pop();
           setStateCreateGroupStatus(CreateGroupStatus.loaded);
         } catch(e) {
+          setStateCreateGroupStatus(CreateGroupStatus.error);
           debugPrint(e.toString());
         }
       } catch(e) {
+        setStateCreateGroupStatus(CreateGroupStatus.error);
         debugPrint(e.toString());
       }
     }
