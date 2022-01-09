@@ -176,10 +176,10 @@ class DatabaseService {
     } catch(e) {
       debugPrint(e.toString());
     }
-    await db.collection(chatCollection)
-    .doc(chatId).update({
-      "updated_at": DateTime.now()
-    });
+    // await db.collection(chatCollection)
+    // .doc(chatId).update({
+    //   "updated_at": DateTime.now()
+    // }); Trigger data changes
   }
 
   Future<void> updateChatData(String chatID, Map<String, dynamic> data) async {
@@ -283,24 +283,24 @@ class DatabaseService {
               List<dynamic> readers = msgObj["readers"];
               int readerIndex = readers.indexWhere((el) => el["uid"] == userUid);
               if(readerIndex != -1) {
-                if(readers[readerIndex]["is_read"] == false) {
-                  await db.collection(chatCollection)
-                  .doc(chatId).update({
-                    "updated_at": DateTime.now()
-                  });
-                }
+                // if(readers[readerIndex]["is_read"] == false) {
+                //   await db.collection(chatCollection)
+                //   .doc(chatId).update({
+                //     "updated_at": DateTime.now()
+                //   });
+                // } Trigger data changes
                 readers[readerIndex]["is_read"] = true;
                 msgDoc.reference.update({
                   "is_read": true,
                   "readers": readers                      
                 }); // Update existing data
               } else {
-                if(readers[readerIndex]["is_read"] == false) {
-                  await db.collection(chatCollection)
-                  .doc(chatId).update({
-                    "updated_at": DateTime.now()
-                  });
-                }
+                // if(readers[readerIndex]["is_read"] == false) {
+                //   await db.collection(chatCollection)
+                //   .doc(chatId).update({
+                //     "updated_at": DateTime.now()
+                //   });
+                // } Trigger data changes
                 msgDoc.reference.update({
                   "is_read": true,
                   "readers": [{

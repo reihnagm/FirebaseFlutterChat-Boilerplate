@@ -29,7 +29,6 @@ class _ChatsPageState extends State<ChatsPage> {
     super.initState();
     WidgetsBinding.instance!.addPostFrameCallback((_) {
       Provider.of<AuthenticationProvider>(context, listen: false).initAuthStateChanges();
-      Provider.of<ChatsProvider>(context, listen: false).getChats();
     });
   }
   
@@ -43,6 +42,7 @@ class _ChatsPageState extends State<ChatsPage> {
   Widget buildUI() {
     return Builder(
       builder: (BuildContext context) {
+        context.watch<ChatsProvider>().getChats();
         return Container(
           decoration: const BoxDecoration(
             color: ColorResources.backgroundColor

@@ -76,7 +76,6 @@ class _UsersPageState extends State<UsersPage> {
     searchFieldTextEditingController = TextEditingController();
     WidgetsBinding.instance!.addPostFrameCallback((_) {
       Provider.of<AuthenticationProvider>(context, listen: false).initAuthStateChanges();
-      Provider.of<UserProvider>(context, listen: false).getUsers();
     });
   }
 
@@ -98,6 +97,7 @@ class _UsersPageState extends State<UsersPage> {
   Widget buildUI() {
     return Builder(
       builder: (context) {
+        context.watch<UserProvider>().getUsers();
         return Container(
           padding: EdgeInsets.symmetric(
             horizontal: deviceWidth * 0.03,

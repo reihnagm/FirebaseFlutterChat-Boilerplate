@@ -39,8 +39,8 @@ class _TextMessageBubbleState extends State<TextMessageBubble> {
     //   const Color.fromRGBO(51, 49, 68, 1.0)
     // ];
     Color colorScheme = widget.isOwnMessage 
-    ? const Color.fromRGBO(51, 49, 68, 1.0)
-    : const Color.fromRGBO(250, 250, 250, 1.0);
+    ? const Color.fromRGBO(250, 250, 250, 1.0)
+    : const Color.fromRGBO(51, 49, 68, 1.0);
     
     return  Container(
       margin: const EdgeInsets.only(top: 15.0),
@@ -62,14 +62,14 @@ class _TextMessageBubbleState extends State<TextMessageBubble> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  widget.isOwnMessage ? widget.message.senderName :  "You",
+                  widget.isOwnMessage ? "You" : widget.message.senderName,
                   style: TextStyle(
-                    color: widget.isOwnMessage ? ColorResources.white : ColorResources.textBlackPrimary,
+                    color: widget.isOwnMessage ? ColorResources.textBlackPrimary : ColorResources.white,
                     fontSize: Dimensions.fontSizeExtraSmall
                   ),
                 ),
                 const SizedBox(width: 80.0),
-                !widget.isOwnMessage ? PopupMenuButton(
+                widget.isOwnMessage ? PopupMenuButton(
                   padding: EdgeInsets.zero,
                   icon: const Icon(
                     Icons.keyboard_arrow_down,
@@ -168,8 +168,8 @@ class _TextMessageBubbleState extends State<TextMessageBubble> {
             textAlign: TextAlign.justify,
             style: TextStyle(
               color: widget.isOwnMessage 
-              ? Colors.white 
-              : Colors.black,
+              ? Colors.black  
+              : Colors.white,
               fontSize: Dimensions.fontSizeExtraSmall,
               height: 1.8
             ),
@@ -181,8 +181,8 @@ class _TextMessageBubbleState extends State<TextMessageBubble> {
               Text(timeago.format(widget.message.sentTime),
                 style: TextStyle(
                   color: widget.isOwnMessage 
-                  ? Colors.white
-                  : Colors.black,
+                  ? Colors.black
+                  : Colors.white,
                   fontSize: Dimensions.fontSizeExtraSmall,
                 ),
               ),
@@ -197,8 +197,8 @@ class _TextMessageBubbleState extends State<TextMessageBubble> {
                   Ionicons.checkmark_done,
                   size: 16.0,
                   color: widget.isOwnMessage 
-                  ? Colors.white  
-                  : Colors.black 
+                  ? Colors.black 
+                  : Colors.white  
                 ),
             ],
           ), 

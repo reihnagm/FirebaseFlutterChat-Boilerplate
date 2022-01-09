@@ -19,7 +19,7 @@ class ChatsProvider extends ChangeNotifier {
     required this.authenticationProvider,
     required this.databaseService
   });
-  
+
   ChatsStatus _chatsStatus = ChatsStatus.loading;
   ChatsStatus get chatsStatus => _chatsStatus;
 
@@ -38,7 +38,7 @@ class ChatsProvider extends ChangeNotifier {
   }
 
   void clearChats() {
-    chats = null;
+    getChats();
     Future.delayed(Duration.zero, () => notifyListeners());
   }
 
@@ -50,12 +50,15 @@ class ChatsProvider extends ChangeNotifier {
           List<dynamic> m = chatData["members"];
           GroupData groupData = GroupData.fromJson(chatData["group"]);
           List<ChatUser> members = [];
-          for (var member in m) {
-            members.add(ChatUser.fromJson(member));
-          }
           List<ChatMessage> messagesPersonalCount = [];
           List<dynamic> messagesGroupCount = [];
           List<ChatMessage> messages = [];
+          
+          if(m.isNotEmpty) {
+            for (var member in m) {
+              members.add(ChatUser.fromJson(member));
+            }
+          }
       
           QuerySnapshot<Object?>? readerCountIds = await databaseService.readerCountIds(
             chatUid: doc.id, 

@@ -355,29 +355,33 @@ class CustomListViewTileWithoutActivity extends StatelessWidget {
           if(!group)
             SizedBox(
               width: MediaQuery.of(context).size.width * 0.50,
-              child: Text(subtitle, 
-                softWrap: true,
-                style: TextStyle(
-                  overflow: TextOverflow.ellipsis,
-                  color: ColorResources.textBlackPrimary,
-                  fontSize: Dimensions.fontSizeExtraSmall,
-                )
-              ),
+              child: Row(
+                children: [
+                  subtitle.isNotEmpty ?
+                  isRead
+                  ? const Icon(
+                      Ionicons.checkmark_done,
+                      size: 16.0,
+                      color: Colors.green,  
+                    )  
+                  : const Icon(
+                      Ionicons.checkmark_done,
+                      size: 16.0,
+                      color: Colors.black,  
+                    )
+                  : const SizedBox(),
+                  const SizedBox(width: 5.0),
+                  Text(subtitle, 
+                    softWrap: true,
+                    style: TextStyle(
+                      overflow: TextOverflow.ellipsis,
+                      color: ColorResources.textBlackPrimary,
+                      fontSize: Dimensions.fontSizeExtraSmall,
+                    )
+                  ),
+                ],
+              )
             ),
-          const SizedBox(width: 30.0),
-          subtitle.isNotEmpty ?
-          isRead
-          ? const Icon(
-              Ionicons.checkmark_done,
-              size: 16.0,
-              color: Colors.green,  
-            )  
-          : const Icon(
-              Ionicons.checkmark_done,
-              size: 16.0,
-              color: Colors.black,  
-            )
-          : const SizedBox()
         ],
       )    
     );
@@ -406,7 +410,7 @@ class CustomChatListViewTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
-      mainAxisAlignment: isOwnMessage ? MainAxisAlignment.start : MainAxisAlignment.end, 
+      mainAxisAlignment: isOwnMessage ? MainAxisAlignment.end : MainAxisAlignment.start, 
       children: [
         message.type == MessageType.text 
         ? TextMessageBubble(
