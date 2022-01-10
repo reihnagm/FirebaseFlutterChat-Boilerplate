@@ -1,3 +1,5 @@
+import 'package:chatv28/pages/chats_group_detail.dart';
+import 'package:chatv28/services/navigation.dart';
 import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
 import 'package:intl/intl.dart';
 
@@ -20,8 +22,11 @@ import 'package:chatv28/providers/authentication.dart';
 class ChatPage extends StatefulWidget {
   final String title;
   final String subtitle;
+  final String groupName;
+  final String groupImage;
   final bool isGroup;
   final String chatUid;
+  final String currentUserId;
   final String receiverId;
   final String receiverName;
   final String receiverImage;
@@ -30,8 +35,11 @@ class ChatPage extends StatefulWidget {
   const ChatPage({ 
     required this.title,
     required this.subtitle,
+    required this.groupName,
+    required this.groupImage,
     required this.isGroup,
     required this.chatUid,
+    required this.currentUserId,
     required this.receiverId,
     required this.receiverName,
     required this.receiverImage,
@@ -142,32 +150,47 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                       children: [ 
                         Column(
                           children: [
-                            TopBarChat(
-                              barTitle: widget.title,
-                              subTitle: widget.isGroup 
-                              ? widget.subtitle 
-                              : context.watch<ChatProvider>().isOnline == null ? "" : context.read<ChatProvider>().isOnline,
-                              primaryAction: IconButton(
-                                icon: const Icon(
-                                  Icons.delete,
-                                  color: ColorResources.white
-                                ),
-                                onPressed: () {
-                                    Provider.of<ChatProvider>(context, listen: false).deleteChat(context, chatUid: widget.chatUid, receiverId: widget.receiverId);
+                            Material(
+                              color: ColorResources.transparent,
+                              child: InkWell(
+                                onTap: () {
+                                  if(widget.isGroup) {
+                                    NavigationService().pushNav(context, ChatsGroupDetail(
+                                      title: widget.groupName,
+                                      imageUrl: widget.groupImage,
+                                      currentUserId: widget.currentUserId,
+                                      members: widget.members
+                                    ));
+                                  }
                                 },
-                              ),  
-                              secondaryAction: IconButton(
-                                icon: const Icon(
-                                  Icons.arrow_back,
-                                  color: ColorResources.white
+                                child: TopBarChat(
+                                  barTitle: widget.title,
+                                  subTitle: widget.isGroup 
+                                  ? widget.subtitle 
+                                  : context.watch<ChatProvider>().isOnline == null ? "" : context.read<ChatProvider>().isOnline,
+                                  primaryAction: IconButton(
+                                    icon: const Icon(
+                                      Icons.delete,
+                                      color: ColorResources.white
+                                    ),
+                                    onPressed: () {
+                                        Provider.of<ChatProvider>(context, listen: false).deleteChat(context, chatUid: widget.chatUid, receiverId: widget.receiverId);
+                                    },
+                                  ),  
+                                  secondaryAction: IconButton(
+                                    icon: const Icon(
+                                      Icons.arrow_back,
+                                      color: ColorResources.white
+                                    ),
+                                    onPressed: () {
+                                      Provider.of<ChatProvider>(context, listen: false).goBack(context, chatUid: widget.chatUid, receiverId: widget.receiverId);
+                                      Provider.of<ChatProvider>(context, listen: false).leaveScreen(
+                                        chatUid: widget.chatUid,
+                                      );
+                                    },
+                                  ),  
                                 ),
-                                onPressed: () {
-                                  Provider.of<ChatProvider>(context, listen: false).goBack(context, chatUid: widget.chatUid, receiverId: widget.receiverId);
-                                  Provider.of<ChatProvider>(context, listen: false).leaveScreen(
-                                    chatUid: widget.chatUid,
-                                  );
-                                },
-                              ),  
+                              ),
                             ),
                             messageList(),
                             sendMessageForm()
@@ -315,6 +338,8 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
             receiverImage: widget.receiverImage,
             tokens: widget.tokens,
             members: widget.members,
+            groupName: widget.groupName,
+            groupImage: widget.groupImage,
             isGroup: widget.isGroup,
           );
         }
@@ -344,6 +369,8 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
             receiverImage: widget.receiverImage,
             members: widget.members,
             tokens: widget.tokens,
+            groupName: widget.groupName,
+            groupImage: widget.groupImage,
             isGroup: widget.isGroup,
           );
         },

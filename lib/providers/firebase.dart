@@ -37,6 +37,8 @@ class FirebaseProvider with ChangeNotifier {
       String chatId = data["chatUid"];
       String title = data["title"];
       String subtitle = data["subtitle"];
+      String groupName = data["groupName"];
+      String groupImage = data["groupImage"];
       String isGroup = data["isGroup"];
       String receiverId = data["receiverId"];
       String receiverName = data["receiverName"];
@@ -47,7 +49,10 @@ class FirebaseProvider with ChangeNotifier {
             chatUid: chatId,
             title: title,  
             subtitle: subtitle,
+            groupName: "",
+            groupImage: "",
             isGroup: isGroup == "true" ? true : false,
+            currentUserId: authenticationProvider.userUid(),
             receiverId: receiverId,
             receiverName: receiverName,
             receiverImage: receiverImage,
@@ -110,7 +115,10 @@ class FirebaseProvider with ChangeNotifier {
     required String receiverId,
     required String receiverName,
     required String receiverImage,
+    required String groupName,
+    required String groupImage,
     required bool isGroup,
+    required String type
   }) async {
     Object data = {};
     if(isGroup) {
@@ -119,7 +127,7 @@ class FirebaseProvider with ChangeNotifier {
         "collapse_key": "type_a",
         "notification": {
           "title": title,
-          "body": "${authenticationProvider.userName()} : $body",
+          "body": "${authenticationProvider.userName()} : ${type == "image" ? "Media Attachment" : body}",
           "sound":"default"
         },
         "data": {
@@ -129,6 +137,8 @@ class FirebaseProvider with ChangeNotifier {
           "receiverId": receiverId,
           "receiverName": receiverName,
           "receiverImage": receiverImage,
+          "groupName": groupName,
+          "groupImage": groupImage,
           "isGroup": true,
           "click_action": "FLUTTER_NOTIFICATION_CLICK"
         },
@@ -140,7 +150,7 @@ class FirebaseProvider with ChangeNotifier {
         "collapse_key": "type_a",
         "notification": {
           "title":authenticationProvider.userName(),
-          "body": body,
+          "body": type == "image" ? "Media Attachment" : body,
           "sound":"default"
         },
         "data": {

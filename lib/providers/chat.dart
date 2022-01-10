@@ -73,6 +73,7 @@ class ChatProvider extends ChangeNotifier {
   void listenToMessages({required String chatUid}) {
     try { 
       messageStream = databaseService.streamMessagesForChat(chatUid).listen((snapshot) {
+        messages = null;
         List<ChatMessage> cm = snapshot.docs.map((m) {
           Map<String, dynamic> messageData = m.data() as Map<String, dynamic>;
           return ChatMessage.fromJSON(messageData);
@@ -128,6 +129,8 @@ class ChatProvider extends ChangeNotifier {
     required String receiverId,
     required List<ChatUser> members,
     required List<Token> tokens,
+    required String groupName,
+    required String groupImage,
     required bool isGroup
   }) async {
     if(messages != null) {
@@ -208,7 +211,10 @@ class ChatProvider extends ChangeNotifier {
             receiverId: receiverId,
             receiverName: receiverName,
             receiverImage: receiverImage,
+            groupName: groupName,
+            groupImage: groupImage,
             isGroup: isGroup,
+            type: "text"
           );
         } catch(e) {
           debugPrint(e.toString());
@@ -234,6 +240,8 @@ class ChatProvider extends ChangeNotifier {
     required String receiverImage,
     required List<ChatUser> members,
     required List<Token> tokens,
+    required String groupName,
+    required String groupImage,
     required bool isGroup
   }) async {
     try {
@@ -316,7 +324,10 @@ class ChatProvider extends ChangeNotifier {
               receiverId: receiverId,
               receiverName: receiverName,
               receiverImage: receiverImage,
+              groupImage: groupImage,
+              groupName: groupName,
               isGroup: isGroup,
+              type: "image"
             );
           } catch(e) {
             debugPrint(e.toString());

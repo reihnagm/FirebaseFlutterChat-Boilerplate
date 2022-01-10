@@ -451,8 +451,8 @@ class _UsersPageState extends State<UsersPage> {
                 imagePath: users[i].image!, 
                 isActive: users[i].isUserOnline(),  
                 onTap: () async {
-                  QuerySnapshot<Map<String, dynamic>> checkCreateChat = (await databaseService.checkCreateChat(context.read<AuthenticationProvider>().userUid(), users[i].uid!))!;
-                  if(checkCreateChat.docs.length == 1 || checkCreateChat.docs.isEmpty) {
+                  QuerySnapshot<Map<String, dynamic>> checkCreateChat = (await databaseService.checkCreateChat(users[i].uid!))!;
+                  if(checkCreateChat.docs.isEmpty) {
                     DocumentReference? doc = await databaseService.createChat(
                       {
                         "is_group": false,
@@ -492,9 +492,12 @@ class _UsersPageState extends State<UsersPage> {
                       chatUid: doc!.id,
                       title: users[i].name!,
                       subtitle: users[i].isOnline.toString(),
+                      currentUserId: context.read<AuthenticationProvider>().userUid(),
                       receiverId: users[i].uid!,
                       receiverName: users[i].name!,
                       receiverImage: users[i].image!,
+                      groupName: "",
+                      groupImage: "",
                       isGroup: false,
                       tokens: const [],
                       members: const [],
@@ -519,9 +522,12 @@ class _UsersPageState extends State<UsersPage> {
                       chatUid: checkCreateChat.docs[0].id,
                       title: users[i].name!,
                       subtitle: users[i].isOnline.toString(),
+                      currentUserId: context.read<AuthenticationProvider>().userUid(),
                       receiverId: users[i].uid!,
                       receiverName: users[i].name!,
                       receiverImage: users[i].image!,
+                      groupName: "",
+                      groupImage: "",
                       isGroup: false,
                       tokens: const [],
                       members: const [],

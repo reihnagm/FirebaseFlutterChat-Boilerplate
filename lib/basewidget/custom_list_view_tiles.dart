@@ -245,6 +245,7 @@ class CustomListViewTileWithoutActivity extends StatelessWidget {
   final bool isActivity;
   final Function onTap;
   final bool isRead;
+  final bool isOwnMessage;
   final int readCount;
 
   const CustomListViewTileWithoutActivity({
@@ -258,6 +259,7 @@ class CustomListViewTileWithoutActivity extends StatelessWidget {
     required this.isActivity,
     required this.onTap,
     required this.isRead,
+    required this.isOwnMessage,
     required this.readCount,
   }) : super(key: key);
 
@@ -358,19 +360,23 @@ class CustomListViewTileWithoutActivity extends StatelessWidget {
               child: Row(
                 children: [
                   subtitle.isNotEmpty ?
-                  isRead
-                  ? const Icon(
-                      Ionicons.checkmark_done,
-                      size: 16.0,
-                      color: Colors.green,  
-                    )  
-                  : const Icon(
-                      Ionicons.checkmark_done,
-                      size: 16.0,
-                      color: Colors.black,  
-                    )
+                  isOwnMessage ?
+                    isRead
+                    ? const Icon(
+                        Ionicons.checkmark_done,
+                        size: 16.0,
+                        color: Colors.green,  
+                      )  
+                    : const Icon(
+                        Ionicons.checkmark_done,
+                        size: 16.0,
+                        color: Colors.black,  
+                      )
+                  : const SizedBox()
                   : const SizedBox(),
-                  const SizedBox(width: 5.0),
+                  isOwnMessage 
+                  ? const SizedBox(width: 5.0)
+                  : const SizedBox(),
                   Text(subtitle, 
                     softWrap: true,
                     style: TextStyle(

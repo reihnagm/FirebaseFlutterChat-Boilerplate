@@ -2,7 +2,6 @@ import 'package:intl/intl.dart';
 
 import 'package:flutter/material.dart';
 import 'package:ionicons/ionicons.dart';
-import 'package:timeago/timeago.dart' as timeago;
 
 import 'package:chatv28/utils/color_resources.dart';
 import 'package:chatv28/utils/dimensions.dart';
@@ -178,7 +177,7 @@ class _TextMessageBubbleState extends State<TextMessageBubble> {
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(timeago.format(widget.message.sentTime),
+              Text(DateFormat("HH:mm").format(widget.message.sentTime),
                 style: TextStyle(
                   color: widget.isOwnMessage 
                   ? Colors.black
@@ -187,19 +186,20 @@ class _TextMessageBubbleState extends State<TextMessageBubble> {
                 ),
               ),
               const SizedBox(width: 10.0),
-              widget.message.isRead
-              ? const Icon(
-                  Ionicons.checkmark_done,
-                  size: 16.0,
-                  color: Colors.green,  
-                )  
-              : Icon(
-                  Ionicons.checkmark_done,
-                  size: 16.0,
-                  color: widget.isOwnMessage 
-                  ? Colors.black 
-                  : Colors.white  
-                ),
+              if(widget.isOwnMessage)
+                widget.message.isRead
+                ? const Icon(
+                    Ionicons.checkmark_done,
+                    size: 16.0,
+                    color: Colors.green,  
+                  )  
+                : Icon(
+                    Ionicons.checkmark_done,
+                    size: 16.0,
+                    color: widget.isOwnMessage 
+                    ? Colors.black 
+                    : Colors.white  
+                  ),
             ],
           ), 
         ],
@@ -267,7 +267,7 @@ class ImageMessageBubble extends StatelessWidget {
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(timeago.format(message.sentTime),
+              Text(DateFormat("HH:mm").format(message.sentTime),
                 style: TextStyle(
                   color: isOwnMessage 
                   ? Colors.black 
@@ -276,17 +276,18 @@ class ImageMessageBubble extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 10.0),
-              message.isRead
-              ? const Icon(
-                  Ionicons.checkmark_done,
-                  size: 20.0,
-                  color: Colors.green  
-                )  
-              : const Icon(
-                  Ionicons.checkmark_done,
-                  size: 20.0,
-                  color: Colors.black,  
-                ),
+              if(isOwnMessage)
+                message.isRead
+                ? const Icon(
+                    Ionicons.checkmark_done,
+                    size: 20.0,
+                    color: Colors.green  
+                  )  
+                : const Icon(
+                    Ionicons.checkmark_done,
+                    size: 20.0,
+                    color: Colors.black,  
+                  ),
             ],
           ),
         ],

@@ -29,6 +29,7 @@ class _ChatsPageState extends State<ChatsPage> {
     super.initState();
     WidgetsBinding.instance!.addPostFrameCallback((_) {
       Provider.of<AuthenticationProvider>(context, listen: false).initAuthStateChanges();
+      Provider.of<ChatsProvider>(context, listen: false).getChats();
     });
   }
   
@@ -42,7 +43,6 @@ class _ChatsPageState extends State<ChatsPage> {
   Widget buildUI() {
     return Builder(
       builder: (BuildContext context) {
-        context.watch<ChatsProvider>().getChats();
         return Container(
           decoration: const BoxDecoration(
             color: ColorResources.backgroundColor
@@ -131,6 +131,9 @@ class _ChatsPageState extends State<ChatsPage> {
     : subtitle 
     : subtitle;
 
+    bool isOwnMessage = chat.messages.isNotEmpty 
+    ? context.read<AuthenticationProvider>().userUid() == chat.messages.last.senderId 
+    : context.read<AuthenticationProvider>().userUid() == chat.currentUserId;
     return CustomListViewTileWithoutActivity(
       height: deviceHeight * 0.10, 
       group: chat.group,
@@ -141,10 +144,14 @@ class _ChatsPageState extends State<ChatsPage> {
       isActivity: chat.activity, 
       readCount: chat.readCount(),
       isRead: chat.isRead(),
+      isOwnMessage: isOwnMessage,
       onTap: () {
         NavigationService().pushNav(context, ChatPage(
           title: chat.title(),
           subtitle: chat.subtitle(),
+          currentUserId: chat.currentUserId,
+          groupName: chat.groupData.name,
+          groupImage: chat.groupData.image,
           isGroup: chat.group,
           tokens: chat.groupData.tokens,
           chatUid: chat.uid,

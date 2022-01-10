@@ -45,7 +45,8 @@ class ChatsProvider extends ChangeNotifier {
   void getChats() {
     try {
       chatsStream = databaseService.getChatsForUser(authenticationProvider.userUid())!.listen((snapshot) async {
-        chats = await Future.wait(snapshot.docs.map((doc) async {
+        chats = null;
+        List<Chat> c = await Future.wait(snapshot.docs.map((doc) async {
           Map<String, dynamic> chatData = doc.data() as Map<String, dynamic>;
           List<dynamic> m = chatData["members"];
           GroupData groupData = GroupData.fromJson(chatData["group"]);
@@ -102,6 +103,7 @@ class ChatsProvider extends ChangeNotifier {
             messagesGroupCount: messagesGroupCount,
           );
         }).toList());
+        chats = c;
         setStateChatsStatus(ChatsStatus.loaded);
       });
     } catch (e) {
