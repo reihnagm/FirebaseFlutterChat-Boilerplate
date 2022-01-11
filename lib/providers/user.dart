@@ -118,7 +118,7 @@ class UserProvider extends ChangeNotifier {
           );
         }
         try {
-          await databaseService.createChat({
+          await databaseService.createChatGroup({
             "is_group": isGroup,
             "is_activity": false,
             "group": {

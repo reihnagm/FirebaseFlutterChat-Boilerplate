@@ -1,11 +1,14 @@
 import 'dart:io';
 
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:chatv28/providers/chat.dart';
+import 'package:chatv28/providers/chats.dart';
 import 'package:flutter/material.dart';
 
 import 'package:chatv28/models/chat_user.dart';
 import 'package:chatv28/utils/dimensions.dart';
 import 'package:chatv28/utils/color_resources.dart';
+import 'package:provider/src/provider.dart';
 
 class ChatsGroupDetail extends StatefulWidget {
   final String title;
@@ -25,6 +28,7 @@ class ChatsGroupDetail extends StatefulWidget {
 }
 
 class _ChatsGroupDetailState extends State<ChatsGroupDetail> {
+  
   String imageUrl = "";
   String title = "";
   String titleMore = "";
@@ -64,7 +68,7 @@ class _ChatsGroupDetailState extends State<ChatsGroupDetail> {
   
   @override
   Widget build(BuildContext context) {
-
+    
     imageUrl = widget.imageUrl;
     titleMore = widget.title;
     members = widget.members;
@@ -157,8 +161,8 @@ class _ChatsGroupDetailState extends State<ChatsGroupDetail> {
                           contentPadding: EdgeInsets.zero,
                           dense: true,
                           leading: Container(
-                            width: 40.0,
-                            height: 40.0,
+                            width: 35.0,
+                            height: 35.0,
                             decoration: BoxDecoration(
                               image: DecorationImage(
                                 fit: BoxFit.cover,
@@ -170,7 +174,7 @@ class _ChatsGroupDetailState extends State<ChatsGroupDetail> {
                           ),
                           title: Text(widget.currentUserId == members[i].uid ? "You" : members[i].name!,
                             style: TextStyle(
-                              fontSize: Dimensions.fontSizeDefault,
+                              fontSize: Dimensions.fontSizeSmall,
                               color: ColorResources.textBlackPrimary
                             ),
                           ),

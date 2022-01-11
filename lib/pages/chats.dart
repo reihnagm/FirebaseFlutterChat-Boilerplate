@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -24,17 +25,21 @@ class _ChatsPageState extends State<ChatsPage> {
   late double deviceHeight;
   late double deviceWidth;
 
+  late AuthenticationProvider authenticationProvider;
+  late ChatsProvider chatsProvider;
+
   @override 
   void initState() {
     super.initState();
-    WidgetsBinding.instance!.addPostFrameCallback((_) {
-      Provider.of<AuthenticationProvider>(context, listen: false).initAuthStateChanges();
-      Provider.of<ChatsProvider>(context, listen: false).getChats();
+    WidgetsBinding.instance!.addPostFrameCallback((timeStamp) {
+      authenticationProvider.initAuthStateChanges();
     });
   }
   
   @override
   Widget build(BuildContext context) {
+    authenticationProvider = context.read<AuthenticationProvider>();
+    chatsProvider = context.watch<ChatsProvider>();
     deviceHeight = MediaQuery.of(context).size.height;
     deviceWidth = MediaQuery.of(context).size.width;
     return buildUI();
@@ -43,6 +48,7 @@ class _ChatsPageState extends State<ChatsPage> {
   Widget buildUI() {
     return Builder(
       builder: (BuildContext context) {
+        chatsProvider.getChats();
         return Container(
           decoration: const BoxDecoration(
             color: ColorResources.backgroundColor
@@ -83,7 +89,7 @@ class _ChatsPageState extends State<ChatsPage> {
   }
 
   Widget chatList() {
-    List<Chat>? chats = context.watch<ChatsProvider>().chats;
+    List<Chat>? chats = chatsProvider.chats;
     return Expanded(
       child: (() {
         if(chats == null) {
@@ -96,7 +102,7 @@ class _ChatsPageState extends State<ChatsPage> {
               ),
             ),
           );
-        } 
+        }
         if(chats.isNotEmpty) {
           return ListView.builder(
             itemCount: chats.length,
@@ -132,8 +138,8 @@ class _ChatsPageState extends State<ChatsPage> {
     : subtitle;
 
     bool isOwnMessage = chat.messages.isNotEmpty 
-    ? context.read<AuthenticationProvider>().userUid() == chat.messages.last.senderId 
-    : context.read<AuthenticationProvider>().userUid() == chat.currentUserId;
+    ? authenticationProvider.userUid() == chat.messages.last.senderId 
+    : authenticationProvider.userUid() == chat.currentUserId;
     return CustomListViewTileWithoutActivity(
       height: deviceHeight * 0.10, 
       group: chat.group,
@@ -145,6 +151,109 @@ class _ChatsPageState extends State<ChatsPage> {
       readCount: chat.readCount(),
       isRead: chat.isRead(),
       isOwnMessage: isOwnMessage,
+      onLongPress: () {
+        if(!chat.group) {
+          showDialog(
+            context: context, 
+            barrierDismissible: true,
+            builder: (cn) {
+              return AlertDialog(
+                backgroundColor: ColorResources.transparent,
+                elevation: 0,
+                content: Stack(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.only(
+                        left: 35.0,
+                        top: 35.0,
+                        right: 35.0,
+                        bottom: 35.0
+                      ),
+                      margin: const EdgeInsets.only(top: 45.0),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.rectangle,
+                        color:ColorResources.white,
+                        borderRadius: BorderRadius.circular(10.0),
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Text("Apakah kamu yakin ingin hapus ?",
+                            style: TextStyle(
+                              fontSize: 14.0,
+                              fontWeight: FontWeight.bold,
+                              color: ColorResources.black
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(
+                            height: 20.0,
+                          ),
+                          Align(
+                            alignment: Alignment.bottomCenter,
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: GestureDetector(
+                                    onTap: () {
+                                      Navigator.of(cn, rootNavigator: true).pop();
+                                    },
+                                    child: Container(
+                                      height: 30.0,
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(10.0),
+                                        color: ColorResources.loaderBluePrimary,
+                                      ),
+                                      child: const Center(
+                                        child: Text("Batal",
+                                          style: TextStyle(
+                                            fontSize: 12.0,
+                                            color: ColorResources.white
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(
+                                  width: 10.0,
+                                ),
+                                Expanded(
+                                  child: GestureDetector(
+                                    onTap: () async { 
+                                      Navigator.of(context).pop();
+                                      await chatsProvider.deleteChat(chatId: chat.uid);
+                                    },  
+                                    child: Container(
+                                      height: 30.0,
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(10.0),
+                                        color: ColorResources.error,
+                                      ),
+                                      child: const Center(
+                                        child: Text("Ok",
+                                          style: TextStyle(
+                                            fontSize: 12.0,
+                                            color: ColorResources.white
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          );
+        }
+      },
       onTap: () {
         NavigationService().pushNav(context, ChatPage(
           title: chat.title(),

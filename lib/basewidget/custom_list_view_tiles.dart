@@ -244,6 +244,7 @@ class CustomListViewTileWithoutActivity extends StatelessWidget {
   final String imagePath;
   final bool isActivity;
   final Function onTap;
+  final Function onLongPress;
   final bool isRead;
   final bool isOwnMessage;
   final int readCount;
@@ -258,6 +259,7 @@ class CustomListViewTileWithoutActivity extends StatelessWidget {
     required this.imagePath,
     required this.isActivity,
     required this.onTap,
+    required this.onLongPress,
     required this.isRead,
     required this.isOwnMessage,
     required this.readCount,
@@ -268,6 +270,7 @@ class CustomListViewTileWithoutActivity extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListTile(
       onTap: () => onTap(),
+      onLongPress: () => onLongPress(),
       leading: RoundedImageNetworkWithoutStatusIndicator(
         key: UniqueKey(),
         imagePath: imagePath, 
@@ -377,16 +380,37 @@ class CustomListViewTileWithoutActivity extends StatelessWidget {
                   isOwnMessage 
                   ? const SizedBox(width: 5.0)
                   : const SizedBox(),
-                  Text(subtitle, 
-                    softWrap: true,
-                    style: TextStyle(
-                      overflow: TextOverflow.ellipsis,
-                      color: ColorResources.textBlackPrimary,
-                      fontSize: Dimensions.fontSizeExtraSmall,
-                    )
+                  SizedBox(
+                    width: MediaQuery.of(context).size.width * 0.30,
+                    child: subtitle == "Media Attachment" ?
+                      Row(
+                        children: [
+                          Text(subtitle, 
+                            softWrap: true,
+                            style: TextStyle(
+                              overflow: TextOverflow.ellipsis,
+                              color: ColorResources.textBlackPrimary,
+                              fontSize: Dimensions.fontSizeExtraSmall,
+                            )
+                          ),
+                          const SizedBox(width: 5.0),
+                          const Icon(
+                            Icons.image, 
+                            size: 16.0
+                          )
+                        ],
+                      )
+                    : Text(subtitle, 
+                      softWrap: true,
+                      style: TextStyle(
+                        overflow: TextOverflow.ellipsis,
+                        color: ColorResources.textBlackPrimary,
+                        fontSize: Dimensions.fontSizeExtraSmall,
+                      )
+                    ),
                   ),
                 ],
-              )
+              ),
             ),
         ],
       )    

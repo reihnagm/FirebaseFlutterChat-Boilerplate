@@ -43,6 +43,7 @@ dependencies:
 
   # P
   provider: ^6.0.1
+  photo_view: ^0.13.0
   popover: ^0.2.6+3
   
   # T
@@ -51,6 +52,9 @@ dependencies:
   # S
   shared_preferences: ^2.0.11
   soundpool: ^2.2.0
+
+  # U
+  uuid: ^3.0.5
 
 dev_dependencies:
   flutter_test:

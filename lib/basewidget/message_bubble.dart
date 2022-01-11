@@ -1,3 +1,8 @@
+import 'package:chatv28/basewidget/full_photo.dart';
+import 'package:chatv28/providers/chat.dart';
+import 'package:chatv28/providers/chats.dart';
+import 'package:chatv28/services/database.dart';
+import 'package:chatv28/services/navigation.dart';
 import 'package:intl/intl.dart';
 
 import 'package:flutter/material.dart';
@@ -6,6 +11,7 @@ import 'package:ionicons/ionicons.dart';
 import 'package:chatv28/utils/color_resources.dart';
 import 'package:chatv28/utils/dimensions.dart';
 import 'package:chatv28/models/chat_message.dart';
+import 'package:provider/provider.dart';
 
 class TextMessageBubble extends StatefulWidget {
   final bool isGroup;
@@ -26,8 +32,12 @@ class TextMessageBubble extends StatefulWidget {
 }
 
 class _TextMessageBubbleState extends State<TextMessageBubble> {
+  late ChatsProvider chatsProvider;
+
+
   @override
   Widget build(BuildContext context) {
+    chatsProvider = context.read<ChatsProvider>();
     // List<Color> colorScheme = isOwnMessage 
     // ? [
     //     const Color.fromRGBO(0, 136, 249, 1.0),
@@ -41,7 +51,7 @@ class _TextMessageBubbleState extends State<TextMessageBubble> {
     ? const Color.fromRGBO(250, 250, 250, 1.0)
     : const Color.fromRGBO(51, 49, 68, 1.0);
     
-    return  Container(
+    return Container(
       margin: const EdgeInsets.only(top: 15.0),
       padding: const EdgeInsets.symmetric(
         horizontal: 10.0,
@@ -67,7 +77,7 @@ class _TextMessageBubbleState extends State<TextMessageBubble> {
                     fontSize: Dimensions.fontSizeExtraSmall
                   ),
                 ),
-                const SizedBox(width: 80.0),
+                // const SizedBox(width: 80.0),
                 widget.isOwnMessage ? PopupMenuButton(
                   padding: EdgeInsets.zero,
                   icon: const Icon(
@@ -84,6 +94,14 @@ class _TextMessageBubbleState extends State<TextMessageBubble> {
                           ),
                         ),
                         value: 'info'
+                      ),
+                      const PopupMenuItem(
+                        child: Icon(
+                          Icons.delete,
+                          color: ColorResources.error,
+                          size: 16.0,
+                        ),
+                        value: 'delete'
                       ),
                     ];
                   },
@@ -161,8 +179,42 @@ class _TextMessageBubbleState extends State<TextMessageBubble> {
                   }
                 }) : const SizedBox(),
               ],
-            ) 
-          : const SizedBox(),
+            ) : Row(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(widget.message.senderName,
+                  style: TextStyle(
+                    color: widget.isOwnMessage ? ColorResources.textBlackPrimary : ColorResources.white,
+                    fontSize: Dimensions.fontSizeExtraSmall
+                  ),
+                ),
+                widget.isOwnMessage ? PopupMenuButton(
+                  padding: EdgeInsets.zero,
+                  icon: const Icon(
+                    Icons.keyboard_arrow_down,
+                    color: ColorResources.black,
+                    size: 16.0,
+                  ),
+                  itemBuilder: (BuildContext context) { 
+                    return <PopupMenuItem<String>>[
+                      const PopupMenuItem(
+                        child: Icon(
+                          Icons.delete,
+                          color: ColorResources.error,
+                          size: 16.0,
+                        ),
+                        value: 'delete'
+                      ),
+                    ];
+                  },
+                onSelected: (String value) async {
+                  if(value == "delete") {
+                    await chatsProvider.deleteMsg(chatId: widget.chatUid, msgId: widget.message.uid);
+                  }
+                }) : const SizedBox(),
+              ],
+            ),
           Text(widget.message.content,
             textAlign: TextAlign.justify,
             style: TextStyle(
@@ -239,59 +291,97 @@ class ImageMessageBubble extends StatelessWidget {
       image: NetworkImage(message.content),
       fit: BoxFit.cover
     ); 
-    return Container(
-      width: width,
-      margin: const EdgeInsets.only(top: 15.0),
-      padding: const EdgeInsets.symmetric(
-        horizontal: 10.0,
-        vertical:  10.0
-      ),
-      decoration: BoxDecoration(
-        color: colorScheme,
-        borderRadius: BorderRadius.circular(15.0),
-      ), 
-      child: Column(
-        mainAxisSize: MainAxisSize.max,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
+    return Consumer<ChatProvider>(
+      builder: (BuildContext context, ChatProvider chatProvider, Widget? child) {
+        if(message.content == "loading") {
+          return Container(
             width: width,
-            height: height,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(15.0),
-              image: decorationImage 
+            height: 180.0,
+            margin: const EdgeInsets.only(top: 15.0),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 10.0,
+              vertical:  10.0
             ),
+            decoration: BoxDecoration(
+              color: colorScheme,
+              borderRadius: BorderRadius.circular(15.0),
+            ), 
+            child: Column(
+              mainAxisSize: MainAxisSize.max,
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: const [
+                SizedBox(
+                  width: 16.0,
+                  height: 16.0,
+                  child: CircularProgressIndicator(
+                    color: ColorResources.loaderBluePrimary,
+                  )
+                )
+              ],
+            ),
+          );
+        }
+        return Container(
+          width: width,
+          margin: const EdgeInsets.only(top: 15.0),
+          padding: const EdgeInsets.symmetric(
+            horizontal: 10.0,
+            vertical:  10.0
           ),
-          const SizedBox(height: 5.0),
-          Row(
-            mainAxisSize: MainAxisSize.min,
+          decoration: BoxDecoration(
+            color: colorScheme,
+            borderRadius: BorderRadius.circular(15.0),
+          ), 
+          child: Column(
+            mainAxisSize: MainAxisSize.max,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(DateFormat("HH:mm").format(message.sentTime),
-                style: TextStyle(
-                  color: isOwnMessage 
-                  ? Colors.black 
-                  : Colors.white,
-                  fontSize: Dimensions.fontSizeExtraSmall,
+              InkWell(
+                onTap: () {
+                  NavigationService().pushNav(context, FullPhotoScreen(url: message.content));
+                },
+                child: Container(
+                  width: width,
+                  height: height,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(15.0),
+                    image: decorationImage 
+                  ),
                 ),
               ),
-              const SizedBox(width: 10.0),
-              if(isOwnMessage)
-                message.isRead
-                ? const Icon(
-                    Ionicons.checkmark_done,
-                    size: 20.0,
-                    color: Colors.green  
-                  )  
-                : const Icon(
-                    Ionicons.checkmark_done,
-                    size: 20.0,
-                    color: Colors.black,  
+              const SizedBox(height: 5.0),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(DateFormat("HH:mm").format(message.sentTime),
+                    style: TextStyle(
+                      color: isOwnMessage 
+                      ? Colors.black 
+                      : Colors.white,
+                      fontSize: Dimensions.fontSizeExtraSmall,
+                    ),
                   ),
+                  const SizedBox(width: 10.0),
+                  if(isOwnMessage)
+                    message.isRead
+                    ? const Icon(
+                        Ionicons.checkmark_done,
+                        size: 20.0,
+                        color: Colors.green  
+                      )  
+                    : const Icon(
+                        Ionicons.checkmark_done,
+                        size: 20.0,
+                        color: Colors.black,  
+                      ),
+                ],
+              ),
             ],
           ),
-        ],
-      ),
-    );
+        );
+      },
+    ); 
   }
 }

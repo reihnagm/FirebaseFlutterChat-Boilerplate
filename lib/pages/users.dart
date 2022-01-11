@@ -37,12 +37,16 @@ class _UsersPageState extends State<UsersPage> {
   late double deviceHeight; 
   late double deviceWidth;
 
-  File? file;
-  PlatformFile? groupImage;
   late DatabaseService databaseService; 
   late MediaService mediaService;
   late TextEditingController searchFieldTextEditingController;
+  late AuthenticationProvider authenticationProvider;
+  late UserProvider userProvider;
+
+  File? file;
+  PlatformFile? groupImage;
   String groupName = "";
+  String groupChatId = "";
   FocusNode focusNodeGroupName = FocusNode();
 
   void chooseGroupAvatar() async {
@@ -74,8 +78,8 @@ class _UsersPageState extends State<UsersPage> {
   void initState() {
     super.initState();
     searchFieldTextEditingController = TextEditingController();
-    WidgetsBinding.instance!.addPostFrameCallback((_) {
-      Provider.of<AuthenticationProvider>(context, listen: false).initAuthStateChanges();
+    WidgetsBinding.instance!.addPostFrameCallback((timeStamp) {
+      authenticationProvider.initAuthStateChanges();
     });
   }
 
@@ -87,6 +91,8 @@ class _UsersPageState extends State<UsersPage> {
 
   @override
   Widget build(BuildContext context) {
+    authenticationProvider = context.read<AuthenticationProvider>();
+    userProvider = context.watch<UserProvider>();
     databaseService = DatabaseService();
     mediaService = MediaService();
     deviceHeight = MediaQuery.of(context).size.height;
@@ -97,7 +103,7 @@ class _UsersPageState extends State<UsersPage> {
   Widget buildUI() {
     return Builder(
       builder: (context) {
-        context.watch<UserProvider>().getUsers();
+        userProvider.getUsers();
         return Container(
           padding: EdgeInsets.symmetric(
             horizontal: deviceWidth * 0.03,
@@ -142,7 +148,7 @@ class _UsersPageState extends State<UsersPage> {
                       ),
                       context: context, 
                       builder: (context) {
-                        List<ChatUser>? users = context.read<UserProvider>().users;
+                        List<ChatUser>? users = userProvider.users;
                         return SafeArea(
                           child: LayoutBuilder(
                             builder: (BuildContext context, BoxConstraints constraints) {
@@ -401,7 +407,7 @@ class _UsersPageState extends State<UsersPage> {
               ),
               CustomTextSearchField(
                 onEditingComplete: (val) {
-                  context.read<UserProvider>().getUsers(name: val);
+                  userProvider.getUsers(name: val);
                   FocusScope.of(context).unfocus();
                 },
                 controller: searchFieldTextEditingController,
@@ -435,7 +441,7 @@ class _UsersPageState extends State<UsersPage> {
   }
 
   Widget usersList() {
-    List<ChatUser>? users = context.watch<UserProvider>().users;
+    List<ChatUser>? users = userProvider.users;
     return Expanded(
       child: () {
       if(users != null) {
@@ -451,9 +457,46 @@ class _UsersPageState extends State<UsersPage> {
                 imagePath: users[i].image!, 
                 isActive: users[i].isUserOnline(),  
                 onTap: () async {
-                  QuerySnapshot<Map<String, dynamic>> checkCreateChat = (await databaseService.checkCreateChat(users[i].uid!))!;
-                  if(checkCreateChat.docs.isEmpty) {
-                    DocumentReference? doc = await databaseService.createChat(
+                  String currentUserId = authenticationProvider.chatUser!.uid!;
+                  String peerId = users[i].uid!;
+                  if(currentUserId.compareTo(peerId) > 0) {
+                    groupChatId = '$currentUserId-$peerId';
+                  } else {
+                    groupChatId = '$peerId-$currentUserId';
+                  }
+                  DocumentSnapshot? createChatDoc = await databaseService.checkChat(groupChatId);
+                  if(createChatDoc!.exists) {  
+                    NavigationService().pushNav(context, ChatPage(
+                      chatUid: createChatDoc.id,
+                      title: users[i].name!,
+                      subtitle: users[i].isOnline.toString(),
+                      currentUserId:  authenticationProvider.userUid(),
+                      receiverId: users[i].uid!,
+                      receiverName: users[i].name!,
+                      receiverImage: users[i].image!,
+                      groupName: "",
+                      groupImage: "",
+                      isGroup: false,
+                      tokens: const [],
+                      members: const [],
+                    ));
+                  } else {
+                    NavigationService().pushNav(context, ChatPage(
+                      chatUid: groupChatId,
+                      title: users[i].name!,
+                      subtitle: users[i].isOnline.toString(),
+                      currentUserId: authenticationProvider.userUid(),
+                      receiverId: users[i].uid!,
+                      receiverName: users[i].name!,
+                      receiverImage: users[i].image!,
+                      groupName: "",
+                      groupImage: "",
+                      isGroup: false,
+                      tokens: const [],
+                      members: const [],
+                    ));
+                    await databaseService.createChat(
+                      groupChatId,
                       {
                         "is_group": false,
                         "is_activity": false,
@@ -464,12 +507,12 @@ class _UsersPageState extends State<UsersPage> {
                         },
                         "members": [
                           {
-                            "uid": context.read<AuthenticationProvider>().chatUser!.uid,
-                            "email": context.read<AuthenticationProvider>().chatUser!.email,
-                            "name": context.read<AuthenticationProvider>().chatUser!.name,
-                            "image": context.read<AuthenticationProvider>().chatUser!.image,
-                            "isOnline": context.read<AuthenticationProvider>().chatUser!.isOnline,
-                            "last_active": context.read<AuthenticationProvider>().chatUser!.lastActive,
+                            "uid": authenticationProvider.chatUser!.uid,
+                            "email": authenticationProvider.chatUser!.email,
+                            "name": authenticationProvider.chatUser!.name,
+                            "image": authenticationProvider.chatUser!.image,
+                            "isOnline": authenticationProvider.chatUser!.isOnline,
+                            "last_active": authenticationProvider.chatUser!.lastActive,
                           },
                           {
                             "uid": users[i].uid,
@@ -483,30 +526,16 @@ class _UsersPageState extends State<UsersPage> {
                         "created_at": DateTime.now(),
                         "updated_at": DateTime.now(),
                         "relations": [
-                          context.read<AuthenticationProvider>().chatUser!.uid,
+                          authenticationProvider.chatUser!.uid,
                           users[i].uid
                         ],
                       }
                     );
-                    NavigationService().pushNav(context, ChatPage(
-                      chatUid: doc!.id,
-                      title: users[i].name!,
-                      subtitle: users[i].isOnline.toString(),
-                      currentUserId: context.read<AuthenticationProvider>().userUid(),
-                      receiverId: users[i].uid!,
-                      receiverName: users[i].name!,
-                      receiverImage: users[i].image!,
-                      groupName: "",
-                      groupImage: "",
-                      isGroup: false,
-                      tokens: const [],
-                      members: const [],
-                    ));
                     await databaseService.createOnScreens({
-                      "id": doc.id,
+                      "id": groupChatId,
                       "on_screens": FieldValue.arrayUnion([ 
                         {
-                          "userUid": context.read<AuthenticationProvider>().userUid(),
+                          "userUid": authenticationProvider.userUid(),
                           "token":  await FirebaseMessaging.instance.getToken(), 
                           "on": true
                         },
@@ -517,21 +546,6 @@ class _UsersPageState extends State<UsersPage> {
                         },
                       ]),
                     });
-                  } else {
-                     NavigationService().pushNav(context, ChatPage(
-                      chatUid: checkCreateChat.docs[0].id,
-                      title: users[i].name!,
-                      subtitle: users[i].isOnline.toString(),
-                      currentUserId: context.read<AuthenticationProvider>().userUid(),
-                      receiverId: users[i].uid!,
-                      receiverName: users[i].name!,
-                      receiverImage: users[i].image!,
-                      groupName: "",
-                      groupImage: "",
-                      isGroup: false,
-                      tokens: const [],
-                      members: const [],
-                    ));
                   }
                 },
               );

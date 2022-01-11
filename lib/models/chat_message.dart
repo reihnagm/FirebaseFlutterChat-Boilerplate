@@ -7,6 +7,7 @@ enum MessageType {
 }
 
 class ChatMessage {
+  final String uid;
   final String content;
   final String senderId;
   final String senderName;
@@ -18,6 +19,7 @@ class ChatMessage {
   final List<String> readerCountIds;
 
   ChatMessage({
+    required this.uid,
     required this.content,
     required this.senderId,
     required this.senderName,
@@ -42,6 +44,7 @@ class ChatMessage {
         messageType = MessageType.unknown;
     }
     return ChatMessage(
+      uid: data["uid"],
       content: data["content"], 
       senderId: data["sender_id"],
       senderName: data["sender_name"],
@@ -66,6 +69,7 @@ class ChatMessage {
         messageType = "";
     }
     return {
+      "uid": uid,
       "content": content,
       "type": messageType,
       "sender_id": senderId,

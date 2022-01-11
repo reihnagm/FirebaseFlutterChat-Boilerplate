@@ -38,7 +38,7 @@ class SignOutConfirmationDialog extends StatelessWidget {
               Expanded(
                 child: InkWell(
                 onTap: () async {
-                  await Provider.of<AuthenticationProvider>(context, listen: false).logout(context);
+                  await context.read<AuthenticationProvider>().logout(context);
                 },
                 child: Consumer<AuthenticationProvider>(
                   builder: (BuildContext context, AuthenticationProvider authenticationProvider, Widget? child) {

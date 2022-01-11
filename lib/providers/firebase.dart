@@ -160,6 +160,8 @@ class FirebaseProvider with ChangeNotifier {
           "receiverId": receiverId,
           "receiverName": receiverName,
           "receiverImage": receiverImage,
+          "groupName": "",
+          "groupImage": "",
           "isGroup": false,
           "click_action": "FLUTTER_NOTIFICATION_CLICK"
         },

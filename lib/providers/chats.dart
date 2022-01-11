@@ -9,7 +9,6 @@ import 'package:chatv28/models/chat_user.dart';
 import 'package:chatv28/providers/authentication.dart';
 import 'package:chatv28/services/database.dart';
 
-enum ChatsStatus { idle, loading, loaded, empty, error }
 
 class ChatsProvider extends ChangeNotifier {
   final AuthenticationProvider authenticationProvider;
@@ -20,47 +19,36 @@ class ChatsProvider extends ChangeNotifier {
     required this.databaseService
   });
 
-  ChatsStatus _chatsStatus = ChatsStatus.loading;
-  ChatsStatus get chatsStatus => _chatsStatus;
-
-  void setStateChatsStatus(ChatsStatus chatsStatus) {
-    _chatsStatus = chatsStatus;
-    Future.delayed(Duration.zero, () => notifyListeners());
-  }
-
   List<Chat>? chats;
+  List<ChatUser>? members;
   StreamSubscription? chatsStream;
+  StreamSubscription? membersGroupStream;
   
   @override 
   void dispose() {
     chatsStream!.cancel();
+    membersGroupStream!.cancel();
     super.dispose();
-  }
-
-  void clearChats() {
-    getChats();
-    Future.delayed(Duration.zero, () => notifyListeners());
   }
 
   void getChats() {
     try {
       chatsStream = databaseService.getChatsForUser(authenticationProvider.userUid())!.listen((snapshot) async {
-        chats = null;
-        List<Chat> c = await Future.wait(snapshot.docs.map((doc) async {
+        chats = await Future.wait(snapshot.docs.map((doc) async {
           Map<String, dynamic> chatData = doc.data() as Map<String, dynamic>;
-          List<dynamic> m = chatData["members"];
-          GroupData groupData = GroupData.fromJson(chatData["group"]);
+    
           List<ChatUser> members = [];
           List<ChatMessage> messagesPersonalCount = [];
           List<dynamic> messagesGroupCount = [];
           List<ChatMessage> messages = [];
+          GroupData groupData;
           
-          if(m.isNotEmpty) {
-            for (var member in m) {
-              members.add(ChatUser.fromJson(member));
-            }
+          groupData = GroupData.fromJson(chatData["group"]);
+        
+          for (var member in chatData["members"]) {
+            members.add(ChatUser.fromJson(member));
           }
-      
+    
           QuerySnapshot<Object?>? readerCountIds = await databaseService.readerCountIds(
             chatUid: doc.id, 
             userUid: authenticationProvider.userUid()
@@ -86,7 +74,7 @@ class ChatsProvider extends ChangeNotifier {
             Map<String, dynamic> messageData = chatMessage.docs.first.data() as Map<String, dynamic>;
             ChatMessage message = ChatMessage.fromJSON(messageData);
             messages.add(message);
-          } // Prevent Bad State No Element
+          } //* Prevent Bad State No Element
           return Chat(
             uid: doc.id, 
             currentUserId: authenticationProvider.userUid(), 
@@ -103,10 +91,33 @@ class ChatsProvider extends ChangeNotifier {
             messagesGroupCount: messagesGroupCount,
           );
         }).toList());
-        chats = c;
-        setStateChatsStatus(ChatsStatus.loaded);
+        notifyListeners();
       });
     } catch (e) {
+      debugPrint(e.toString());
+    }
+  }
+
+  void membersGroup({required String userId}) {
+    try {
+    
+    } catch(e) {
+      debugPrint(e.toString());
+    }
+  }
+
+  Future<void> deleteChat({required String chatId}) async {
+    try {
+      await databaseService.deleteChat(chatId);
+    } catch(e) {
+      debugPrint(e.toString());
+    }
+  }
+
+   Future<void> deleteMsg({required String chatId, required String msgId}) async {
+    try {
+      await databaseService.deleteMsg(chatId: chatId, msgId: msgId);
+    } catch(e) {
       debugPrint(e.toString());
     }
   }

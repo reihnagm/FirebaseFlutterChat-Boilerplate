@@ -8,14 +8,14 @@ import 'package:chatv28/services/navigation.dart';
 import 'package:chatv28/basewidget/button/custom_button.dart';
 import 'package:chatv28/basewidget/custom_input_fields.dart';
 
-class LoginPage extends StatefulWidget {
-  const LoginPage({ Key? key }) : super(key: key);
+class RegisterPage extends StatefulWidget {
+  const RegisterPage({ Key? key }) : super(key: key);
 
   @override
-  _LoginPageState createState() => _LoginPageState();
+  _RegisterPageState createState() => _RegisterPageState();
 }
 
-class _LoginPageState extends State<LoginPage> {
+class _RegisterPageState extends State<RegisterPage> {
   late double deviceHeight;
   late double deviceWidth;
 
@@ -58,7 +58,7 @@ class _LoginPageState extends State<LoginPage> {
             const SizedBox(height: 20.0),
             loginButton(),
             const SizedBox(height: 10.0),
-            registerAccountLink()
+            loginAccountLink()
           ],
         ),
       ),
@@ -146,11 +146,11 @@ class _LoginPageState extends State<LoginPage> {
       isBoxShadow: true,
       isLoading: context.watch<AuthenticationProvider>().loginStatus == LoginStatus.loading ? true : false,
       btnColor: ColorResources.loaderBluePrimary,
-      btnTxt: "Login"
+      btnTxt: "Register"
     );
   } 
 
-  Widget registerAccountLink() {
+  Widget loginAccountLink() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -164,7 +164,7 @@ class _LoginPageState extends State<LoginPage> {
               },
               child: Padding(
                 padding: const EdgeInsets.all(8.0),
-                child: Text("Register",
+                child: Text("Login",
                   style: TextStyle(
                     color: ColorResources.textBlackPrimary,
                     fontSize: Dimensions.fontSizeExtraSmall
