@@ -1,11 +1,14 @@
+import 'dart:async';
 import 'dart:io';
 
+import 'package:chatv28/providers/chats.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
 import 'package:chatv28/services/media.dart';
@@ -40,8 +43,6 @@ class _UsersPageState extends State<UsersPage> {
   late DatabaseService databaseService; 
   late MediaService mediaService;
   late TextEditingController searchFieldTextEditingController;
-  late AuthenticationProvider authenticationProvider;
-  late UserProvider userProvider;
 
   File? file;
   PlatformFile? groupImage;
@@ -78,8 +79,9 @@ class _UsersPageState extends State<UsersPage> {
   void initState() {
     super.initState();
     searchFieldTextEditingController = TextEditingController();
-    WidgetsBinding.instance!.addPostFrameCallback((timeStamp) {
-      authenticationProvider.initAuthStateChanges();
+    WidgetsBinding.instance!.addPostFrameCallback((_) {
+      context.read<AuthenticationProvider>().initAuthStateChanges();
+      context.read<UserProvider>().getUsers();
     });
   }
 
@@ -91,8 +93,6 @@ class _UsersPageState extends State<UsersPage> {
 
   @override
   Widget build(BuildContext context) {
-    authenticationProvider = context.read<AuthenticationProvider>();
-    userProvider = context.watch<UserProvider>();
     databaseService = DatabaseService();
     mediaService = MediaService();
     deviceHeight = MediaQuery.of(context).size.height;
@@ -102,8 +102,7 @@ class _UsersPageState extends State<UsersPage> {
 
   Widget buildUI() {
     return Builder(
-      builder: (context) {
-        userProvider.getUsers();
+      builder: (BuildContext context) {
         return Container(
           padding: EdgeInsets.symmetric(
             horizontal: deviceWidth * 0.03,
@@ -148,7 +147,6 @@ class _UsersPageState extends State<UsersPage> {
                       ),
                       context: context, 
                       builder: (context) {
-                        List<ChatUser>? users = userProvider.users;
                         return SafeArea(
                           child: LayoutBuilder(
                             builder: (BuildContext context, BoxConstraints constraints) {
@@ -256,7 +254,7 @@ class _UsersPageState extends State<UsersPage> {
                                                       validator: (val) {
                                                         if(val == null || val.isEmpty) {
                                                           focusNodeGroupName.requestFocus();
-                                                          return 'Name can`t empty';
+                                                          return "Name can't empty";
                                                         } else {
                                                           return null;
                                                         }
@@ -324,25 +322,29 @@ class _UsersPageState extends State<UsersPage> {
                                             ],
                                           )
                                         ),
-                                        Expanded(
-                                          child: ListView.builder(
-                                            itemCount: users!.length,
-                                            itemBuilder: (BuildContext context, int i) {
-                                              return CustomListViewTile(
-                                                title: users[i].name!,
-                                                group: false,
-                                                subtitle: "Last Active: ${timeago.format(users[i].lastActive!)}",
-                                                height: deviceHeight * 0.10,  
-                                                imagePath: users[i].image!, 
-                                                isActive: users[i].isUserOnline(), 
-                                                isSelected: context.watch<UserProvider>().selectedUsers.contains(users[i]), 
-                                                onTap: () {
-                                                  context.read<UserProvider>().updateSelectedUsers(users[i]);
+                                        Consumer<UserProvider>(
+                                          builder: (BuildContext context, UserProvider userProvider, Widget? child) {
+                                            return Expanded(
+                                              child: ListView.builder(
+                                                itemCount: userProvider.users!.length,
+                                                itemBuilder: (BuildContext context, int i) {
+                                                  return CustomListViewTile(
+                                                    title: userProvider.users![i].name!,
+                                                    group: false,
+                                                    subtitle: "Last Active: ${timeago.format(userProvider.users![i].lastActive!)}",
+                                                    height: deviceHeight * 0.10,  
+                                                    imagePath: userProvider.users![i].image!, 
+                                                    isActive: userProvider.users![i].isUserOnline(), 
+                                                    isSelected: userProvider.selectedUsers.contains(userProvider.users![i]), 
+                                                    onTap: () {
+                                                      userProvider.updateSelectedUsers(userProvider.users![i]);
+                                                    },
+                                                  );   
                                                 },
-                                              );   
-                                            },
-                                          ),
-                                        ),
+                                              ),
+                                            );
+                                          },
+                                        )
                                       ],
                                     ),
                                   ),
@@ -407,7 +409,7 @@ class _UsersPageState extends State<UsersPage> {
               ),
               CustomTextSearchField(
                 onEditingComplete: (val) {
-                  userProvider.getUsers(name: val);
+                  context.read<UserProvider>().getUsers(name: val);
                   FocusScope.of(context).unfocus();
                 },
                 controller: searchFieldTextEditingController,
@@ -432,7 +434,6 @@ class _UsersPageState extends State<UsersPage> {
                   return usersList();
                 },
               ),
-              // createChatButton()
             ],
           ),
         );
@@ -441,7 +442,7 @@ class _UsersPageState extends State<UsersPage> {
   }
 
   Widget usersList() {
-    List<ChatUser>? users = userProvider.users;
+    List<ChatUser>? users = context.watch<UserProvider>().users;
     return Expanded(
       child: () {
       if(users != null) {
@@ -457,7 +458,7 @@ class _UsersPageState extends State<UsersPage> {
                 imagePath: users[i].image!, 
                 isActive: users[i].isUserOnline(),  
                 onTap: () async {
-                  String currentUserId = authenticationProvider.chatUser!.uid!;
+                  String currentUserId = context.read<AuthenticationProvider>().userUid();
                   String peerId = users[i].uid!;
                   if(currentUserId.compareTo(peerId) > 0) {
                     groupChatId = '$currentUserId-$peerId';
@@ -466,11 +467,12 @@ class _UsersPageState extends State<UsersPage> {
                   }
                   DocumentSnapshot? createChatDoc = await databaseService.checkChat(groupChatId);
                   if(createChatDoc!.exists) {  
+                    SharedPreferences prefs = await SharedPreferences.getInstance();
+                    prefs.setString("chatId", createChatDoc.id);
                     NavigationService().pushNav(context, ChatPage(
-                      chatUid: createChatDoc.id,
                       title: users[i].name!,
                       subtitle: users[i].isOnline.toString(),
-                      currentUserId:  authenticationProvider.userUid(),
+                      currentUserId: context.read<AuthenticationProvider>().userUid(),
                       receiverId: users[i].uid!,
                       receiverName: users[i].name!,
                       receiverImage: users[i].image!,
@@ -481,11 +483,12 @@ class _UsersPageState extends State<UsersPage> {
                       members: const [],
                     ));
                   } else {
+                    SharedPreferences prefs = await SharedPreferences.getInstance();
+                    prefs.setString("chatId", groupChatId);
                     NavigationService().pushNav(context, ChatPage(
-                      chatUid: groupChatId,
                       title: users[i].name!,
                       subtitle: users[i].isOnline.toString(),
-                      currentUserId: authenticationProvider.userUid(),
+                      currentUserId: context.read<AuthenticationProvider>().userUid(),
                       receiverId: users[i].uid!,
                       receiverName: users[i].name!,
                       receiverImage: users[i].image!,
@@ -498,8 +501,24 @@ class _UsersPageState extends State<UsersPage> {
                     await databaseService.createChat(
                       groupChatId,
                       {
+                        "id": groupChatId,
                         "is_group": false,
-                        "is_activity": false,
+                        "is_activity": [
+                          {
+                            "chat_id": groupChatId,
+                            "user_id": context.read<AuthenticationProvider>().chatUser!.uid!,
+                            "name": users[i].name,
+                            "is_active": false,
+                            "is_group": false
+                          },
+                          {
+                            "chat_id": groupChatId,
+                            "user_id": users[i].uid,
+                            "name": context.read<AuthenticationProvider>().chatUser!.name,
+                            "is_active": false,
+                            "is_group": false
+                          }
+                        ],
                         "group": {
                           "name": "",
                           "image": "",
@@ -507,12 +526,12 @@ class _UsersPageState extends State<UsersPage> {
                         },
                         "members": [
                           {
-                            "uid": authenticationProvider.chatUser!.uid,
-                            "email": authenticationProvider.chatUser!.email,
-                            "name": authenticationProvider.chatUser!.name,
-                            "image": authenticationProvider.chatUser!.image,
-                            "isOnline": authenticationProvider.chatUser!.isOnline,
-                            "last_active": authenticationProvider.chatUser!.lastActive,
+                            "uid": context.read<AuthenticationProvider>().chatUser!.uid!,
+                            "email": context.read<AuthenticationProvider>().chatUser!.email,
+                            "name": context.read<AuthenticationProvider>().chatUser!.name,
+                            "image": context.read<AuthenticationProvider>().chatUser!.image,
+                            "isOnline": context.read<AuthenticationProvider>().chatUser!.isOnline,
+                            "last_active": context.read<AuthenticationProvider>().chatUser!.lastActive,
                           },
                           {
                             "uid": users[i].uid,
@@ -526,7 +545,7 @@ class _UsersPageState extends State<UsersPage> {
                         "created_at": DateTime.now(),
                         "updated_at": DateTime.now(),
                         "relations": [
-                          authenticationProvider.chatUser!.uid,
+                          context.read<AuthenticationProvider>().userUid(),
                           users[i].uid
                         ],
                       }
@@ -535,7 +554,7 @@ class _UsersPageState extends State<UsersPage> {
                       "id": groupChatId,
                       "on_screens": FieldValue.arrayUnion([ 
                         {
-                          "userUid": authenticationProvider.userUid(),
+                          "userUid": context.read<AuthenticationProvider>().userUid(),
                           "token":  await FirebaseMessaging.instance.getToken(), 
                           "on": true
                         },
@@ -573,19 +592,4 @@ class _UsersPageState extends State<UsersPage> {
       }
     }());
   }
-
-  // Widget createChatButton() {
-  //   return Visibility(
-  //     visible:  context.watch<UserProvider>().selectedUsers.isNotEmpty,
-  //     child: CustomButton(
-  //       onTap: () {
-  //          context.read<UserProvider>().createChat(context, groupName: groupName);
-  //       }, 
-  //       isBoxShadow: false,
-  //       btnTxt: context.read<UserProvider>().selectedUsers.length == 1 
-  //       ? "Chat with ${context.read<UserProvider>().selectedUsers.first.name}"
-  //       : "Create Group Chat"
-  //     )
-  //   );
-  // }
 }

@@ -8,47 +8,56 @@ import 'package:chatv28/models/chat_message.dart';
 import 'package:chatv28/models/chat_user.dart';
 import 'package:chatv28/providers/authentication.dart';
 import 'package:chatv28/services/database.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 
 class ChatsProvider extends ChangeNotifier {
+  final SharedPreferences sharedPreferences;
   final AuthenticationProvider authenticationProvider;
   final DatabaseService databaseService;
 
   ChatsProvider({
+    required this.sharedPreferences,
     required this.authenticationProvider,
     required this.databaseService
   });
 
   List<Chat>? chats;
-  List<ChatUser>? members;
   StreamSubscription? chatsStream;
-  StreamSubscription? membersGroupStream;
-  
+
   @override 
   void dispose() {
     chatsStream!.cancel();
-    membersGroupStream!.cancel();
     super.dispose();
   }
 
-  void getChats() {
-    try {
+  void cleanChats() {
+    chatsStream!.cancel();
+    Future.delayed(Duration.zero, () => notifyListeners());
+  }
+
+  void getChats() async {
+    try {      
       chatsStream = databaseService.getChatsForUser(authenticationProvider.userUid())!.listen((snapshot) async {
-        chats = await Future.wait(snapshot.docs.map((doc) async {
+        List<Chat> _chats = await Future.wait(snapshot.docs.map((doc) async {
           Map<String, dynamic> chatData = doc.data() as Map<String, dynamic>;
-    
           List<ChatUser> members = [];
+          List<IsActivity> isActivity = [];
           List<ChatMessage> messagesPersonalCount = [];
           List<dynamic> messagesGroupCount = [];
           List<ChatMessage> messages = [];
           GroupData groupData;
-          
+
           groupData = GroupData.fromJson(chatData["group"]);
-        
+
+          for (var active in chatData["is_activity"]) {
+            isActivity.add(IsActivity.fromJson(active));
+          }
+
           for (var member in chatData["members"]) {
             members.add(ChatUser.fromJson(member));
           }
-    
+        
           QuerySnapshot<Object?>? readerCountIds = await databaseService.readerCountIds(
             chatUid: doc.id, 
             userUid: authenticationProvider.userUid()
@@ -78,7 +87,7 @@ class ChatsProvider extends ChangeNotifier {
           return Chat(
             uid: doc.id, 
             currentUserId: authenticationProvider.userUid(), 
-            activity: chatData["is_activity"], 
+            activity: isActivity, 
             group: chatData["is_group"], 
             groupData: GroupData(
               image: groupData.image,
@@ -91,17 +100,10 @@ class ChatsProvider extends ChangeNotifier {
             messagesGroupCount: messagesGroupCount,
           );
         }).toList());
-        notifyListeners();
+        chats = _chats;
+        Future.delayed(Duration.zero, () => notifyListeners());
       });
     } catch (e) {
-      debugPrint(e.toString());
-    }
-  }
-
-  void membersGroup({required String userId}) {
-    try {
-    
-    } catch(e) {
       debugPrint(e.toString());
     }
   }
@@ -114,11 +116,6 @@ class ChatsProvider extends ChangeNotifier {
     }
   }
 
-   Future<void> deleteMsg({required String chatId, required String msgId}) async {
-    try {
-      await databaseService.deleteMsg(chatId: chatId, msgId: msgId);
-    } catch(e) {
-      debugPrint(e.toString());
-    }
-  }
+  String chatId() => sharedPreferences.getString("chatId") ?? "";
+
 }

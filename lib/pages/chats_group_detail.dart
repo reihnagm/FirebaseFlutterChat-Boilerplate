@@ -1,14 +1,14 @@
 import 'dart:io';
 
+import 'package:chatv28/basewidget/rounded_image.dart';
+import 'package:timeago/timeago.dart' as timeago;
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:chatv28/providers/chat.dart';
-import 'package:chatv28/providers/chats.dart';
 import 'package:flutter/material.dart';
 
+import 'package:chatv28/basewidget/custom_list_view_tiles.dart';
 import 'package:chatv28/models/chat_user.dart';
 import 'package:chatv28/utils/dimensions.dart';
 import 'package:chatv28/utils/color_resources.dart';
-import 'package:provider/src/provider.dart';
 
 class ChatsGroupDetail extends StatefulWidget {
   final String title;
@@ -155,31 +155,65 @@ class _ChatsGroupDetailState extends State<ChatsGroupDetail> {
                   sliver: SliverList(
                    delegate: SliverChildBuilderDelegate(
                      (BuildContext context, int i) {
-                       return Container(
-                         margin: EdgeInsets.all(Dimensions.marginSizeExtraSmall),
-                         child: ListTile(
-                          contentPadding: EdgeInsets.zero,
-                          dense: true,
-                          leading: Container(
-                            width: 35.0,
-                            height: 35.0,
-                            decoration: BoxDecoration(
-                              image: DecorationImage(
-                                fit: BoxFit.cover,
-                                image: NetworkImage(members[i].image!),
-                              ),
-                              borderRadius: BorderRadius.circular(30.0),
-                              color: Colors.black,
-                            ),
-                          ),
-                          title: Text(widget.currentUserId == members[i].uid ? "You" : members[i].name!,
-                            style: TextStyle(
-                              fontSize: Dimensions.fontSizeSmall,
-                              color: ColorResources.textBlackPrimary
-                            ),
-                          ),
+                       return ListTile(
+                        onTap: () {},
+                        leading: RoundedImageNetworkWithStatusIndicator(
+                          key: UniqueKey(),
+                          imagePath: members[i].image!, 
+                          size: MediaQuery.of(context).size.height * 0.10 / 2, 
+                          isActive: members[i].isOnline!,
+                          group: false
                         ),
+                        minVerticalPadding: MediaQuery.of(context).size.height * 0.10 * 0.20,
+                        title: Text(members[i].name!,
+                          style: TextStyle(
+                            color: ColorResources.textBlackPrimary,
+                            fontSize: Dimensions.fontSizeSmall,
+                            fontWeight: FontWeight.bold
+                          )
+                        ),
+                        subtitle: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            SizedBox(
+                              width: MediaQuery.of(context).size.width * 0.50,
+                              child: Text("Last Active: ${timeago.format(members[i].lastActive!)}", 
+                              softWrap: true,
+                                style: TextStyle(
+                                  overflow: TextOverflow.ellipsis,
+                                  color: ColorResources.textBlackPrimary,
+                                  fontSize: Dimensions.fontSizeExtraSmall,
+                                )
+                              ),
+                            ),
+                          ],
+                        )     
                       );
+                      //  return Container(
+                      //    margin: EdgeInsets.all(Dimensions.marginSizeExtraSmall),
+                      //    child: ListTile(
+                      //     contentPadding: EdgeInsets.zero,
+                      //     dense: true,
+                      //     leading: Container(
+                      //       width: 35.0,
+                      //       height: 35.0,
+                      //       decoration: BoxDecoration(
+                      //         image: DecorationImage(
+                      //           fit: BoxFit.cover,
+                      //           image: NetworkImage(members[i].image!),
+                      //         ),
+                      //         borderRadius: BorderRadius.circular(30.0),
+                      //         color: Colors.black,
+                      //       ),
+                      //     ),
+                      //     title: Text(widget.currentUserId == members[i].uid ? "You" : members[i].name!,
+                      //       style: TextStyle(
+                      //         fontSize: Dimensions.fontSizeSmall,
+                      //         color: ColorResources.textBlackPrimary
+                      //       ),
+                      //     ),
+                      //   ),
+                      // );
                      },
                      childCount: members.length
                    ),

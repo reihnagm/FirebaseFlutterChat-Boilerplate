@@ -1,4 +1,5 @@
 // import 'package:chatv28/widgets/message_bubble.dart';
+import 'package:chatv28/providers/chat.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 
@@ -9,6 +10,7 @@ import 'package:chatv28/basewidget/message_bubble.dart';
 import 'package:chatv28/models/chat_message.dart';
 import 'package:chatv28/basewidget/rounded_image.dart';
 import 'package:ionicons/ionicons.dart';
+import 'package:provider/src/provider.dart';
 
 class CustomListViewTile extends StatelessWidget {
   final double height;
@@ -240,9 +242,11 @@ class CustomListViewTileWithoutActivity extends StatelessWidget {
   final bool group;
   final String title;
   final String subtitle;
+  final String messageType;
   final String contentGroup;
   final String imagePath;
   final bool isActivity;
+  final String receiverName;
   final Function onTap;
   final Function onLongPress;
   final bool isRead;
@@ -255,8 +259,10 @@ class CustomListViewTileWithoutActivity extends StatelessWidget {
     required this.group,
     required this.title,
     required this.subtitle,
+    required this.messageType,
     required this.contentGroup,
     required this.imagePath,
+    required this.receiverName,
     required this.isActivity,
     required this.onTap,
     required this.onLongPress,
@@ -304,16 +310,35 @@ class CustomListViewTileWithoutActivity extends StatelessWidget {
           ),
         ),
       ),
-      subtitle: isActivity 
-      ? Row(
+      subtitle: isActivity
+        ? Row(
           mainAxisSize: MainAxisSize.max,
           mainAxisAlignment: MainAxisAlignment.start,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            SpinKitThreeBounce(
-              color: ColorResources.loaderBluePrimary,
-              size: height * 0.10,
-            )
+            // SpinKitThreeBounce(
+            //   color: ColorResources.loaderBluePrimary,
+            //   size: height * 0.10,
+            // )
+            group 
+            ? Text("$receiverName sedang menulis pesan...", 
+                softWrap: true,
+                style: TextStyle(
+                  overflow: TextOverflow.ellipsis,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.green[400],
+                  fontSize: Dimensions.fontSizeExtraSmall,
+                )
+              )
+            : Text("Mengetik...", 
+                softWrap: true,
+                style: TextStyle(
+                  overflow: TextOverflow.ellipsis,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.green[400],
+                  fontSize: Dimensions.fontSizeExtraSmall,
+                )
+              ),
           ],
         ) 
       : Row(
@@ -325,6 +350,7 @@ class CustomListViewTileWithoutActivity extends StatelessWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  
                   Text(subtitle, 
                     softWrap: true,
                     style: TextStyle(
@@ -345,14 +371,32 @@ class CustomListViewTileWithoutActivity extends StatelessWidget {
                   const SizedBox(width: 5.0),
                   SizedBox(
                     width: MediaQuery.of(context).size.width * 0.30,
-                    child: Text(contentGroup, 
-                      softWrap: true,
-                      style: TextStyle(
-                        overflow: TextOverflow.ellipsis,
-                        color: ColorResources.textBlackPrimary,
-                        fontSize: Dimensions.fontSizeExtraSmall,
+                    child: messageType == "IMAGE" 
+                    ? Row(
+                        children: [
+                          Text(contentGroup, 
+                            softWrap: true,
+                            style: TextStyle(
+                              overflow: TextOverflow.ellipsis,
+                              color: ColorResources.textBlackPrimary,
+                              fontSize: Dimensions.fontSizeExtraSmall,
+                            )
+                          ),
+                          const SizedBox(width: 5.0),
+                          const Icon(
+                            Icons.image, 
+                            size: 16.0
+                          )
+                        ],
                       )
-                    ),
+                    : Text(contentGroup, 
+                        softWrap: true,
+                        style: TextStyle(
+                          overflow: TextOverflow.ellipsis,
+                          color: ColorResources.textBlackPrimary,
+                          fontSize: Dimensions.fontSizeExtraSmall,
+                        )
+                      ),
                   ),
                 ],
               ) 
@@ -381,8 +425,8 @@ class CustomListViewTileWithoutActivity extends StatelessWidget {
                   ? const SizedBox(width: 5.0)
                   : const SizedBox(),
                   SizedBox(
-                    width: MediaQuery.of(context).size.width * 0.30,
-                    child: subtitle == "Media Attachment" ?
+                    width: MediaQuery.of(context).size.width * 0.40,
+                    child: messageType == "IMAGE" ?
                       Row(
                         children: [
                           Text(subtitle, 
@@ -425,7 +469,6 @@ class CustomChatListViewTile extends StatelessWidget {
   final bool isGroup;
   final bool isOwnMessage;
   final ChatMessage message;
-  final String chatUid;
 
   const CustomChatListViewTile({
     required this.deviceWidth,
@@ -433,29 +476,81 @@ class CustomChatListViewTile extends StatelessWidget {
     required this.isGroup,
     required this.isOwnMessage,
     required this.message,
-    required this.chatUid,
     Key? key
   }) : super(key: key);
   
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: isOwnMessage ? MainAxisAlignment.end : MainAxisAlignment.start, 
-      children: [
-        message.type == MessageType.text 
-        ? TextMessageBubble(
-            isGroup: isGroup,
-            isOwnMessage: isOwnMessage, 
-            message: message, 
-            chatUid: chatUid
-          )
-        : ImageMessageBubble(
-            isOwnMessage: isOwnMessage, 
-            message: message, 
-            height: 150.0, 
-            width: 150.0
-          )
-      ],
+    return message.softDelete && isOwnMessage 
+    ? Container() 
+    : Material(
+      color: ColorResources.transparent,
+      child: InkWell(
+        onTap: () {
+          if(isGroup) {
+            if(isOwnMessage) {
+              if(context.read<ChatProvider>().selectedMessages.isNotEmpty) {
+                if(context.read<ChatProvider>().selectedMessages.isEmpty && context.read<ChatProvider>().selectedMessages.length != 2) {
+                  context.read<ChatProvider>().onSelectedMessages(message);
+                } else {
+                  context.read<ChatProvider>().onSelectedMessagesRemove(message);
+                }
+              }
+            }
+          } else {
+            if(isOwnMessage) {
+              if(context.read<ChatProvider>().selectedMessages.isNotEmpty) {
+                context.read<ChatProvider>().onSelectedMessages(message);
+              } 
+            }
+          }
+        },
+        onLongPress: () {
+          if(isGroup) {
+            if(isOwnMessage) {
+              if(context.read<ChatProvider>().selectedMessages.isEmpty && context.read<ChatProvider>().selectedMessages.length != 2) {
+                context.read<ChatProvider>().onSelectedMessages(message);
+              } else {
+                context.read<ChatProvider>().onSelectedMessagesRemove(message);
+              }
+            }
+          } else {
+            if(isOwnMessage) {
+              context.read<ChatProvider>().onSelectedMessages(message);
+            }
+          }
+        },
+        child: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Row(
+            mainAxisAlignment: isOwnMessage ? MainAxisAlignment.end : MainAxisAlignment.start, 
+            children: [
+              message.type == MessageType.text 
+              ? TextMessageBubble(
+                  isGroup: isGroup,
+                  isOwnMessage: isOwnMessage, 
+                  message: message, 
+                )
+              : ImageMessageBubble(
+                  isOwnMessage: isOwnMessage, 
+                  message: message, 
+                  height: 150.0, 
+                  width: 150.0
+                ),
+                context.watch<ChatProvider>().selectedMessages.contains(message) 
+              ? Container(
+                  margin: const EdgeInsets.only(left: 10.0),
+                  child: const Icon(
+                    Icons.check,
+                    size: 20.0,
+                    color: ColorResources.primary,
+                  ),
+              ) 
+              : Container()
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

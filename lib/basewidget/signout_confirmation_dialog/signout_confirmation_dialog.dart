@@ -51,7 +51,7 @@ class SignOutConfirmationDialog extends StatelessWidget {
                           bottomLeft: Radius.circular(10.0)
                         )
                       ),
-                      child: authenticationProvider.logoutStatus == LogoutStatus.loading 
+                      child: context.watch<AuthenticationProvider>().logoutStatus == LogoutStatus.loading 
                       ? Text("...", 
                           style: TextStyle(
                             color: ColorResources.white,

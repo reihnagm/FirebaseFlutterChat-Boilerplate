@@ -1,6 +1,9 @@
-import 'package:flutter/cupertino.dart';
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:chatv28/providers/authentication.dart';
 import 'package:chatv28/basewidget/animated_dialog/show_animate_dialog.dart';
@@ -25,21 +28,29 @@ class _ChatsPageState extends State<ChatsPage> {
   late double deviceHeight;
   late double deviceWidth;
 
-  late AuthenticationProvider authenticationProvider;
-  late ChatsProvider chatsProvider;
 
   @override 
   void initState() {
     super.initState();
-    WidgetsBinding.instance!.addPostFrameCallback((timeStamp) {
-      authenticationProvider.initAuthStateChanges();
+    WidgetsBinding.instance!.addPostFrameCallback((_) {
+      context.read<AuthenticationProvider>().initAuthStateChanges();
+    });
+  }
+
+  @override 
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    Future.delayed(const Duration(seconds: 1), () {
+      if(mounted) {
+        context.read<ChatsProvider>().getChats();
+      } else {
+        context.read<ChatsProvider>().cleanChats();
+      }
     });
   }
   
   @override
   Widget build(BuildContext context) {
-    authenticationProvider = context.read<AuthenticationProvider>();
-    chatsProvider = context.watch<ChatsProvider>();
     deviceHeight = MediaQuery.of(context).size.height;
     deviceWidth = MediaQuery.of(context).size.width;
     return buildUI();
@@ -48,7 +59,6 @@ class _ChatsPageState extends State<ChatsPage> {
   Widget buildUI() {
     return Builder(
       builder: (BuildContext context) {
-        chatsProvider.getChats();
         return Container(
           decoration: const BoxDecoration(
             color: ColorResources.backgroundColor
@@ -89,7 +99,7 @@ class _ChatsPageState extends State<ChatsPage> {
   }
 
   Widget chatList() {
-    List<Chat>? chats = chatsProvider.chats;
+    List<Chat>? chats = context.watch<ChatsProvider>().chats;
     return Expanded(
       child: (() {
         if(chats == null) {
@@ -138,16 +148,18 @@ class _ChatsPageState extends State<ChatsPage> {
     : subtitle;
 
     bool isOwnMessage = chat.messages.isNotEmpty 
-    ? authenticationProvider.userUid() == chat.messages.last.senderId 
-    : authenticationProvider.userUid() == chat.currentUserId;
+    ? context.read<AuthenticationProvider>().userUid() == chat.messages.last.senderId 
+    : context.read<AuthenticationProvider>().userUid() == chat.currentUserId;
     return CustomListViewTileWithoutActivity(
       height: deviceHeight * 0.10, 
       group: chat.group,
       title: chat.title(), 
       subtitle: content,
       contentGroup: subtitle,
+      messageType: chat.messages.isEmpty ? "" : chat.messages.last.type == MessageType.text ? "TEXT" : "IMAGE",
+      receiverName: chat.group ? chat.receiverTyping() : chat.recepients.first.name!,
       imagePath: chat.image(), 
-      isActivity: chat.activity, 
+      isActivity: chat.isTyping(), 
       readCount: chat.readCount(),
       isRead: chat.isRead(),
       isOwnMessage: isOwnMessage,
@@ -222,7 +234,7 @@ class _ChatsPageState extends State<ChatsPage> {
                                   child: GestureDetector(
                                     onTap: () async { 
                                       Navigator.of(context).pop();
-                                      await chatsProvider.deleteChat(chatId: chat.uid);
+                                      await context.read<ChatsProvider>().deleteChat(chatId: chat.uid);
                                     },  
                                     child: Container(
                                       height: 30.0,
@@ -254,7 +266,9 @@ class _ChatsPageState extends State<ChatsPage> {
           );
         }
       },
-      onTap: () {
+      onTap: () async {
+        SharedPreferences prefs = await SharedPreferences.getInstance();
+        prefs.setString("chatId", chat.uid);
         NavigationService().pushNav(context, ChatPage(
           title: chat.title(),
           subtitle: chat.subtitle(),
@@ -263,11 +277,10 @@ class _ChatsPageState extends State<ChatsPage> {
           groupImage: chat.groupData.image,
           isGroup: chat.group,
           tokens: chat.groupData.tokens,
-          chatUid: chat.uid,
           members: chat.members,
+          receiverId: chat.recepients.first.uid!, 
           receiverName: chat.recepients.first.name!,
           receiverImage: chat.group ? "" : chat.recepients.first.image!,
-          receiverId: chat.recepients.first.uid!, 
         ));
       }
     );

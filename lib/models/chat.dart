@@ -53,7 +53,6 @@ class GroupData {
   }
 }
 
-
 class Token {
   Token({
     required this.userUid,
@@ -69,10 +68,34 @@ class Token {
   );
 }
 
+class IsActivity {
+  IsActivity({
+    required this.chatId,
+    required this.userId,
+    required this.name,
+    required this.isGroup,
+    required this.isActive
+  });
+
+  String chatId;
+  String userId;
+  String name;
+  bool isGroup;
+  bool isActive;
+
+  factory IsActivity.fromJson(Map<String, dynamic> json) => IsActivity(
+    chatId: json["chat_id"],
+    userId: json["user_id"], 
+    name: json["name"],
+    isGroup: json["is_group"],
+    isActive: json["is_active"]
+  );
+}
+
 class Chat {
   final String uid;
   final String currentUserId;
-  final bool activity;
+  final List<IsActivity> activity;
   final bool group;
   final GroupData groupData;
   late final List<ChatUser> members;
@@ -116,8 +139,15 @@ class Chat {
   : messagesPersonalCount.where((el) => el.isRead == false && el.receiverId == currentUserId).toList().length;
   bool isRead() => messages.any((m) => m.isRead);
 
+  bool isTyping() => activity.any((el) => el.isActive && el.userId != currentUserId);
+
   bool isUsersOnline() => recepients.any((el) => el.isUserOnline());
   String title() => !group ? recepients.first.name! : groupData.name;
   String subtitle() => !group ? isUsersOnline() ? "ONLINE" : "OFFLINE" : peopleJoinGroup.map((user) => user.name!).join(", ");
+  String receiverTyping() => group 
+  ? activity.where((el) => el.isActive == true).toList().isNotEmpty 
+  ? activity.firstWhere((el) => el.isActive == true).name 
+  : ""
+  : "";
   String image() => !group ? recepients.first.image! : groupData.image == "" ? "https://www.iconpacks.net/icons/1/free-user-group-icon-296-thumb.png" : groupData.image;
 }

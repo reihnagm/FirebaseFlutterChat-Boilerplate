@@ -20,6 +20,7 @@ Future<void> init() async {
   getIt.registerLazySingleton(() => DatabaseService());
 
   getIt.registerFactory(() => AuthenticationProvider(
+    cloudStorageService: getIt(),
     sharedPreferences: getIt(),
     databaseService: getIt(),
   ));
@@ -31,9 +32,11 @@ Future<void> init() async {
   ));
   getIt.registerFactory(() => ChatsProvider(
     authenticationProvider: getIt(), 
+    sharedPreferences: getIt(),
     databaseService: getIt()
   ));
   getIt.registerFactory(() => ChatProvider(
+    sharedPreferences: getIt(),
     authenticationProvider: getIt(),
     cloudStorageService: getIt(),
     databaseService: getIt(),
@@ -41,7 +44,8 @@ Future<void> init() async {
     navigationService: getIt(),
   ));
   getIt.registerFactory(() => FirebaseProvider(
-    authenticationProvider: getIt()
+    authenticationProvider: getIt(),
+    sharedPreferences: getIt()
   ));
   
    // External

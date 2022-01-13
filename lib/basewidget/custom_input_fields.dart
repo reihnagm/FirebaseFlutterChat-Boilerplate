@@ -6,20 +6,24 @@ import 'package:chatv28/utils/dimensions.dart';
 class CustomTextFormField extends StatelessWidget {
   final TextEditingController? controller;
   final Function (String) onSaved;
-  final String regex;
+  final Function (String) onChanged;
+  final String? regex;
   final String hintText;
   final Widget label;
   final bool obscureText;
+  final Icon prefixIcon;
   final Color? fillColor;
 
   const CustomTextFormField({
     Key? key, 
     this.controller,
     required this.onSaved,
-    required this.regex,
+    required this.onChanged,
+    this.regex = "",
     required this.hintText,
     required this.label,
     required this.obscureText,
+    required this.prefixIcon,
     this.fillColor = ColorResources.white
   }) : super(key: key);
 
@@ -27,6 +31,7 @@ class CustomTextFormField extends StatelessWidget {
   Widget build(BuildContext context) {
     return TextFormField(
       controller: controller,
+      onChanged: (val) => onChanged(val),
       onSaved: (val) => onSaved(val!),
       cursorColor: ColorResources.hintColor,
       style: TextStyle(
@@ -36,14 +41,10 @@ class CustomTextFormField extends StatelessWidget {
       ),
       obscureText: obscureText,
       validator: (val) {
-        return RegExp(regex).hasMatch(val!) ? null : 'Enter a valid value.';
+        return RegExp(regex!).hasMatch(val!) ? null : 'Enter a valid value.';
       },
       decoration: InputDecoration(
-        prefixIcon: const Icon(
-          Icons.email,
-          size: 20.0,  
-          color: ColorResources.backgroundBlackPrimary,
-        ),
+        prefixIcon: prefixIcon,
         label: label,
         floatingLabelBehavior: FloatingLabelBehavior.always,
         fillColor: fillColor,
@@ -63,11 +64,11 @@ class CustomTextFormField extends StatelessWidget {
   }
 }
 
-
 class CustomTextMessageFormField extends StatelessWidget {
   final TextEditingController? controller;
   final Function (String) onSaved;
   final Function (String) onChange;
+  final FocusNode focusNode;
   final String regex;
   final String hintText;
   final Widget label;
@@ -79,6 +80,7 @@ class CustomTextMessageFormField extends StatelessWidget {
     this.controller,
     required this.onSaved,
     required this.onChange,
+    required this.focusNode,
     required this.regex,
     required this.hintText,
     required this.label,
@@ -92,22 +94,26 @@ class CustomTextMessageFormField extends StatelessWidget {
       controller: controller,
       onSaved: (val) => onSaved(val!),
       onChanged: (val) => onChange(val),
+      focusNode: focusNode,
+      textCapitalization: TextCapitalization.sentences,
       cursorColor: ColorResources.white,
       style: TextStyle(
         color: ColorResources.white,
         fontSize: Dimensions.fontSizeSmall
       ),
-      maxLines: 2,
+      maxLines: null,
       decoration: InputDecoration(
         label: label,
         floatingLabelBehavior: FloatingLabelBehavior.always,
         fillColor: fillColor,
         filled: true,
-        contentPadding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 15.0),
+        isDense: true,
+        contentPadding: EdgeInsets.zero,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10.0),
           borderSide: BorderSide.none
         ),
+        alignLabelWithHint: true,
         hintText: hintText,
         hintStyle: TextStyle(
           color: ColorResources.gainsBoro,

@@ -1,4 +1,6 @@
+import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
@@ -17,6 +19,34 @@ import 'container.dart' as core;
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
+  AwesomeNotifications().initialize('resource://drawable/ic_launcher',
+    [
+      NotificationChannel(
+        channelGroupKey: 'basic_channel_group',
+        channelKey: 'basic_channel',
+        channelName: 'Basic notifications',
+        channelDescription: 'Notification channel for basic tests',
+        defaultColor: Colors.grey,
+        ledColor: Colors.white,
+        playSound: true,
+        enableLights: true,
+        enableVibration: true
+      )
+    ],
+    channelGroups: [
+      NotificationChannelGroup(
+        channelGroupkey: 'basic_channel_group',
+        channelGroupName: 'Basic group'
+      )
+    ],
+    debug: false
+  );
+  AwesomeNotifications().isNotificationAllowed().then((isAllowed) {
+    if (!isAllowed) {
+      AwesomeNotifications().requestPermissionToSendNotifications();
+    }
+  });
+  FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
   await core.init();
   runApp(
     SplashPage(
@@ -30,6 +60,20 @@ void main() async {
         );
       }
     ),
+  );
+}
+
+Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async { 
+  AwesomeNotifications().createNotification(
+    content: NotificationContent(
+      id: 1,
+      color: Colors.grey,
+      fullScreenIntent: true,
+      displayOnBackground: true,
+      displayOnForeground: true,
+      channelKey: 'basic_channel',
+      title: "hello",
+    )
   );
 }
 
@@ -54,23 +98,19 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
     // - Detached (View Destroyed - App Closed)
     if(state == AppLifecycleState.resumed) {
       debugPrint("=== APP RESUME ===");
-      await databaseService.updateUserOnline(Provider.of<AuthenticationProvider>(context, listen: false).userUid(), true);
-      // await databaseService.onlineMember(Provider.of<AuthenticationProvider>(context, listen: false).userUid());
+      await databaseService.updateUserOnlineToken(context.read<AuthenticationProvider>().userUid(), true);
     }
     if(state == AppLifecycleState.inactive) {
       debugPrint("=== APP INACTIVE ===");
-      await databaseService.updateUserOnline(Provider.of<AuthenticationProvider>(context, listen: false).userUid(), false);
-      // await databaseService.offlineMember(Provider.of<AuthenticationProvider>(context, listen: false).userUid());
+      await databaseService.updateUserOnlineToken(context.read<AuthenticationProvider>().userUid(), false);
     }
     if(state == AppLifecycleState.paused) {
       debugPrint("=== APP PAUSED ===");
-      await databaseService.updateUserOnline(Provider.of<AuthenticationProvider>(context, listen: false).userUid(), false);
-      // await databaseService.offlineMember(Provider.of<AuthenticationProvider>(context, listen: false).userUid());
+      await databaseService.updateUserOnlineToken(context.read<AuthenticationProvider>().userUid(), false);
     }
     if(state == AppLifecycleState.detached) {
       debugPrint("=== APP CLOSED ===");
-      await databaseService.updateUserOnline(Provider.of<AuthenticationProvider>(context, listen: false).userUid(), false);
-      // await databaseService.offlineMember(Provider.of<AuthenticationProvider>(context, listen: false).userUid());
+      await databaseService.updateUserOnlineToken(context.read<AuthenticationProvider>().userUid(), false);
     }
   }
 
@@ -78,11 +118,6 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance!.addObserver(this);
-    WidgetsBinding.instance!.addPostFrameCallback((_) async {
-      await Provider.of<FirebaseProvider>(context, listen: false).setupInteractedMessage(context);
-      await databaseService.updateUserOnline(Provider.of<AuthenticationProvider>(context, listen: false).userUid(), true);
-      // await databaseService.onlineMember(Provider.of<AuthenticationProvider>(context, listen: false).userUid());
-    });
   }
 
   @override
@@ -101,15 +136,16 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
           debugShowCheckedModeBanner: false,
           theme: ThemeData(
             backgroundColor: ColorResources.backgroundColor,
-            scaffoldBackgroundColor:  ColorResources.backgroundColor,
+            scaffoldBackgroundColor: ColorResources.backgroundColor,
             bottomNavigationBarTheme: const BottomNavigationBarThemeData(
               backgroundColor: ColorResources.backgroundBlueSecondary,
             )
           ),
           home: Builder(
             builder: (context) {
-              Provider.of<FirebaseProvider>(context, listen: false).initializeNotification(context);
-              Provider.of<FirebaseProvider>(context, listen: false).listenNotification(context);
+              // context.read<FirebaseProvider>().setupInteractedMessage(context);
+              context.read<FirebaseProvider>().initializeNotification(context);
+              context.read<FirebaseProvider>().listenNotification(context);
               return Consumer<AuthenticationProvider>(
                 builder: (BuildContext context, AuthenticationProvider authenticationProvider, Widget? child) {
                   if(authenticationProvider.isLogin()) {

@@ -9,6 +9,7 @@ import 'package:chatv28/models/chat_user.dart';
 import 'package:chatv28/providers/authentication.dart';
 import 'package:chatv28/services/database.dart';
 import 'package:chatv28/services/navigation.dart';
+import 'package:uuid/uuid.dart';
 
 enum CreateGroupStatus { idle, loading, loaded, empty, error }
 
@@ -29,17 +30,14 @@ class UserProvider extends ChangeNotifier {
     return null;
   }
   StreamSubscription? usersStream;
-  List<ChatUser>? _selectedUsers;
-  List<ChatUser> get selectedUsers => [..._selectedUsers!];
+  List<ChatUser> selectedUsers = [];
 
   UserProvider({
     required this.authenticationProvider, 
     required this.databaseService, 
     required this.navigationService,
     required this.cloudStorageService  
-  }) {
-    _selectedUsers = [];
-  }
+  });
 
   void setStateCreateGroupStatus(CreateGroupStatus createGroupStatus) {
     _createGroupStatus = createGroupStatus;
@@ -60,7 +58,7 @@ class UserProvider extends ChangeNotifier {
           data["uid"] = d.id;
           return ChatUser.fromJson(data);
         }).toList();
-        Future.delayed(Duration.zero, () =>   notifyListeners());
+        Future.delayed(Duration.zero, () => notifyListeners());
       });
     } catch(e) {  
       debugPrint(e.toString());
@@ -68,10 +66,10 @@ class UserProvider extends ChangeNotifier {
   }
 
   void updateSelectedUsers(ChatUser user) {
-    if(_selectedUsers!.contains(user)) {
-      _selectedUsers!.remove(user);
+    if(selectedUsers.contains(user)) {
+      selectedUsers.remove(user);
     } else {
-      _selectedUsers!.add(user);
+      selectedUsers.add(user);
     }
     Future.delayed(Duration.zero, () => notifyListeners());
   }
@@ -80,12 +78,14 @@ class UserProvider extends ChangeNotifier {
     required String groupName,
     PlatformFile? groupImage,
   }) async {
-    List<String> relations = _selectedUsers!.map((user) => user.uid!).toList();
+    List<String> relations = selectedUsers.map((user) => user.uid!).toSet().toList();
     relations.add(authenticationProvider.userUid());
     bool isGroup = selectedUsers.length > 1;
     if(isGroup) {
+      String chatId = const Uuid().v4();
       List<dynamic> tokens = [];
-      List<Map<String, dynamic>> members = [];
+      List<dynamic> isActivity = [];
+      List<dynamic> members = [];
       setStateCreateGroupStatus(CreateGroupStatus.loading);
       for (String uid in relations) {
         try {
@@ -97,12 +97,19 @@ class UserProvider extends ChangeNotifier {
             "name": userData["name"],
             "email": userData["email"],
             "image": userData["image"],
-            "isOnline": false,
+            "isOnline":  userData["isOnline"],
             "last_active": userData["last_active"]
           });
           tokens.add({
             "userUid": snapshot.id,
             "token": userData["token"]
+          });
+          isActivity.add({
+            "chat_id": chatId,
+            "user_id": snapshot.id,
+            "name": userData["name"],
+            "is_active": false,
+            "is_group": true
           });
         } catch(e) {
           setStateCreateGroupStatus(CreateGroupStatus.error);
@@ -118,18 +125,18 @@ class UserProvider extends ChangeNotifier {
           );
         }
         try {
-          await databaseService.createChatGroup({
+          await databaseService.createChatGroup(chatId, {
             "is_group": isGroup,
-            "is_activity": false,
+            "is_activity": isActivity,
             "group": {
               "name": groupName,
               "image": groupImageUrl,
               "tokens": FieldValue.arrayUnion(tokens)
             },  
             "members": members,
+            "relations": relations,
             "created_at": DateTime.now(),
             "updated_at": DateTime.now(),
-            "relations": relations,
           });
           Navigator.of(context).pop();
           setStateCreateGroupStatus(CreateGroupStatus.loaded);

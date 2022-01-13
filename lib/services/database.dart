@@ -10,12 +10,27 @@ const String usersOnlineCollection = "UsersOnline";
 // const String memberCollection = "Members";
 // const String readersCollection = "Readers";
 const String onScreenCollection = "OnScreens";
-const String badgeCountCollection = "BadgeCount";
+const String conversationsCollection = "Conversations";
 const String chatCollection = "Chats";
 const String messageCollection = "Messages"; 
 
 class DatabaseService {
   final FirebaseFirestore db = FirebaseFirestore.instance;
+
+   Future<void> register(String uid, String name, String email, String imageUrl) async {
+    try{  
+      return await db.collection(userCollection).doc(uid).set({
+        "name": name,
+        "email": email, 
+        "image": imageUrl,
+        "last_active": DateTime.now().toUtc(),
+        "isOnline": true,
+        "token": await FirebaseMessaging.instance.getToken()
+      });
+    } catch(e) {
+      debugPrint(e.toString());
+    }
+  }
 
   Future<DocumentSnapshot>? getUser(String uid) {
     try{
@@ -33,11 +48,20 @@ class DatabaseService {
     }
   }
 
-  Stream<QuerySnapshot>? getChatsForUser(String userUid) {
+  Stream<DocumentSnapshot>? isUserTyping(String chatId) {
+    try{
+      return db.collection(chatCollection).doc(chatId).snapshots();
+    } catch(e) {
+      debugPrint(e.toString());
+    }
+  }
+
+  Stream<QuerySnapshot>? getChatsForUser(String userId) {
     try {
       return db.collection(chatCollection)
-      .where('relations', arrayContains: userUid)
-      .snapshots();
+      .where('relations', arrayContains: userId)
+      .snapshots()
+      .distinct();
     } catch(e) {
       debugPrint(e.toString());
     } 
@@ -47,7 +71,7 @@ class DatabaseService {
     return db.collection(chatCollection)
     .doc(chatId)
     .collection(messageCollection)
-    .orderBy("sent_time", descending: true)
+    .orderBy("sent_time", descending: false)
     .snapshots();
   }
 
@@ -102,11 +126,13 @@ class DatabaseService {
   Future<void> addMessageToChat(
     BuildContext context,
   {
-    required List<String> uids, 
+    required String msgId,
     required String chatId, 
     required ChatMessage message, 
     required bool isGroup, 
-    required List<dynamic> readers
+    required String currentUserId,
+    required List<dynamic> readers,
+    required List<String> uids, 
   }) async {
     String messageType;
     switch (message.type) {
@@ -121,22 +147,30 @@ class DatabaseService {
     }
     try { 
       String msgId = const Uuid().v4();
-      FirebaseFirestore.instance.runTransaction((transaction) async {
-        await db.collection(chatCollection)
-        .doc(chatId)
-        .collection(messageCollection)
-        .doc(msgId)
-        .set({
-          "uid": msgId,
-          "content": message.content,
-          "type": messageType,
-          "sender_id": message.senderId,
-          "sender_name": message.senderName,
-          "receiver_id": message.receiverId,
-          "is_read": message.isRead,
-          "sent_time": message.sentTime,
-          "readers": readers,
-          "readerCountIds": uids
+      db.collection(chatCollection)
+      .doc(chatId)
+      .collection(messageCollection)
+      .doc(msgId)
+      .set({
+        "uid": msgId,
+        "content": message.content,
+        "type": messageType,
+        "sender_id": message.senderId,
+        "sender_name": message.senderName,
+        "receiver_id": message.receiverId,
+        "is_read": message.isRead,
+        "soft_delete": message.softDelete,
+        "sent_time": message.sentTime,
+        "readers": readers,
+        "readerCountIds": uids,
+      }).then((_) async {
+        DocumentSnapshot doc = await db.collection(chatCollection).doc(chatId).get();
+        Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+        List<dynamic> isActivity = data["is_activity"];
+        int index = isActivity.indexWhere((el) => el["user_id"] == currentUserId && el["chat_id"] == chatId);
+        isActivity[index]["is_active"] = false;
+        doc.reference.update({
+          "is_activity": isActivity
         });
       });
     // .add(message.toJson());
@@ -150,22 +184,41 @@ class DatabaseService {
     // Trigger data changes
   }
 
-  Future<void> deleteMsg({required String chatId, required String msgId}) async {
+  Future<void> deleteMsg({required String chatId, required String msgId, required bool softDelete}) async {
     try {
-      await db
-      .collection(chatCollection)
-      .doc(chatId)
-      .collection(messageCollection)
-      .doc(msgId)
-      .delete();
+      if(softDelete) {
+        await db
+        .collection(chatCollection)
+        .doc(chatId)
+        .collection(messageCollection)
+        .doc(msgId)
+        .update({
+          "soft_delete": softDelete
+        });
+      } 
+      else {
+        await db
+        .collection(chatCollection)
+        .doc(chatId)
+        .collection(messageCollection)
+        .doc(msgId)
+        .delete();
+      }
     } catch(e) {
       debugPrint(e.toString());
     }
   }
 
-  Future<void> updateChatData(String chatID, Map<String, dynamic> data) async {
+  Future<void> updateChatData(String userId, String chatId, bool isActive) async {
     try { 
-      await db.collection(chatCollection).doc(chatID).update(data);
+      DocumentSnapshot doc = await db.collection(chatCollection).doc(chatId).get();
+      Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+      List<dynamic> isActivity = data["is_activity"];
+      int index = isActivity.indexWhere((el) => el["user_id"] == userId && el["chat_id"] == chatId);
+      isActivity[index]["is_active"] = isActive;
+      doc.reference.update({
+        "is_activity": isActivity
+      });
     } catch(e) {
       debugPrint(e.toString());
     }
@@ -217,7 +270,6 @@ class DatabaseService {
                 //     "updated_at": DateTime.now()
                 //   });
                 // }
-                // 
                 //  Trigger data changes
                 readers[indexReader]["is_read"] = true;
                 msgDoc.reference.update({
@@ -293,7 +345,7 @@ class DatabaseService {
                     "name": readers[readerIndex]["name"],
                     "image": readers[readerIndex]["image"],
                     "is_read": readers[readerIndex]["is_read"],
-                    "seen": readers[readerIndex]["seen"]
+                    "seen": readers[readerIndex]["seen"],
                   }]
                 });
               }
@@ -308,15 +360,21 @@ class DatabaseService {
     }
   }
 
-  Future<void> updateUserToken(String userUid, String? token) async {
+  Future<void> updateUserOnlineToken(String userUid, bool isOnline) async {
     try {
-      await db
+      db
       .collection(userCollection)
       .doc(userUid)
       .update({
-        "token": token
-      });
-      try {
+        "isOnline": isOnline
+      }).then((_) async {
+        await db
+        .collection(userCollection)
+        .doc(userUid)
+        .update({
+          "token": await FirebaseMessaging.instance.getToken()
+        });
+      }).then((_) async {
         QuerySnapshot<Map<String, dynamic>> onscreens = await db
         .collection(onScreenCollection)
         .get();
@@ -325,12 +383,12 @@ class DatabaseService {
         .get();
         if(onscreens.docs.isNotEmpty) {
           for (QueryDocumentSnapshot<Map<String, dynamic>> screenDoc in onscreens.docs) {
-            List<dynamic> onscreensList = screenDoc.data()["on_screens"];
-            int index = onscreensList.indexWhere((el) => el["userUid"] == userUid);
+            List<dynamic> onscreens = screenDoc.data()["on_screens"];
+            int index = onscreens.indexWhere((el) => el["userUid"] == userUid);
             if(index != -1) {
-              onscreensList[index]["token"] = token;
+              onscreens[index]["token"] = await FirebaseMessaging.instance.getToken();
               screenDoc.reference.update({
-                "on_screens": onscreensList
+                "on_screens": onscreens
               }); // Update existing data
             } 
           }
@@ -341,32 +399,19 @@ class DatabaseService {
             List<dynamic> tokens = group["tokens"];
             int index = tokens.indexWhere((el) => el["userUid"] == userUid);
             if(index != -1) {
-              tokens[index]["token"] = token;
+              tokens[index]["token"] = await FirebaseMessaging.instance.getToken();
               chatDoc.reference.update({
                 "group": {
                   "name": group["name"],
                   "image": group["image"],
                   "tokens": tokens
                 }
-              });
+              }); // Update existing data
             } 
           }
         }
-      } catch(e) {
-        debugPrint(e.toString());
-      }
-    } catch(e) {
-      debugPrint(e.toString());
-    }
-  }
-
-  Future<void> updateUserOnline(String userUid, bool isOnline) async {
-    try {
-      await db
-      .collection(userCollection)
-      .doc(userUid)
-      .update({
-        "isOnline": isOnline
+      }).then((_) async {
+        await updateUserLastSeenTime(userUid);
       });
     } catch(e) {
       debugPrint(e.toString());
@@ -395,17 +440,29 @@ class DatabaseService {
     }
   }
 
-  Future<DocumentReference<Map<String, dynamic>>?> createChatGroup(Map<String, dynamic> data) async {
+  Future<QuerySnapshot<Map<String, dynamic>>?> checkConversation(String userId) async {
     try {
       return await db
       .collection(chatCollection)
-      .add(data);
+      .where("relations", arrayContains: userId)
+      .get();
     } catch(e) {
       debugPrint(e.toString());
     }
   }
 
-   Future<DocumentSnapshot?> checkChat(String chatId) async {
+  Future<void> createChatGroup(String chatId, Map<String, dynamic> data) async {
+    try {
+      return await db
+      .collection(chatCollection)
+      .doc(chatId)
+      .set(data);
+    } catch(e) {
+      debugPrint(e.toString());
+    }
+  }
+
+  Future<DocumentSnapshot?> checkChat(String chatId) async {
     try {
       return await db
       .collection(chatCollection)
@@ -416,16 +473,6 @@ class DatabaseService {
     }
   }
 
-  // Future<DocumentReference?> createMembers(Map<String, dynamic> data) async {
-  //   try {
-  //     return await db
-  //     .collection(memberCollection)
-  //     .add(data);
-  //   } catch(e) {
-  //     debugPrint(e.toString());
-  //   }
-  // }
-
   Future<DocumentReference?> createOnScreens(Map<String, dynamic> data) async {
     try {
       return await db
@@ -435,16 +482,6 @@ class DatabaseService {
       debugPrint(e.toString());
     }
   }
-
-  // Future<DocumentReference?> createReaders(Map<String, dynamic> data) async {
-  //   try {
-  //     return await db
-  //     .collection(readersCollection)
-  //     .add(data);
-  //   } catch(e) {
-  //     debugPrint(e.toString());
-  //   }
-  // }
 
   Future<void> deleteChat(String chatId) async {
     WriteBatch batch = FirebaseFirestore.instance.batch();
