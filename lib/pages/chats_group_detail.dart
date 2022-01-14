@@ -1,25 +1,24 @@
 import 'dart:io';
 
-import 'package:chatv28/basewidget/rounded_image.dart';
 import 'package:timeago/timeago.dart' as timeago;
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
-import 'package:chatv28/basewidget/custom_list_view_tiles.dart';
+import 'package:chatv28/basewidget/rounded_image.dart';
 import 'package:chatv28/models/chat_user.dart';
 import 'package:chatv28/utils/dimensions.dart';
 import 'package:chatv28/utils/color_resources.dart';
 
 class ChatsGroupDetail extends StatefulWidget {
+  final String currentUserId;
   final String title;
   final String imageUrl;
   final List<ChatUser> members;
-  final String currentUserId;
   const ChatsGroupDetail({ 
+    required this.currentUserId,
     required this.title,
     required this.imageUrl,
     required this.members,
-    required this.currentUserId,
     Key? key 
   }) : super(key: key);
 
@@ -33,7 +32,7 @@ class _ChatsGroupDetailState extends State<ChatsGroupDetail> {
   String title = "";
   String titleMore = "";
   List<ChatUser> members = [];
-  late ScrollController scrollController;
+  ScrollController? scrollController;
   bool lastStatus = true;
 
   scrollListener() {
@@ -45,14 +44,14 @@ class _ChatsGroupDetailState extends State<ChatsGroupDetail> {
   }
 
   bool get isShrink {
-    return scrollController.hasClients && scrollController.offset > (250 - kToolbarHeight);
+    return scrollController!.hasClients && scrollController!.offset > (250 - kToolbarHeight);
   }
 
   @override
   void initState() {
     super.initState();
     scrollController = ScrollController();
-    scrollController.addListener(scrollListener);
+    scrollController!.addListener(scrollListener);
     if (widget.title.length > 24) {
       titleMore = widget.title.substring(0, 24);
     } else {
@@ -62,7 +61,7 @@ class _ChatsGroupDetailState extends State<ChatsGroupDetail> {
 
   @override
   void dispose() {
-    scrollController.removeListener(scrollListener);
+    scrollController!.removeListener(scrollListener);
     super.dispose();
   }
   
@@ -155,7 +154,9 @@ class _ChatsGroupDetailState extends State<ChatsGroupDetail> {
                   sliver: SliverList(
                    delegate: SliverChildBuilderDelegate(
                      (BuildContext context, int i) {
-                       return ListTile(
+                       return widget.currentUserId == members[i].uid 
+                       ? Container() 
+                       : ListTile(
                         onTap: () {},
                         leading: RoundedImageNetworkWithStatusIndicator(
                           key: UniqueKey(),

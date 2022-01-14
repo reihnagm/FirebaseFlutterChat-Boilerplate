@@ -1,6 +1,8 @@
 import 'package:awesome_notifications/awesome_notifications.dart';
+import 'package:chatv28/utils/global.dart';
+
 import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
+// import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
@@ -18,8 +20,7 @@ import 'container.dart' as core;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
-  AwesomeNotifications().initialize('resource://drawable/ic_launcher',
+  AwesomeNotifications().initialize('resource://drawable/ic_notification',
     [
       NotificationChannel(
         channelGroupKey: 'basic_channel_group',
@@ -46,7 +47,26 @@ void main() async {
       AwesomeNotifications().requestPermissionToSendNotifications();
     }
   });
-  FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+  await Firebase.initializeApp();
+  // FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+  // FirebaseMessaging.onMessageOpenedApp.listen((event) {
+  //   AwesomeNotifications().actionStream.listen(
+  //     (ReceivedNotification receivedNotification) {
+  //       navigatorKey.currentState!.push(PageRouteBuilder(pageBuilder: (BuildContext context, Animation<double> animation, Animation<double> secondaryAnimation) {
+  //         return const HomePage(currentPage: 1);
+  //       },
+  //       transitionsBuilder: (context, animation, secondaryAnimation, child) {
+  //         const begin = Offset(1.0, 0.0);
+  //         const end = Offset.zero;
+  //         const curve = Curves.ease;
+  //         var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+  //         return SlideTransition(
+  //           position: animation.drive(tween),
+  //           child: child,
+  //         );
+  //       }));
+  //     });
+  // });
   await core.init();
   runApp(
     SplashPage(
@@ -63,19 +83,23 @@ void main() async {
   );
 }
 
-Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async { 
-  AwesomeNotifications().createNotification(
-    content: NotificationContent(
-      id: 1,
-      color: Colors.grey,
-      fullScreenIntent: true,
-      displayOnBackground: true,
-      displayOnForeground: true,
-      channelKey: 'basic_channel',
-      title: "hello",
-    )
-  );
-}
+// Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async { 
+//   String title = message.data["title"];
+//   String subtitle = message.data["subtitle"];
+//   AwesomeNotifications().createNotification(
+//     content: NotificationContent(
+//       id: 1,
+//       color: Colors.transparent,
+//       fullScreenIntent: true,
+//       displayOnBackground: true,
+//       displayOnForeground: true,
+//       icon: 'resource://drawable/ic_notification',
+//       channelKey: 'basic_channel',
+//       title: title,
+//       body: subtitle
+//     )
+//   );
+// }
 
 class MainApp extends StatefulWidget {
   const MainApp({Key? key}) : super(key: key);
@@ -85,7 +109,7 @@ class MainApp extends StatefulWidget {
 }
 
 class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
-  
+
   DatabaseService databaseService = DatabaseService();
 
   @override 
@@ -98,19 +122,19 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
     // - Detached (View Destroyed - App Closed)
     if(state == AppLifecycleState.resumed) {
       debugPrint("=== APP RESUME ===");
-      await databaseService.updateUserOnlineToken(context.read<AuthenticationProvider>().userUid(), true);
+      await databaseService.updateUserOnlineToken(context.read<AuthenticationProvider>().userId(), true);
     }
     if(state == AppLifecycleState.inactive) {
       debugPrint("=== APP INACTIVE ===");
-      await databaseService.updateUserOnlineToken(context.read<AuthenticationProvider>().userUid(), false);
+      await databaseService.updateUserOnlineToken(context.read<AuthenticationProvider>().userId(), false);
     }
     if(state == AppLifecycleState.paused) {
       debugPrint("=== APP PAUSED ===");
-      await databaseService.updateUserOnlineToken(context.read<AuthenticationProvider>().userUid(), false);
+      await databaseService.updateUserOnlineToken(context.read<AuthenticationProvider>().userId(), false);
     }
     if(state == AppLifecycleState.detached) {
       debugPrint("=== APP CLOSED ===");
-      await databaseService.updateUserOnlineToken(context.read<AuthenticationProvider>().userUid(), false);
+      await databaseService.updateUserOnlineToken(context.read<AuthenticationProvider>().userId(), false);
     }
   }
 
@@ -141,15 +165,15 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
               backgroundColor: ColorResources.backgroundBlueSecondary,
             )
           ),
+          navigatorKey: GlobalVariable.navState,
           home: Builder(
             builder: (context) {
-              // context.read<FirebaseProvider>().setupInteractedMessage(context);
-              context.read<FirebaseProvider>().initializeNotification(context);
+              context.read<FirebaseProvider>().setupInteractedMessage();
               context.read<FirebaseProvider>().listenNotification(context);
               return Consumer<AuthenticationProvider>(
                 builder: (BuildContext context, AuthenticationProvider authenticationProvider, Widget? child) {
                   if(authenticationProvider.isLogin()) {
-                    return const HomePage();
+                    return const HomePage(currentPage: 0);
                   } else {
                     return const LoginPage();
                   }

@@ -7,8 +7,6 @@ import 'package:chatv28/models/chat_message.dart';
 
 const String userCollection = "Users";
 const String usersOnlineCollection = "UsersOnline";
-// const String memberCollection = "Members";
-// const String readersCollection = "Readers";
 const String onScreenCollection = "OnScreens";
 const String conversationsCollection = "Conversations";
 const String chatCollection = "Chats";
@@ -34,7 +32,10 @@ class DatabaseService {
 
   Future<DocumentSnapshot>? getUser(String uid) {
     try{
-      return db.collection(userCollection).doc(uid).get();
+      return db
+      .collection(userCollection)
+      .doc(uid)
+      .get();
     } catch(e) {
       debugPrint(e.toString());
     }
@@ -42,7 +43,10 @@ class DatabaseService {
 
   Stream<DocumentSnapshot>? getChatUserOnline(String uid) {
     try{
-      return db.collection(userCollection).doc(uid).snapshots();
+      return db
+      .collection(userCollection)
+      .doc(uid)
+      .snapshots();
     } catch(e) {
       debugPrint(e.toString());
     }
@@ -50,7 +54,10 @@ class DatabaseService {
 
   Stream<DocumentSnapshot>? isUserTyping(String chatId) {
     try{
-      return db.collection(chatCollection).doc(chatId).snapshots();
+      return db
+      .collection(chatCollection)
+      .doc(chatId)
+      .snapshots();
     } catch(e) {
       debugPrint(e.toString());
     }
@@ -58,10 +65,10 @@ class DatabaseService {
 
   Stream<QuerySnapshot>? getChatsForUser(String userId) {
     try {
-      return db.collection(chatCollection)
+      return db
+      .collection(chatCollection)
       .where('relations', arrayContains: userId)
-      .snapshots()
-      .distinct();
+      .snapshots();
     } catch(e) {
       debugPrint(e.toString());
     } 
@@ -90,7 +97,8 @@ class DatabaseService {
 
   Future<QuerySnapshot>? getMessageCountForChat(String chatId) {
     try {
-      return db.collection(chatCollection)
+      return db
+      .collection(chatCollection)
       .doc(chatId)
       .collection(messageCollection)
       .orderBy("sent_time", descending: true)
@@ -109,13 +117,13 @@ class DatabaseService {
     return query.snapshots();
   }
 
-  Future<QuerySnapshot?> readerCountIds({required String chatUid, required String userUid}) async {
+  Future<QuerySnapshot?> readerCountIds({required String chatId, required String userId}) async {
     try {
       QuerySnapshot readerCountIds = await db
       .collection(chatCollection)
-      .doc(chatUid)
+      .doc(chatId)
       .collection(messageCollection)
-      .where("readerCountIds", arrayContains: userUid)
+      .where("readerCountIds", arrayContains: userId)
       .get();
       return readerCountIds;
     } catch(e) {  
@@ -132,7 +140,7 @@ class DatabaseService {
     required bool isGroup, 
     required String currentUserId,
     required List<dynamic> readers,
-    required List<String> uids, 
+    required List<String> userIdNotRead,
   }) async {
     String messageType;
     switch (message.type) {
@@ -158,11 +166,11 @@ class DatabaseService {
         "sender_id": message.senderId,
         "sender_name": message.senderName,
         "receiver_id": message.receiverId,
-        "is_read": message.isRead,
+        "is_read": isGroup ? false : message.isRead,
         "soft_delete": message.softDelete,
         "sent_time": message.sentTime,
         "readers": readers,
-        "readerCountIds": uids,
+        "readerCountIds": userIdNotRead
       }).then((_) async {
         DocumentSnapshot doc = await db.collection(chatCollection).doc(chatId).get();
         Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
@@ -173,17 +181,33 @@ class DatabaseService {
           "is_activity": isActivity
         });
       });
-    // .add(message.toJson());
+    // // .add(message.toJson());
     } catch(e) {
       debugPrint(e.toString());
     }
-    // await db.collection(chatCollection)
-    // .doc(chatId).update({
-    //   "updated_at": DateTime.now()
-    // }); 
+    if(messageType == "image") {
+      await db
+      .collection(chatCollection)
+      .doc(chatId)
+      .update({
+        "updated_at": DateTime.now()
+      }); 
+    }
     // Trigger data changes
   }
 
+  void getReadersMsg({required String chatId}) {
+    try {
+      db
+      .collection(chatCollection)
+      .doc(chatId)
+      .collection(messageCollection)
+      .snapshots();
+    } catch(e) {
+      debugPrint(e.toString());
+    }
+  }
+ 
   Future<void> deleteMsg({required String chatId, required String msgId, required bool softDelete}) async {
     try {
       if(softDelete) {
@@ -203,6 +227,16 @@ class DatabaseService {
         .collection(messageCollection)
         .doc(msgId)
         .delete();
+      }
+      try {
+        await db
+        .collection(chatCollection)
+        .doc(chatId)
+        .update({
+          "updated_at": DateTime.now()
+        }); 
+      } catch(e) {
+        debugPrint(e.toString());
       }
     } catch(e) {
       debugPrint(e.toString());
@@ -226,7 +260,10 @@ class DatabaseService {
 
   Future<void> updateUserLastSeenTime(String uid) async {
     try {
-      await db.collection(userCollection).doc(uid).update({
+      await db
+      .collection(userCollection)
+      .doc(uid)
+      .update({
         "last_active": DateTime.now().toUtc()
       });
     } catch(e) {
@@ -237,7 +274,7 @@ class DatabaseService {
   Future<void> seeMsg({
     required String chatId, 
     required String receiverId, 
-    required String userUid,
+    required String userId,
     required String userName,
     required String userImage,
     required bool isGroup
@@ -259,26 +296,26 @@ class DatabaseService {
             Map<String, dynamic> msgObj = msgDoc1.data() as Map<String, dynamic>;
 
             List<dynamic> readers = msgObj["readers"];
-            int indexReader = readers.indexWhere((el) => el["uid"] == userUid);
+            int indexReader = readers.indexWhere((el) => el["uid"] == userId);
 
-            if(msgObj["sender_id"] != userUid) {         
+            if(msgObj["sender_id"] != userId) {         
               if(indexReader != -1) {  
-                // if(readers[indexReader]["is_read"] == false) {
-                //   readers[indexReader]["seen"] = DateTime.now();
-                //   await db.collection(chatCollection)
-                //   .doc(chatId).update({
-                //     "updated_at": DateTime.now()
-                //   });
-                // }
+                if(readers[indexReader]["is_read"] == false) {
+                  readers[indexReader]["seen"] = DateTime.now();
+                  await db.collection(chatCollection)
+                  .doc(chatId).update({
+                    "updated_at": DateTime.now()
+                  });
+                }
                 //  Trigger data changes
                 readers[indexReader]["is_read"] = true;
                 msgDoc.reference.update({
-                  "readerCountIds": FieldValue.arrayRemove([userUid]),
+                  "readerCountIds": FieldValue.arrayRemove([userId]),
                   "readers": readers               
                 }); // Update existing data
               } else {
                 msgDoc.reference.update({
-                  "readerCountIds": FieldValue.arrayRemove([userUid]),
+                  "readerCountIds": FieldValue.arrayRemove([userId]),
                   "readers": [{
                     "uid": readers[indexReader]["uid"],
                     "name": readers[indexReader]["name"],
@@ -289,7 +326,7 @@ class DatabaseService {
                 });
               }
             } else {
-                msgDoc.reference.update({
+              msgDoc.reference.update({
                 "content": msgObj["content"],
                 "type": msgObj["type"],
                 "sender_name": msgObj["sender_name"],
@@ -310,20 +347,20 @@ class DatabaseService {
           }
         } else {
           List<dynamic> data = msg.docs
-          .where((el) => el["receiver_id"] == userUid)
+          .where((el) => el["receiver_id"] == userId)
           .where((el) => el["is_read"] == false).toList();
           if(data.isNotEmpty) {
             for (QueryDocumentSnapshot<Map<String, dynamic>> msgDoc in msg.docs) {
               Map<String, dynamic> msgObj = msgDoc.data();
               List<dynamic> readers = msgObj["readers"];
-              int readerIndex = readers.indexWhere((el) => el["uid"] == userUid);
+              int readerIndex = readers.indexWhere((el) => el["uid"] == userId);
               if(readerIndex != -1) {
-                // if(readers[readerIndex]["is_read"] == false) {
-                //   await db.collection(chatCollection)
-                //   .doc(chatId).update({
-                //     "updated_at": DateTime.now()
-                //   });
-                // } 
+                if(readers[readerIndex]["is_read"] == false) {
+                  await db.collection(chatCollection)
+                  .doc(chatId).update({
+                    "updated_at": DateTime.now()
+                  });
+                } 
                 //  Trigger data changes
                 readers[readerIndex]["is_read"] = true;
                 msgDoc.reference.update({
@@ -331,12 +368,12 @@ class DatabaseService {
                   "readers": readers                      
                 }); // Update existing data
               } else {
-                // if(readers[readerIndex]["is_read"] == false) {
-                //   await db.collection(chatCollection)
-                //   .doc(chatId).update({
-                //     "updated_at": DateTime.now()
-                //   });
-                // }
+                if(readers[readerIndex]["is_read"] == false) {
+                  await db.collection(chatCollection)
+                  .doc(chatId).update({
+                    "updated_at": DateTime.now()
+                  });
+                }
                 // } Trigger data changes
                 msgDoc.reference.update({
                   "is_read": true,
@@ -360,17 +397,17 @@ class DatabaseService {
     }
   }
 
-  Future<void> updateUserOnlineToken(String userUid, bool isOnline) async {
+  Future<void> updateUserOnlineToken(String userId, bool isOnline) async {
     try {
       db
       .collection(userCollection)
-      .doc(userUid)
+      .doc(userId)
       .update({
         "isOnline": isOnline
       }).then((_) async {
         await db
         .collection(userCollection)
-        .doc(userUid)
+        .doc(userId)
         .update({
           "token": await FirebaseMessaging.instance.getToken()
         });
@@ -384,7 +421,7 @@ class DatabaseService {
         if(onscreens.docs.isNotEmpty) {
           for (QueryDocumentSnapshot<Map<String, dynamic>> screenDoc in onscreens.docs) {
             List<dynamic> onscreens = screenDoc.data()["on_screens"];
-            int index = onscreens.indexWhere((el) => el["userUid"] == userUid);
+            int index = onscreens.indexWhere((el) => el["user_id"] == userId);
             if(index != -1) {
               onscreens[index]["token"] = await FirebaseMessaging.instance.getToken();
               screenDoc.reference.update({
@@ -397,7 +434,7 @@ class DatabaseService {
           for (QueryDocumentSnapshot<Map<String, dynamic>> chatDoc in chats.docs) {
             Map<String, dynamic> group = chatDoc.data()["group"];
             List<dynamic> tokens = group["tokens"];
-            int index = tokens.indexWhere((el) => el["userUid"] == userUid);
+            int index = tokens.indexWhere((el) => el["user_id"] == userId);
             if(index != -1) {
               tokens[index]["token"] = await FirebaseMessaging.instance.getToken();
               chatDoc.reference.update({
@@ -411,30 +448,19 @@ class DatabaseService {
           }
         }
       }).then((_) async {
-        await updateUserLastSeenTime(userUid);
+        await updateUserLastSeenTime(userId);
       });
     } catch(e) {
       debugPrint(e.toString());
     }
   }
 
-  Stream<QuerySnapshot>? isScreenOn({required String chatUid}) {
+  Stream<DocumentSnapshot>? isScreenOn({required String chatId}) {
     try {
       return db
       .collection(onScreenCollection)
-      .where("id", isEqualTo: chatUid)
-      .snapshots();
-    } catch(e) {
-      debugPrint(e.toString());
-    }
-  }
-
-  Future<void> createChat(String chatId, Map<String, dynamic> data) async {
-    try {
-      return await db
-      .collection(chatCollection)
       .doc(chatId)
-      .set(data);
+      .snapshots();
     } catch(e) {
       debugPrint(e.toString());
     }
@@ -451,17 +477,6 @@ class DatabaseService {
     }
   }
 
-  Future<void> createChatGroup(String chatId, Map<String, dynamic> data) async {
-    try {
-      return await db
-      .collection(chatCollection)
-      .doc(chatId)
-      .set(data);
-    } catch(e) {
-      debugPrint(e.toString());
-    }
-  }
-
   Future<DocumentSnapshot?> checkChat(String chatId) async {
     try {
       return await db
@@ -473,11 +488,34 @@ class DatabaseService {
     }
   }
 
-  Future<DocumentReference?> createOnScreens(Map<String, dynamic> data) async {
+  Future<void> createChat(String chatId, Map<String, dynamic> data) async {
+    try {
+      return await db
+      .collection(chatCollection)
+      .doc(chatId)
+      .set(data);
+    } catch(e) {
+      debugPrint(e.toString());
+    }
+  }
+
+  Future<void> createChatGroup(String chatId, Map<String, dynamic> data) async {
+    try {
+      return await db
+      .collection(chatCollection)
+      .doc(chatId)
+      .set(data);
+    } catch(e) {
+      debugPrint(e.toString());
+    }
+  }
+
+  Future<void> createOnScreens(String chatId, Map<String, dynamic> data) async {
     try {
       return await db
       .collection(onScreenCollection)
-      .add(data);
+      .doc(chatId)
+      .set(data);
     } catch(e) {
       debugPrint(e.toString());
     }
@@ -487,10 +525,8 @@ class DatabaseService {
     WriteBatch batch = FirebaseFirestore.instance.batch();
     try {
       QuerySnapshot<Map<String, dynamic>> chatData = await db.collection(chatCollection).doc(chatId).collection(messageCollection).get();
-      QuerySnapshot<Map<String, dynamic>> onScreens = await db.collection(onScreenCollection).where("id", isEqualTo: chatId).get();
-      for (QueryDocumentSnapshot<Map<String, dynamic>> item in onScreens.docs) {
-        batch.delete(item.reference);
-      }
+      DocumentSnapshot<Map<String, dynamic>> onScreens = await db.collection(onScreenCollection).doc(chatId).get();
+      batch.delete(onScreens.reference);
       for (QueryDocumentSnapshot<Map<String, dynamic>> item in chatData.docs) {
         batch.delete(item.reference);
       }
@@ -507,62 +543,55 @@ class DatabaseService {
     }
   }
 
-  Future<void> joinScreen({required String chatUid, required String userUid}) async {
+  Future<void> joinScreen({required String chatId, required String userId}) async {
     try {
-      QuerySnapshot<Map<String, dynamic>> data = await db
+      DocumentSnapshot<Map<String, dynamic>> data = await db
       .collection(onScreenCollection)
-      .where("id", isEqualTo: chatUid)
-      .get();
-      for (QueryDocumentSnapshot<Map<String, dynamic>> item in data.docs) {
-        List<dynamic> onScreens = item.data()["on_screens"];
-        int index = onScreens.indexWhere((el) => el["userUid"] == userUid);
-        if(index != -1) {
-          onScreens[index]["on"] = true;
-          onScreens[index]["token"] = await FirebaseMessaging.instance.getToken();
-          item.reference.update({
-            "on_screens": onScreens
-          }); // Update existing data
-        } else {
-          item.reference.update({
-            "on_screens": [{
-              "userUid": userUid,
-              "on": true,
-            }]
-          });
-        }
+      .doc(chatId).get();
+      List<dynamic> onScreens = data.data()!["on_screens"];
+      int index = onScreens.indexWhere((el) => el["user_id"] == userId);
+      if(index != -1) {
+        onScreens[index]["on"] = true;
+        onScreens[index]["token"] = await FirebaseMessaging.instance.getToken();
+        data.reference.update({
+          "on_screens": onScreens
+        }); // Update existing data
+      } else {
+        data.reference.update({
+          "on_screens": [{
+            "user_id": userId,
+            "on": true,
+          }]
+        });
       }
     } catch(e) {
       debugPrint(e.toString());
     }
   }
 
-  Future<void> leaveScreen({required String chatUid, required String userUid}) async {
+  Future<void> leaveScreen({required String chatId, required String userId}) async {
     try {
-      QuerySnapshot<Map<String, dynamic>> data = await db
+      DocumentSnapshot<Map<String, dynamic>> data = await db
       .collection(onScreenCollection)
-      .where("id", isEqualTo: chatUid)
+      .doc(chatId)
       .get();
-      if(data.docs.isNotEmpty) {
-        for (QueryDocumentSnapshot<Map<String, dynamic>> item in data.docs) {
-          List<dynamic> onScreens = item.data()["on_screens"];
-          int index = onScreens.indexWhere((el) => el["userUid"] == userUid);
-          if(index != -1) {
-            onScreens[index]["on"] = false;
-            item.reference.update({
-              "id": chatUid,
-              "on_screens": onScreens
-            }); // Update existing data
-          } else {
-            item.reference.update({
-              "id": chatUid,
-              "on_screens": {
-                "on": onScreens[index]["on"],
-                "token": onScreens[index]["token"],
-                "userUid": onScreens[index]["userUid"] 
-              }
-            }); 
+      List<dynamic> onScreens = data.data()!["on_screens"];
+      int index = onScreens.indexWhere((el) => el["user_id"] == userId);
+      if(index != -1) {
+        onScreens[index]["on"] = false;
+        data.reference.update({
+          "id": chatId,
+          "on_screens": onScreens
+        }); // Update existing data
+      } else {
+        data.reference.update({
+          "id": chatId,
+          "on_screens": {
+            "on": onScreens[index]["on"],
+            "token": onScreens[index]["token"],
+            "user_id": onScreens[index]["user_id"] 
           }
-        }
+        }); 
       }
     } catch(e) {
       debugPrint(e.toString());

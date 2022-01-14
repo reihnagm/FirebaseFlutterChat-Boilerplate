@@ -69,10 +69,10 @@ class AuthenticationProvider extends ChangeNotifier {
 
   Future<void> initAuthStateChanges() async {
     try {
-      DocumentSnapshot<Object?> snapshot = await databaseService.getUser(userUid())!;
+      DocumentSnapshot<Object?> snapshot = await databaseService.getUser(userId())!;
       Map<String, dynamic> userData = snapshot.data() as Map<String, dynamic>;
       chatUser = ChatUser.fromJson({
-        "uid": userUid(),
+        "uid": userId(),
         "name": userData["name"],
         "email": userData["email"],
         "last_active": userData["last_active"],
@@ -80,7 +80,7 @@ class AuthenticationProvider extends ChangeNotifier {
         "image": userData["image"],
         "token": userData["token"]
       });  
-      await databaseService.updateUserOnlineToken(userUid(), true);
+      await databaseService.updateUserOnlineToken(userId(), true);
       sharedPreferences.setString("userName", userData["name"]);
       setStateAuthStatus(AuthStatus.loaded);
     } catch(e) {
@@ -92,7 +92,7 @@ class AuthenticationProvider extends ChangeNotifier {
   Future<void> logout(BuildContext context) async {
     setStateLogoutStatus(LogoutStatus.loading);
     try {
-      await databaseService.updateUserOnlineToken(userUid(), false);
+      await databaseService.updateUserOnlineToken(userId(), false);
       try {
         await auth.signOut();
         sharedPreferences.clear();
@@ -113,10 +113,10 @@ class AuthenticationProvider extends ChangeNotifier {
     try {
       await auth.signInWithEmailAndPassword(email: email, password: password);
       sharedPreferences.setBool("login", true);
-      sharedPreferences.setString("userUid", auth.currentUser!.uid);
-      await databaseService.updateUserOnlineToken(userUid(), true);
+      sharedPreferences.setString("userId", auth.currentUser!.uid);
+      await databaseService.updateUserOnlineToken(userId(), true);
       setStateLoginStatus(LoginStatus.loaded);
-      NavigationService().pushNavReplacement(context, const HomePage());   
+      NavigationService().pushNavReplacement(context, const HomePage(currentPage: 0));   
     } on FirebaseAuthException {
       setStateLoginStatus(LoginStatus.error);
     } catch(e) {
@@ -132,9 +132,9 @@ class AuthenticationProvider extends ChangeNotifier {
       String? imageUrl = await cloudStorageService.saveUserImageToStorage(auth.currentUser!.uid, image);
       await databaseService.register(auth.currentUser!.uid, name, email, imageUrl!);
       sharedPreferences.setBool("login", true);
-      sharedPreferences.setString("userUid", auth.currentUser!.uid);
+      sharedPreferences.setString("userId", auth.currentUser!.uid);
       setStateRegisterStatus(RegisterStatus.loaded);
-      NavigationService().pushNavReplacement(context, const HomePage()); 
+      NavigationService().pushNavReplacement(context, const HomePage(currentPage: 0)); 
     } on FirebaseException {
       setStateRegisterStatus(RegisterStatus.error);
     } catch(e) {
@@ -144,7 +144,7 @@ class AuthenticationProvider extends ChangeNotifier {
   }
 
   bool isLogin() => sharedPreferences.getBool("login") ?? false;
-  String userUid() => sharedPreferences.getString("userUid") ?? "";
+  String userId() => sharedPreferences.getString("userId") ?? "";
   String userName() => sharedPreferences.getString("userName") ?? "";
   String userImage() => sharedPreferences.getString("userImage") ?? "";
 }

@@ -80,8 +80,10 @@ class _TextMessageBubbleState extends State<TextMessageBubble> {
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(
-                      widget.isOwnMessage ? "You" : widget.message.senderName,
+                    widget.isOwnMessage 
+                    ? const SizedBox() 
+                    : Text(
+                      widget.message.senderName,
                       style: TextStyle(
                         color: widget.isOwnMessage 
                         ? ColorResources.textBlackPrimary 
@@ -89,118 +91,6 @@ class _TextMessageBubbleState extends State<TextMessageBubble> {
                         fontSize: Dimensions.fontSizeExtraSmall
                       ),
                     ),
-                    const SizedBox(width: 15.0),
-                    Text(DateFormat("HH:mm").format(widget.message.sentTime),
-                      style: TextStyle(
-                        color: widget.isOwnMessage 
-                        ? Colors.black
-                        : Colors.white,
-                        fontSize: Dimensions.fontSizeOverExtraSmall,
-                      ),
-                    ),
-                    const SizedBox(width: 10.0),
-                    widget.isGroup && widget.isOwnMessage ?
-                    Builder(
-                      builder: (ctx) {
-                        return GestureDetector(
-                          onTapDown: (TapDownDetails details)  {
-                            double left = details.globalPosition.dx;
-                            double top = details.globalPosition.dy;
-                            showMenu(
-                              context: ctx,
-                              position: RelativeRect.fromLTRB(left, top, 0, 0),
-                              items: [
-                                const PopupMenuItem(
-                                  value: "info-msg",
-                                  child: Text("Info",
-                                    style: TextStyle(
-                                      fontSize: 12.0
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ).then((value) async {
-                              if(value == "info-msg") {
-                                showModalBottomSheet(
-                                  isScrollControlled: true,
-                                  shape: const RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.only(
-                                      topLeft: Radius.circular(10.0), 
-                                      topRight: Radius.circular(10.0)
-                                    ),
-                                  ),
-                                  context: context, 
-                                  builder: (BuildContext context) {
-                                    List<Readers> readers = widget.message.readers.where((el) => el.isRead == true).toList();
-                                    if(readers.isEmpty) {
-                                      return SizedBox(
-                                        height: 80.0,
-                                        child: Center(
-                                          child: Text("No Views",
-                                            style: TextStyle(
-                                              color: Colors.black,
-                                              fontSize: Dimensions.fontSizeSmall
-                                            ),
-                                          ),
-                                        ),
-                                      );
-                                    }
-                                    return Container(
-                                      margin: EdgeInsets.all(Dimensions.marginSizeDefault),
-                                      child: ListView.builder(
-                                        shrinkWrap: true,
-                                        itemCount: readers.length,
-                                        itemBuilder: (BuildContext context, int i) {
-                                          return Container(
-                                            margin: const EdgeInsets.only(bottom: 10.0),
-                                            child: ListTile(
-                                              contentPadding: EdgeInsets.zero,
-                                              dense: true,
-                                              leading: Container(
-                                                width: 40.0,
-                                                height: 40.0,
-                                                decoration: BoxDecoration(
-                                                  image: DecorationImage(
-                                                    fit: BoxFit.cover,
-                                                    image: NetworkImage(readers[i].image),
-                                                  ),
-                                                  borderRadius: BorderRadius.circular(30.0),
-                                                  color: Colors.black,
-                                                ),
-                                              ),
-                                              title: Text(readers[i].name,
-                                                style: TextStyle(
-                                                  fontSize: Dimensions.fontSizeDefault,
-                                                  color: ColorResources.textBlackPrimary
-                                                ),
-                                              ),
-                                              subtitle: Container(
-                                                margin: const EdgeInsets.only(top: 8.0),
-                                                child: Text(DateFormat.Hm().format(readers[i].seen),
-                                                  style: TextStyle(
-                                                    fontSize: Dimensions.fontSizeSmall,
-                                                    color: ColorResources.grey
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                          );
-                                        },
-                                      ),
-                                    );
-                                  },
-                                );
-                              }
-                            });
-                          },
-                        child: const Icon(
-                          Icons.keyboard_arrow_down,
-                            color: ColorResources.black,
-                            size: 16.0,
-                          ),
-                        );
-                      },
-                    ) : Container()
                   ],
                 ),
                 Row(
@@ -259,18 +149,9 @@ class _TextMessageBubbleState extends State<TextMessageBubble> {
                         ),
                       ),
                     ),
-                    const SizedBox(width: 10.0),
-                    Text(DateFormat("HH:mm").format(widget.message.sentTime),
-                      style: TextStyle(
-                        color: widget.isOwnMessage 
-                        ? Colors.black
-                        : Colors.white,
-                        fontSize: Dimensions.fontSizeOverExtraSmall,
-                      ),
-                    ),
+                    const SizedBox(width: 6.0),
                   ],
                 ),
-                const SizedBox(width: 6.0),
                 if(widget.isOwnMessage)
                   widget.message.isRead
                   ? const Icon(
@@ -286,6 +167,15 @@ class _TextMessageBubbleState extends State<TextMessageBubble> {
                       : Colors.white  
                     ), 
               ],
+            ),
+            const SizedBox(height: 6.0),
+            Text(DateFormat("HH:mm").format(widget.message.sentTime),
+              style: TextStyle(
+                color: widget.isOwnMessage 
+                ? Colors.black
+                : Colors.white,
+                fontSize: Dimensions.fontSizeOverExtraSmall,
+              ),
             ),
         ],
       )

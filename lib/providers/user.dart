@@ -25,7 +25,7 @@ class UserProvider extends ChangeNotifier {
   List<ChatUser>? _users;
   List<ChatUser>? get users {
     if(_users != null) {
-      return _users!.where((el) => el.uid != authenticationProvider.userUid()).toList();
+      return _users!.where((el) => el.uid != authenticationProvider.userId()).toList();
     }
     return null;
   }
@@ -79,13 +79,14 @@ class UserProvider extends ChangeNotifier {
     PlatformFile? groupImage,
   }) async {
     List<String> relations = selectedUsers.map((user) => user.uid!).toSet().toList();
-    relations.add(authenticationProvider.userUid());
+    relations.add(authenticationProvider.userId());
     bool isGroup = selectedUsers.length > 1;
     if(isGroup) {
       String chatId = const Uuid().v4();
       List<dynamic> tokens = [];
       List<dynamic> isActivity = [];
       List<dynamic> members = [];
+      List<dynamic> onScreens = [];
       setStateCreateGroupStatus(CreateGroupStatus.loading);
       for (String uid in relations) {
         try {
@@ -101,7 +102,7 @@ class UserProvider extends ChangeNotifier {
             "last_active": userData["last_active"]
           });
           tokens.add({
-            "userUid": snapshot.id,
+            "user_id": snapshot.id,
             "token": userData["token"]
           });
           isActivity.add({
@@ -111,10 +112,23 @@ class UserProvider extends ChangeNotifier {
             "is_active": false,
             "is_group": true
           });
+          onScreens.add({
+            "user_id": snapshot.id,
+            "token": userData["token"],
+            "on": false 
+          });
         } catch(e) {
           setStateCreateGroupStatus(CreateGroupStatus.error);
           debugPrint(e.toString());
         }
+      }
+      try {
+        await databaseService.createOnScreens(chatId, {
+          "id": chatId,
+          "on_screens": onScreens,
+        });
+      } catch(e) {
+        debugPrint(e.toString());
       }
       try {
         String? groupImageUrl = "";

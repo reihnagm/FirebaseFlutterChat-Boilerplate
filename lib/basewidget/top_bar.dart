@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
@@ -61,6 +62,7 @@ class TopBar extends StatelessWidget {
 }
 
 class TopBarChat extends StatelessWidget {
+  final String? avatar;
   final String? barTitle;
   final String? subTitle;
   late final double? barTitleFontSize;
@@ -75,6 +77,7 @@ class TopBarChat extends StatelessWidget {
 
   TopBarChat({
     Key? key,
+    this.avatar,
     this.barTitle, 
     this.subTitle,
     this.barTitleColor = ColorResources.white,
@@ -104,6 +107,8 @@ class TopBarChat extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           if(secondaryAction != null) secondaryAction!,
+          avatar != null && avatar != '' ? ava() : Container(),
+          const SizedBox(width: 10.0),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -117,6 +122,20 @@ class TopBarChat extends StatelessWidget {
           if(primaryAction != null) primaryAction!
         ],
       ),
+    );
+  }
+
+  Widget ava() {
+    return CachedNetworkImage(
+      width: 30.0,
+      height: 30.0,
+      imageUrl: avatar!,
+      imageBuilder: (context, imageProvider) {
+        return CircleAvatar(
+          backgroundImage: imageProvider,
+          radius: 20,
+        );
+      },
     );
   }
 

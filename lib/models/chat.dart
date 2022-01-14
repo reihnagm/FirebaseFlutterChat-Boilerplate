@@ -55,15 +55,15 @@ class GroupData {
 
 class Token {
   Token({
-    required this.userUid,
+    required this.userId,
     required this.token,
   });
 
-  String userUid;
+  String userId;
   String token;
 
   factory Token.fromJson(Map<String, dynamic> json) => Token(
-    userUid: json["userUid"],
+    userId: json["user_id"],
     token: json["token"],
   );
 }
@@ -137,16 +137,16 @@ class Chat {
   : group 
   ? messagesGroupCount.fold(0, (previousValue, element) => element + previousValue)
   : messagesPersonalCount.where((el) => el.isRead == false && el.receiverId == currentUserId).toList().length;
+  
   bool isRead() => messages.any((m) => m.isRead);
-
   bool isTyping() => activity.any((el) => el.isActive && el.userId != currentUserId);
-
   bool isUsersOnline() => recepients.any((el) => el.isUserOnline());
+
   String title() => !group ? recepients.first.name! : groupData.name;
   String subtitle() => !group ? isUsersOnline() ? "ONLINE" : "OFFLINE" : peopleJoinGroup.map((user) => user.name!).join(", ");
   String receiverTyping() => group 
-  ? activity.where((el) => el.isActive == true).toList().isNotEmpty 
-  ? activity.firstWhere((el) => el.isActive == true).name 
+  ? activity.where((el) => el.isActive == true && el.chatId == uid).toList().isNotEmpty 
+  ? activity.firstWhere((el) => el.isActive == true && el.chatId == uid).name 
   : ""
   : "";
   String image() => !group ? recepients.first.image! : groupData.image == "" ? "https://www.iconpacks.net/icons/1/free-user-group-icon-296-thumb.png" : groupData.image;

@@ -374,7 +374,7 @@ class _UsersPageState extends State<UsersPage> {
                                               btnTxt: "Create", 
                                               btnColor: ColorResources.backgroundBlueSecondary,
                                               isLoading: context.watch<UserProvider>().createGroupStatus == CreateGroupStatus.loading ? true : false,
-                                              onTap: () async {
+                                              onTap: context.watch<UserProvider>().createGroupStatus == CreateGroupStatus.loading ? () {} : () async {
                                                 if(formKey.currentState!.validate()) {
                                                   formKey.currentState!.save();
                                                   if(file != null) {
@@ -458,7 +458,7 @@ class _UsersPageState extends State<UsersPage> {
                 imagePath: users[i].image!, 
                 isActive: users[i].isUserOnline(),  
                 onTap: () async {
-                  String currentUserId = context.read<AuthenticationProvider>().userUid();
+                  String currentUserId = context.read<AuthenticationProvider>().userId();
                   String peerId = users[i].uid!;
                   if(currentUserId.compareTo(peerId) > 0) {
                     groupChatId = '$currentUserId-$peerId';
@@ -470,9 +470,10 @@ class _UsersPageState extends State<UsersPage> {
                     SharedPreferences prefs = await SharedPreferences.getInstance();
                     prefs.setString("chatId", createChatDoc.id);
                     NavigationService().pushNav(context, ChatPage(
+                      avatar: users[i].image!,
                       title: users[i].name!,
                       subtitle: users[i].isOnline.toString(),
-                      currentUserId: context.read<AuthenticationProvider>().userUid(),
+                      currentUserId: context.read<AuthenticationProvider>().userId(),
                       receiverId: users[i].uid!,
                       receiverName: users[i].name!,
                       receiverImage: users[i].image!,
@@ -486,9 +487,10 @@ class _UsersPageState extends State<UsersPage> {
                     SharedPreferences prefs = await SharedPreferences.getInstance();
                     prefs.setString("chatId", groupChatId);
                     NavigationService().pushNav(context, ChatPage(
+                      avatar: users[i].image!,
                       title: users[i].name!,
                       subtitle: users[i].isOnline.toString(),
-                      currentUserId: context.read<AuthenticationProvider>().userUid(),
+                      currentUserId: context.read<AuthenticationProvider>().userId(),
                       receiverId: users[i].uid!,
                       receiverName: users[i].name!,
                       receiverImage: users[i].image!,
@@ -545,21 +547,21 @@ class _UsersPageState extends State<UsersPage> {
                         "created_at": DateTime.now(),
                         "updated_at": DateTime.now(),
                         "relations": [
-                          context.read<AuthenticationProvider>().userUid(),
+                          context.read<AuthenticationProvider>().userId(),
                           users[i].uid
                         ],
                       }
                     );
-                    await databaseService.createOnScreens({
+                    await databaseService.createOnScreens(groupChatId, {
                       "id": groupChatId,
                       "on_screens": FieldValue.arrayUnion([ 
                         {
-                          "userUid": context.read<AuthenticationProvider>().userUid(),
+                          "user_id": context.read<AuthenticationProvider>().userId(),
                           "token":  await FirebaseMessaging.instance.getToken(), 
                           "on": true
                         },
                         {
-                          "userUid": users[i].uid,
+                          "user_id": users[i].uid,
                           "token": users[i].token,
                           "on": false
                         },

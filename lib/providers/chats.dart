@@ -25,21 +25,10 @@ class ChatsProvider extends ChangeNotifier {
   List<Chat>? chats;
   StreamSubscription? chatsStream;
 
-  @override 
-  void dispose() {
-    chatsStream!.cancel();
-    super.dispose();
-  }
-
-  void cleanChats() {
-    chatsStream!.cancel();
-    Future.delayed(Duration.zero, () => notifyListeners());
-  }
-
   void getChats() async {
     try {      
-      chatsStream = databaseService.getChatsForUser(authenticationProvider.userUid())!.listen((snapshot) async {
-        List<Chat> _chats = await Future.wait(snapshot.docs.map((doc) async {
+      chatsStream = databaseService.getChatsForUser(authenticationProvider.userId())!.listen((snapshot) async {
+        chats = await Future.wait(snapshot.docs.map((doc) async {
           Map<String, dynamic> chatData = doc.data() as Map<String, dynamic>;
           List<ChatUser> members = [];
           List<IsActivity> isActivity = [];
@@ -59,15 +48,15 @@ class ChatsProvider extends ChangeNotifier {
           }
         
           QuerySnapshot<Object?>? readerCountIds = await databaseService.readerCountIds(
-            chatUid: doc.id, 
-            userUid: authenticationProvider.userUid()
+            chatId: doc.id, 
+            userId: authenticationProvider.userId()
           );
 
           if(readerCountIds!.docs.isNotEmpty) {
             for (QueryDocumentSnapshot<Object?> item in readerCountIds.docs) {
               Map<String, dynamic> readerDataCount = item.data() as Map<String, dynamic>;
               List<dynamic> readerCountIds = readerDataCount["readerCountIds"];
-              int readerCount = readerCountIds.where((uids) => uids == authenticationProvider.userUid()).toList().length; 
+              int readerCount = readerCountIds.where((uids) => uids == authenticationProvider.userId()).toList().length; 
               messagesGroupCount.add(readerCount);
             }
           }
@@ -86,7 +75,7 @@ class ChatsProvider extends ChangeNotifier {
           } //* Prevent Bad State No Element
           return Chat(
             uid: doc.id, 
-            currentUserId: authenticationProvider.userUid(), 
+            currentUserId: authenticationProvider.userId(), 
             activity: isActivity, 
             group: chatData["is_group"], 
             groupData: GroupData(
@@ -100,7 +89,6 @@ class ChatsProvider extends ChangeNotifier {
             messagesGroupCount: messagesGroupCount,
           );
         }).toList());
-        chats = _chats;
         Future.delayed(Duration.zero, () => notifyListeners());
       });
     } catch (e) {

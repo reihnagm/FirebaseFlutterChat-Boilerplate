@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -28,25 +26,23 @@ class _ChatsPageState extends State<ChatsPage> {
   late double deviceHeight;
   late double deviceWidth;
 
+  late ChatsProvider chatsProvider;
 
   @override 
   void initState() {
     super.initState();
+    chatsProvider = context.read<ChatsProvider>();
     WidgetsBinding.instance!.addPostFrameCallback((_) {
       context.read<AuthenticationProvider>().initAuthStateChanges();
+      chatsProvider.getChats();
     });
   }
 
-  @override 
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    Future.delayed(const Duration(seconds: 1), () {
-      if(mounted) {
-        context.read<ChatsProvider>().getChats();
-      } else {
-        context.read<ChatsProvider>().cleanChats();
-      }
-    });
+
+  @override  
+  void dispose() {
+    chatsProvider.chatsStream!.cancel();
+    super.dispose();
   }
   
   @override
@@ -148,8 +144,8 @@ class _ChatsPageState extends State<ChatsPage> {
     : subtitle;
 
     bool isOwnMessage = chat.messages.isNotEmpty 
-    ? context.read<AuthenticationProvider>().userUid() == chat.messages.last.senderId 
-    : context.read<AuthenticationProvider>().userUid() == chat.currentUserId;
+    ? context.read<AuthenticationProvider>().userId() == chat.messages.last.senderId 
+    : context.read<AuthenticationProvider>().userId() == chat.currentUserId;
     return CustomListViewTileWithoutActivity(
       height: deviceHeight * 0.10, 
       group: chat.group,
@@ -270,6 +266,7 @@ class _ChatsPageState extends State<ChatsPage> {
         SharedPreferences prefs = await SharedPreferences.getInstance();
         prefs.setString("chatId", chat.uid);
         NavigationService().pushNav(context, ChatPage(
+          avatar: chat.group ? chat.groupData.image : chat.recepients.first.image!,
           title: chat.title(),
           subtitle: chat.subtitle(),
           currentUserId: chat.currentUserId,
