@@ -5,14 +5,14 @@ import 'dart:async';
 import 'package:uuid/uuid.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:soundpool/soundpool.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 
+import 'package:chatv28/providers/firebase.dart';
 import 'package:chatv28/models/chat.dart';
 import 'package:chatv28/models/chat_user.dart';
-import 'package:chatv28/providers/firebase.dart';
 import 'package:chatv28/models/chat_message.dart';
 import 'package:chatv28/providers/authentication.dart';
 import 'package:chatv28/services/cloud_storage.dart';
@@ -30,16 +30,17 @@ class ChatProvider extends ChangeNotifier {
   final MediaService mediaService;
   final NavigationService navigationService;
 
-  Timer? _debounce;
+  Timer? debounce;
 
-  List<dynamic> seeReads = [];
+  List<dynamic> userIdIsNotRead = [];
 
+  List<Readers> get whoReads => selectedMessages.last.readers.where((el) => el.isRead == true).toList();
   List<ChatMessage> selectedMessages = [];
 
   bool get isSelectedMessages => selectedMessages.isNotEmpty;
 
   List<ChatMessage>? _messages = [];
-  List<ChatMessage>? get messages => [..._messages!.reversed];
+  List<ChatMessage>? get messages => [..._messages!];
 
   Soundpool pool = Soundpool.fromOptions(options: SoundpoolOptions.kDefault);
 
@@ -47,26 +48,17 @@ class ChatProvider extends ChangeNotifier {
   String isTyping = "";
   String? isOnline;
   String token = "";
-  List<String> userIdIsNotRead = [];
+  String currentUserIsRead = "";
   bool isRead = false;
 
   ScrollController scrollController = ScrollController();
   TextEditingController messageTextEditingController = TextEditingController();
   FocusNode messageFocusNode = FocusNode();
+  StreamSubscription? readersStream;
   StreamSubscription? isScreenOnStream;
   StreamSubscription? isUserOnlineStream;
   StreamSubscription? isUserTypingStream;
   StreamSubscription? messageStream;
-  StreamSubscription? keyboardTypeStream;
-
-  @override
-  void dispose() {
-    _debounce?.cancel();
-    keyboardTypeStream!.cancel();
-    messageTextEditingController.dispose();
-    scrollController.dispose();
-    super.dispose();
-  }
 
   ChatProvider({
     required this.sharedPreferences,
@@ -75,13 +67,10 @@ class ChatProvider extends ChangeNotifier {
     required this.mediaService,
     required this.cloudStorageService,
     required this.navigationService
-  }) {
-    scrollController = ScrollController();
-    messageTextEditingController = TextEditingController();
-  }
+  });
 
   void clearSelectedMessages() {
-    selectedMessages.clear();
+    selectedMessages = [];
     Future.delayed(Duration.zero, () => notifyListeners());
   }
 
@@ -103,14 +92,14 @@ class ChatProvider extends ChangeNotifier {
 
   void listenToMessages() {
     try { 
-      messageStream = databaseService.streamMessagesForChat(chatId()).listen((snapshot) {
+      messageStream = databaseService.streamMessagesForChat(chatId())!.listen((snapshot) {
         _messages = [];
         Future.delayed(Duration.zero, () => notifyListeners());
-        List<ChatMessage> _msg = snapshot.docs.map((m) {
+        List<ChatMessage> messages = snapshot.docs.map((m) {
           Map<String, dynamic> messageData = m.data() as Map<String, dynamic>;
           return ChatMessage.fromJSON(messageData);
         }).toList();
-        _messages = _msg;
+        _messages = messages;
         WidgetsBinding.instance!.addPostFrameCallback((_) {
           if(scrollController.hasClients) {
             scrollController.animateTo(0, 
@@ -128,12 +117,12 @@ class ChatProvider extends ChangeNotifier {
     }
   }
 
-  void onChangeMsg(BuildContext context, String val, {required String userId}) {
-    if (_debounce?.isActive ?? false) _debounce!.cancel();
-    _debounce = Timer(const Duration(milliseconds: 100), () {
+  void onChangeMsg(BuildContext context, String val) {
+    if (debounce?.isActive ?? false) debounce!.cancel();
+    debounce = Timer(const Duration(milliseconds: 100), () {
       toggleIsActivity(
         isActive: val.isNotEmpty ? true : false, 
-        userId: userId,
+        userId: userId(),
       );
     });
     Future.delayed(Duration.zero, () => notifyListeners());
@@ -142,7 +131,6 @@ class ChatProvider extends ChangeNotifier {
   Future<void> sendTextMessage(
     BuildContext context,
   {
-    required String avatar,
     required String title,
     required String subtitle,
     required String receiverName,
@@ -158,22 +146,31 @@ class ChatProvider extends ChangeNotifier {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     List<dynamic> readers = [];
     List<String> registrationIds = [];
-    for (Token item in tokens) {
-      if(item.userId != authenticationProvider.userId()) {
-        registrationIds.add(item.token);
-      }
+    for (Token token in tokens) {
+      registrationIds.add(token.token);
     }
     if(isGroup) {
       for (ChatUser member in members) {
         if(member.uid != authenticationProvider.userId()) {
-          readers.add({
-            "uid": member.uid,
-            "name": member.name,
-            "image": member.image,
-            "is_read": false,
-            "seen": DateTime.now(),
-            "created_at": DateTime.now()
-          });
+          if(member.uid == currentUserIsRead) {
+            readers.add({
+              "uid": member.uid,
+              "name": member.name,
+              "image": member.image,
+              "is_read": true,
+              "seen": DateTime.now(),
+              "created_at": DateTime.now()
+            });
+          } else {
+            readers.add({
+              "uid": member.uid,
+              "name": member.name,
+              "image": member.image,
+              "is_read": false,
+              "seen": DateTime.now(),
+              "created_at": DateTime.now()
+            });
+          }
         }
       }
     } else {
@@ -211,7 +208,7 @@ class ChatProvider extends ChangeNotifier {
     );
     messageTextEditingController.text = "";
     try {
-      await databaseService.addMessageToChat(
+      databaseService.addMessageToChat(
         context,
         msgId: msgId,
         chatId: chatId(), 
@@ -220,7 +217,9 @@ class ChatProvider extends ChangeNotifier {
         currentUserId: authenticationProvider.userId(),
         userIdNotRead: userIdIsNotRead,
         readers: readers,
-      );
+      ).then((_) async {
+        await databaseService.updateMicroTask(chatId());
+      });
       if(scrollController.hasClients) {
         scrollController.animateTo(0, 
           duration: const Duration(
@@ -234,23 +233,21 @@ class ChatProvider extends ChangeNotifier {
     }      
     if(!isRead) {
       try {
-        // await Provider.of<FirebaseProvider>(context, listen: false).sendNotification(
-        //   chatId: chatId(),
-        //   tokens: tokens,
-        //   registrationIds: registrationIds,
-        //   token: token, 
-        //   avatar: avatar,
-        //   title: title,
-        //   subtitle: subtitle,
-        //   body: messageToSend.content, 
-        //   receiverId: receiverId,
-        //   receiverName: receiverName,
-        //   receiverImage: receiverImage,
-        //   groupName: groupName,
-        //   groupImage: groupImage,
-        //   isGroup: isGroup,
-        //   type: "text"
-        // );
+        await context.read<FirebaseProvider>().sendNotification(
+          chatId: chatId(),
+          registrationIds: registrationIds,
+          token: token, 
+          title: title,
+          subtitle: subtitle,
+          body: messageToSend.content, 
+          receiverId: receiverId,
+          receiverName: receiverName,
+          receiverImage: receiverImage,
+          groupName: groupName,
+          groupImage: groupImage,
+          isGroup: isGroup,
+          type: "text"
+        );
       } catch(e) {
         debugPrint(e.toString());
       }
@@ -266,7 +263,6 @@ class ChatProvider extends ChangeNotifier {
   Future sendImageMessage(
     BuildContext context,
   {
-    required String avatar,
     required String title,
     required String subtitle,
     required String receiverId, 
@@ -284,22 +280,31 @@ class ChatProvider extends ChangeNotifier {
       if(file != null) { 
         List<dynamic> readers = [];
         List<String> registrationIds = [];
-        for (Token item in tokens) {
-          if(item.userId != authenticationProvider.userId()) {
-            registrationIds.add(item.token);
-          }
+        for (Token token in tokens) {
+          registrationIds.add(token.token);
         }
         if(isGroup) {
           for (ChatUser member in members) {
             if(member.uid != authenticationProvider.userId()) {
-              readers.add({
-                "uid": member.uid,
-                "name": member.name,
-                "image": member.image,
-                "is_read": false,
-                "seen": DateTime.now(),
-                "created_at": DateTime.now()
-              });
+              if(member.uid == currentUserIsRead) {
+                readers.add({
+                  "uid": member.uid,
+                  "name": member.name,
+                  "image": member.image,
+                  "is_read": true,
+                  "seen": DateTime.now(),
+                  "created_at": DateTime.now()
+                });
+              } else {
+                readers.add({
+                  "uid": member.uid,
+                  "name": member.name,
+                  "image": member.image,
+                  "is_read": false,
+                  "seen": DateTime.now(),
+                  "created_at": DateTime.now()
+                });
+              }
             }
           }
         } else {
@@ -322,7 +327,7 @@ class ChatProvider extends ChangeNotifier {
             }
           ];
         }
-        _messages!.add(
+        _messages!.insert(0,
           ChatMessage(
             uid: msgId,
             content: "loading", 
@@ -360,7 +365,7 @@ class ChatProvider extends ChangeNotifier {
           sentTime: DateTime.now()
         );
         try {      
-          await databaseService.addMessageToChat(
+          databaseService.addMessageToChat(
             context,
             msgId: msgId,
             chatId: chatId(),  
@@ -369,7 +374,9 @@ class ChatProvider extends ChangeNotifier {
             currentUserId: authenticationProvider.userId(),
             userIdNotRead: userIdIsNotRead,
             readers: readers,
-          );
+          ).then((_) async {
+            await databaseService.updateMicroTask(chatId());
+          });
         } catch(e) {
           debugPrint(e.toString());
         }
@@ -377,10 +384,8 @@ class ChatProvider extends ChangeNotifier {
           try {
             await Provider.of<FirebaseProvider>(context, listen: false).sendNotification(
               chatId: chatId(),
-              tokens: tokens,
               registrationIds: registrationIds,
               token: token, 
-              avatar: avatar,
               title: title,
               subtitle: subtitle,
               body: messageToSend.content, 
@@ -421,6 +426,11 @@ class ChatProvider extends ChangeNotifier {
             for (var item in data["on_screens"].where((el) => el["on"] == false).toList()) {
               userIdIsNotRead.add(item["user_id"]);
             }
+          }
+          if(data["on_screens"].where((el) => el["user_id"] != userId() && el["on"] == true).isNotEmpty) {
+            currentUserIsRead = data["on_screens"].firstWhere((el) => el["user_id"] != userId() && el["on"] == true)["user_id"];
+          } else {
+            currentUserIsRead = "";
           }
         }
         Future.delayed(Duration.zero, () => notifyListeners()); 
@@ -463,14 +473,16 @@ class ChatProvider extends ChangeNotifier {
 
   Future<void> seeMsg({required String receiverId, required bool isGroup}) async {
     try {
-      await databaseService.seeMsg(
+      databaseService.seeMsg(
         chatId: chatId(),
         isGroup: isGroup,
         receiverId: receiverId,
         userId: authenticationProvider.userId(),
         userName: authenticationProvider.userName(),
         userImage: authenticationProvider.userImage(),
-      );
+      ).then((_) async {
+        await databaseService.updateMicroTask(chatId());
+      });
     } catch(e) {
       debugPrint(e.toString());
     }
@@ -478,7 +490,7 @@ class ChatProvider extends ChangeNotifier {
 
   Future<void> toggleIsActivity({required bool isActive, required String userId}) async {
     try {
-      await databaseService.updateChatData(userId, chatId(), isActive);
+      await databaseService.updateChatIsActivity(userId, chatId(), isActive);
     } catch(e) {
       debugPrint(e.toString());
     }
@@ -486,21 +498,7 @@ class ChatProvider extends ChangeNotifier {
 
   Future<void> deleteChat(BuildContext context, {required String receiverId}) async {
     try {
-      goBack(context);
       await databaseService.deleteChat(chatId());
-    } catch(e) {
-      debugPrint(e.toString());
-    }
-  }
-
-  Future<void> deleteMsg({required String msgId, required bool softDelete}) async {
-    try {
-      await databaseService.deleteMsg(
-        chatId: chatId(), 
-        msgId: msgId,
-        softDelete: softDelete
-      );
-      selectedMessages = [];
     } catch(e) {
       debugPrint(e.toString());
     }
@@ -509,11 +507,13 @@ class ChatProvider extends ChangeNotifier {
   Future<void> deleteMsgBulk({required bool softDelete}) async {
     try {
       for (ChatMessage item in selectedMessages) {
-        await databaseService.deleteMsg(
+        databaseService.deleteMsgBulk(
           chatId: chatId(), 
           msgId: item.uid,
           softDelete: softDelete
-        );
+        ).then((_) async {
+          await databaseService.updateMicroTask(chatId());
+        });
       }
       selectedMessages = [];
       Future.delayed(Duration.zero, () => notifyListeners());
@@ -562,10 +562,8 @@ class ChatProvider extends ChangeNotifier {
       debugPrint(e.toString());
     }
   }
-  
-  void goBack(BuildContext context) {
-    NavigationService.goBack(context);
-  }
+
+
 
   String userId() => sharedPreferences.getString("userId") ?? "";
   String userName() => sharedPreferences.getString("userName") ?? "";

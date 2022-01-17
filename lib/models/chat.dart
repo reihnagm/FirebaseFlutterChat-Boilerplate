@@ -1,38 +1,6 @@
 import 'package:chatv28/models/chat_message.dart';
 import 'package:chatv28/models/chat_user.dart';
 
-class ChatBadgeCount {
-  final String chatId;
-  final String messageId;
-  final String readerId;
-  final bool isRead;
-
-  ChatBadgeCount({
-    required this.chatId,
-    required this.messageId,
-    required this.readerId,
-    required this.isRead,
-  });
-
-  factory ChatBadgeCount.fromJson(Map<String, dynamic> json) {
-    return ChatBadgeCount(
-      chatId: json["chat_id"],
-      messageId: json["message_id"],
-      readerId: json["reader_id"], 
-      isRead: json["is_read"],
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      "chat_id": chatId,
-      "message_id": messageId,
-      "reader_id": readerId,
-      "is_read": isRead,
-    };
-  }
-}
-
 class GroupData {
   final String name;
   final String image;
@@ -102,7 +70,7 @@ class Chat {
   final List<ChatMessage> messages; 
   final List<dynamic> messagesGroupCount;
   final List<ChatMessage> messagesPersonalCount; 
-  late final List<ChatUser> peopleJoinGroup;
+  late final List<ChatUser> peopleJoinedGroup;
   late final List<ChatUser> recepients;
 
   Chat({
@@ -129,21 +97,22 @@ class Chat {
         token: chatUser.token,
       )); 
     }
-    peopleJoinGroup = chatUserAssign;
+    peopleJoinedGroup = chatUserAssign;
   }
 
   int readCount() => messagesPersonalCount.isEmpty 
   ? 0 
   : group 
-  ? messagesGroupCount.fold(0, (previousValue, element) => element + previousValue)
+  ? messagesGroupCount.fold(0, (prev, el) => el + prev)
   : messagesPersonalCount.where((el) => el.isRead == false && el.receiverId == currentUserId).toList().length;
   
   bool isRead() => messages.any((m) => m.isRead);
   bool isTyping() => activity.any((el) => el.isActive && el.userId != currentUserId);
   bool isUsersOnline() => recepients.any((el) => el.isUserOnline());
 
+  String type() => messages.isNotEmpty ? messages.last.type == MessageType.text ? "TEXT" : "IMAGE" : "";
   String title() => !group ? recepients.first.name! : groupData.name;
-  String subtitle() => !group ? isUsersOnline() ? "ONLINE" : "OFFLINE" : peopleJoinGroup.map((user) => user.name!).join(", ");
+  String subtitle() => !group ? isUsersOnline() ? "ONLINE" : "OFFLINE" : peopleJoinedGroup.map((user) => user.name!).join(", ");
   String receiverTyping() => group 
   ? activity.where((el) => el.isActive == true && el.chatId == uid).toList().isNotEmpty 
   ? activity.firstWhere((el) => el.isActive == true && el.chatId == uid).name 

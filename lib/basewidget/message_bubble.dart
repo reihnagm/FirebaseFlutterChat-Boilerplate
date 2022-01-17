@@ -77,22 +77,18 @@ class _TextMessageBubbleState extends State<TextMessageBubble> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               mainAxisSize: MainAxisSize.min,
               children: [
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    widget.isOwnMessage 
-                    ? const SizedBox() 
-                    : Text(
-                      widget.message.senderName,
-                      style: TextStyle(
-                        color: widget.isOwnMessage 
-                        ? ColorResources.textBlackPrimary 
-                        : ColorResources.white,
-                        fontSize: Dimensions.fontSizeExtraSmall
-                      ),
-                    ),
-                  ],
+                widget.isOwnMessage 
+                ? const SizedBox() 
+                : Text(
+                  widget.message.senderName,
+                  style: TextStyle(
+                    color: widget.isOwnMessage 
+                    ? ColorResources.textBlackPrimary 
+                    : ColorResources.white,
+                    fontSize: Dimensions.fontSizeExtraSmall
+                  ),
                 ),
+                const SizedBox(height: 6.0),
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -259,7 +255,7 @@ class ImageMessageBubble extends StatelessWidget {
             },
             child: CachedNetworkImage(
               imageUrl: message.content,
-              imageBuilder: (context, imageProvider) {
+              imageBuilder: (BuildContext context, ImageProvider<Object> imageProvider) {
                 return Container(
                   width: width,
                   height: height,
@@ -267,6 +263,32 @@ class ImageMessageBubble extends StatelessWidget {
                     borderRadius: BorderRadius.circular(15.0),
                     image: DecorationImage(
                       image: imageProvider,
+                      fit: BoxFit.cover
+                    )
+                  ),
+                );
+              },
+              placeholder: (BuildContext context, String url) {
+                return Container(
+                  width: width,
+                  height: height,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(15.0),
+                    image: const DecorationImage(
+                      image: AssetImage('assets/images/default-image.png'),
+                      fit: BoxFit.cover
+                    )
+                  ),
+                );
+              },
+              errorWidget: (BuildContext context, String url, dynamic error) {
+                return Container(
+                  width: width,
+                  height: height,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(15.0),
+                    image: const DecorationImage(
+                      image: AssetImage('assets/images/default-image.png'),
                       fit: BoxFit.cover
                     )
                   ),

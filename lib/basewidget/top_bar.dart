@@ -4,15 +4,13 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'package:chatv28/utils/color_resources.dart';
 
-class TopBar extends StatelessWidget {
+class TopBar extends StatefulWidget {
   final String? barTitle;
   late final double? barTitleFontSize;
   final Color barTitleColor;
   final Widget? primaryAction;
   final Widget? secondaryAction;
 
-  late double deviceHeight;
-  late double deviceWidth;
 
   TopBar({
     Key? key,
@@ -23,6 +21,15 @@ class TopBar extends StatelessWidget {
   })  : super(key: key) {
     barTitleFontSize = 14.0.sp;
   }
+
+  @override
+  State<TopBar> createState() => _TopBarState();
+}
+
+class _TopBarState extends State<TopBar> {
+  late double deviceHeight;
+
+  late double deviceWidth;
 
   @override
   Widget build(BuildContext context) {
@@ -40,9 +47,9 @@ class TopBar extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          if(secondaryAction != null) secondaryAction!,
+          if(widget.secondaryAction != null) widget.secondaryAction!,
           titleBar(),
-          if(primaryAction != null) primaryAction!
+          if(widget.primaryAction != null) widget.primaryAction!
         ],
       ),
     );
@@ -50,18 +57,18 @@ class TopBar extends StatelessWidget {
 
   Widget titleBar() {
     return Text(
-      barTitle!, 
+      widget.barTitle!, 
       overflow: TextOverflow.ellipsis,
       style: TextStyle(
-        color: barTitleColor,
-        fontSize: barTitleFontSize,
+        color: widget.barTitleColor,
+        fontSize: widget.barTitleFontSize,
         fontWeight: FontWeight.w700
       ),
     );
   }
 }
 
-class TopBarChat extends StatelessWidget {
+class TopBarChat extends StatefulWidget {
   final String? avatar;
   final String? barTitle;
   final String? subTitle;
@@ -72,8 +79,6 @@ class TopBarChat extends StatelessWidget {
   final Widget? primaryAction;
   final Widget? secondaryAction;
 
-  late double deviceHeight;
-  late double deviceWidth;
 
   TopBarChat({
     Key? key,
@@ -88,6 +93,15 @@ class TopBarChat extends StatelessWidget {
     barTitleFontSize = 14.0.sp;
     barSubtitleFontSize = 8.0.sp;
   }
+
+  @override
+  State<TopBarChat> createState() => _TopBarChatState();
+}
+
+class _TopBarChatState extends State<TopBarChat> {
+  late double deviceHeight;
+
+  late double deviceWidth;
 
   @override
   Widget build(BuildContext context) {
@@ -106,8 +120,8 @@ class TopBarChat extends StatelessWidget {
         mainAxisSize: MainAxisSize.max,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          if(secondaryAction != null) secondaryAction!,
-          avatar != null && avatar != '' ? ava() : Container(),
+          if(widget.secondaryAction != null) widget.secondaryAction!,
+          widget.avatar != null && widget.avatar != '' ? ava() : Container(),
           const SizedBox(width: 10.0),
           Expanded(
             child: Column(
@@ -119,7 +133,7 @@ class TopBarChat extends StatelessWidget {
               ],
             ),
           ),
-          if(primaryAction != null) primaryAction!
+          if(widget.primaryAction != null) widget.primaryAction!
         ],
       ),
     );
@@ -129,10 +143,25 @@ class TopBarChat extends StatelessWidget {
     return CachedNetworkImage(
       width: 30.0,
       height: 30.0,
-      imageUrl: avatar!,
-      imageBuilder: (context, imageProvider) {
+      imageUrl: widget.avatar!,
+      imageBuilder: (BuildContext context, ImageProvider<Object> imageProvider) {
         return CircleAvatar(
           backgroundImage: imageProvider,
+          backgroundColor: ColorResources.white,
+          radius: 20,
+        );
+      },
+      placeholder: (BuildContext context, String url) {
+        return const CircleAvatar(
+          backgroundImage: AssetImage('assets/images/default-image.png'),
+          backgroundColor: ColorResources.white,
+          radius: 20,
+        );
+      },
+      errorWidget: (BuildContext context, String url, dynamic error) {
+        return const CircleAvatar(
+          backgroundImage: AssetImage('assets/images/default-image.png'),
+          backgroundColor: ColorResources.white,
           radius: 20,
         );
       },
@@ -141,11 +170,11 @@ class TopBarChat extends StatelessWidget {
 
   Widget titleBar() {
     return Text(
-      barTitle!, 
+      widget.barTitle!, 
       overflow: TextOverflow.ellipsis,
       style: TextStyle(
-        color: barTitleColor,
-        fontSize: barTitleFontSize,
+        color: widget.barTitleColor,
+        fontSize: widget.barTitleFontSize,
         fontWeight: FontWeight.w700
       ),
     );
@@ -153,11 +182,11 @@ class TopBarChat extends StatelessWidget {
 
   Widget subTitleBar() {
     return Text(
-      subTitle!, 
+      widget.subTitle!, 
       overflow: TextOverflow.ellipsis,
       style: TextStyle(
-        color: barSubtitleColor,
-        fontSize: barSubtitleFontSize,
+        color: widget.barSubtitleColor,
+        fontSize: widget.barSubtitleFontSize,
         fontWeight: FontWeight.w700
       ),
     );

@@ -1,5 +1,7 @@
 import 'dart:io';
 
+import 'package:chatv28/providers/authentication.dart';
+import 'package:provider/src/provider.dart';
 import 'package:timeago/timeago.dart' as timeago;
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -10,12 +12,10 @@ import 'package:chatv28/utils/dimensions.dart';
 import 'package:chatv28/utils/color_resources.dart';
 
 class ChatsGroupDetail extends StatefulWidget {
-  final String currentUserId;
   final String title;
   final String imageUrl;
   final List<ChatUser> members;
   const ChatsGroupDetail({ 
-    required this.currentUserId,
     required this.title,
     required this.imageUrl,
     required this.members,
@@ -154,7 +154,7 @@ class _ChatsGroupDetailState extends State<ChatsGroupDetail> {
                   sliver: SliverList(
                    delegate: SliverChildBuilderDelegate(
                      (BuildContext context, int i) {
-                       return widget.currentUserId == members[i].uid 
+                       return context.read<AuthenticationProvider>().userId()== members[i].uid 
                        ? Container() 
                        : ListTile(
                         onTap: () {},
@@ -190,31 +190,6 @@ class _ChatsGroupDetailState extends State<ChatsGroupDetail> {
                           ],
                         )     
                       );
-                      //  return Container(
-                      //    margin: EdgeInsets.all(Dimensions.marginSizeExtraSmall),
-                      //    child: ListTile(
-                      //     contentPadding: EdgeInsets.zero,
-                      //     dense: true,
-                      //     leading: Container(
-                      //       width: 35.0,
-                      //       height: 35.0,
-                      //       decoration: BoxDecoration(
-                      //         image: DecorationImage(
-                      //           fit: BoxFit.cover,
-                      //           image: NetworkImage(members[i].image!),
-                      //         ),
-                      //         borderRadius: BorderRadius.circular(30.0),
-                      //         color: Colors.black,
-                      //       ),
-                      //     ),
-                      //     title: Text(widget.currentUserId == members[i].uid ? "You" : members[i].name!,
-                      //       style: TextStyle(
-                      //         fontSize: Dimensions.fontSizeSmall,
-                      //         color: ColorResources.textBlackPrimary
-                      //       ),
-                      //     ),
-                      //   ),
-                      // );
                      },
                      childCount: members.length
                    ),

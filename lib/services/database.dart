@@ -6,6 +6,7 @@ import 'package:uuid/uuid.dart';
 import 'package:chatv28/models/chat_message.dart';
 
 const String userCollection = "Users";
+const String conversationCollection = "Conversations";
 const String usersOnlineCollection = "UsersOnline";
 const String onScreenCollection = "OnScreens";
 const String conversationsCollection = "Conversations";
@@ -74,12 +75,16 @@ class DatabaseService {
     } 
   }
 
-  Stream<QuerySnapshot> streamMessagesForChat(String chatId) {
-    return db.collection(chatCollection)
-    .doc(chatId)
-    .collection(messageCollection)
-    .orderBy("sent_time", descending: false)
-    .snapshots();
+  Stream<QuerySnapshot>? streamMessagesForChat(String chatId) {
+    try {
+      return db.collection(chatCollection)
+      .doc(chatId)
+      .collection(messageCollection)
+      .orderBy("sent_time", descending: true)
+      .snapshots();
+    } catch(e) {
+      debugPrint(e.toString());
+    }
   }
 
   Future<QuerySnapshot>? getLastMessageForChat(String chatId) {
@@ -89,7 +94,7 @@ class DatabaseService {
       .collection(messageCollection)
       .orderBy("sent_time", descending: true)
       .limit(1)
-    .get();
+      .get();
     } catch(e) {
       debugPrint(e.toString());
     }
@@ -140,7 +145,7 @@ class DatabaseService {
     required bool isGroup, 
     required String currentUserId,
     required List<dynamic> readers,
-    required List<String> userIdNotRead,
+    required List<dynamic> userIdNotRead,
   }) async {
     String messageType;
     switch (message.type) {
@@ -170,7 +175,7 @@ class DatabaseService {
         "soft_delete": message.softDelete,
         "sent_time": message.sentTime,
         "readers": readers,
-        "readerCountIds": userIdNotRead
+        "readerCountIds": isGroup ? userIdNotRead : []
       }).then((_) async {
         DocumentSnapshot doc = await db.collection(chatCollection).doc(chatId).get();
         Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
@@ -181,34 +186,12 @@ class DatabaseService {
           "is_activity": isActivity
         });
       });
-    // // .add(message.toJson());
     } catch(e) {
       debugPrint(e.toString());
     }
-    if(messageType == "image") {
-      await db
-      .collection(chatCollection)
-      .doc(chatId)
-      .update({
-        "updated_at": DateTime.now()
-      }); 
-    }
-    // Trigger data changes
   }
 
-  void getReadersMsg({required String chatId}) {
-    try {
-      db
-      .collection(chatCollection)
-      .doc(chatId)
-      .collection(messageCollection)
-      .snapshots();
-    } catch(e) {
-      debugPrint(e.toString());
-    }
-  }
- 
-  Future<void> deleteMsg({required String chatId, required String msgId, required bool softDelete}) async {
+  Future<void> deleteMsgBulk({required String chatId, required String msgId, required bool softDelete}) async {
     try {
       if(softDelete) {
         await db
@@ -228,22 +211,12 @@ class DatabaseService {
         .doc(msgId)
         .delete();
       }
-      try {
-        await db
-        .collection(chatCollection)
-        .doc(chatId)
-        .update({
-          "updated_at": DateTime.now()
-        }); 
-      } catch(e) {
-        debugPrint(e.toString());
-      }
     } catch(e) {
       debugPrint(e.toString());
     }
   }
 
-  Future<void> updateChatData(String userId, String chatId, bool isActive) async {
+  Future<void> updateChatIsActivity(String userId, String chatId, bool isActive) async {
     try { 
       DocumentSnapshot doc = await db.collection(chatCollection).doc(chatId).get();
       Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
@@ -271,6 +244,19 @@ class DatabaseService {
     }
   }
 
+  Future<void> updateMicroTask(String chatId) async {
+    try {
+      await db
+      .collection(chatCollection)
+      .doc(chatId)
+      .update({
+        "updated_at": DateTime.now().toUtc()
+      });
+    } catch(e) {
+      debugPrint(e.toString());
+    }
+  }
+
   Future<void> seeMsg({
     required String chatId, 
     required String receiverId, 
@@ -292,22 +278,16 @@ class DatabaseService {
             .collection(chatCollection)
             .doc(chatId)
             .collection(messageCollection)
-            .doc(msgDoc.id).get();
+            .doc(msgDoc.id)
+            .get();
             Map<String, dynamic> msgObj = msgDoc1.data() as Map<String, dynamic>;
 
             List<dynamic> readers = msgObj["readers"];
             int indexReader = readers.indexWhere((el) => el["uid"] == userId);
 
             if(msgObj["sender_id"] != userId) {         
-              if(indexReader != -1) {  
-                if(readers[indexReader]["is_read"] == false) {
-                  readers[indexReader]["seen"] = DateTime.now();
-                  await db.collection(chatCollection)
-                  .doc(chatId).update({
-                    "updated_at": DateTime.now()
-                  });
-                }
-                //  Trigger data changes
+              if(indexReader != -1) { 
+                readers[indexReader]["seen"] = DateTime.now();
                 readers[indexReader]["is_read"] = true;
                 msgDoc.reference.update({
                   "readerCountIds": FieldValue.arrayRemove([userId]),
@@ -355,26 +335,12 @@ class DatabaseService {
               List<dynamic> readers = msgObj["readers"];
               int readerIndex = readers.indexWhere((el) => el["uid"] == userId);
               if(readerIndex != -1) {
-                if(readers[readerIndex]["is_read"] == false) {
-                  await db.collection(chatCollection)
-                  .doc(chatId).update({
-                    "updated_at": DateTime.now()
-                  });
-                } 
-                //  Trigger data changes
                 readers[readerIndex]["is_read"] = true;
                 msgDoc.reference.update({
                   "is_read": true,
                   "readers": readers                      
                 }); // Update existing data
               } else {
-                if(readers[readerIndex]["is_read"] == false) {
-                  await db.collection(chatCollection)
-                  .doc(chatId).update({
-                    "updated_at": DateTime.now()
-                  });
-                }
-                // } Trigger data changes
                 msgDoc.reference.update({
                   "is_read": true,
                   "readers": [{
@@ -493,6 +459,17 @@ class DatabaseService {
       return await db
       .collection(chatCollection)
       .doc(chatId)
+      .set(data);
+    } catch(e) {
+      debugPrint(e.toString());
+    }
+  }
+
+  Future<void> createConversation(String userId, Map<String, dynamic> data) async {
+    try {
+      return await db
+      .collection(conversationCollection)
+      .doc(userId)
       .set(data);
     } catch(e) {
       debugPrint(e.toString());

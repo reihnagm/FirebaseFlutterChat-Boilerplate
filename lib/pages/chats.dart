@@ -152,7 +152,7 @@ class _ChatsPageState extends State<ChatsPage> {
       title: chat.title(), 
       subtitle: content,
       contentGroup: subtitle,
-      messageType: chat.messages.isEmpty ? "" : chat.messages.last.type == MessageType.text ? "TEXT" : "IMAGE",
+      messageType: chat.type(),
       receiverName: chat.group ? chat.receiverTyping() : chat.recepients.first.name!,
       imagePath: chat.image(), 
       isActivity: chat.isTyping(), 
@@ -186,9 +186,9 @@ class _ChatsPageState extends State<ChatsPage> {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Text("Apakah kamu yakin ingin hapus ?",
-                            style: TextStyle(
-                              fontSize: 14.0,
+                          Text("Hapus semua pesan dengan ${chat.recepients.first.name} ?",
+                            style: const TextStyle(
+                              fontSize: 12.0,
                               fontWeight: FontWeight.bold,
                               color: ColorResources.black
                             ),
@@ -269,7 +269,6 @@ class _ChatsPageState extends State<ChatsPage> {
           avatar: chat.group ? chat.groupData.image : chat.recepients.first.image!,
           title: chat.title(),
           subtitle: chat.subtitle(),
-          currentUserId: chat.currentUserId,
           groupName: chat.groupData.name,
           groupImage: chat.groupData.image,
           isGroup: chat.group,

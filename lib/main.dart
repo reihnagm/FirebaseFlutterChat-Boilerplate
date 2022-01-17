@@ -1,12 +1,16 @@
-import 'package:awesome_notifications/awesome_notifications.dart';
-import 'package:chatv28/utils/global.dart';
+import 'dart:convert';
 
+import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:firebase_core/firebase_core.dart';
-// import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
 
+import 'package:chatv28/utils/utils.dart';
+import 'package:chatv28/pages/chat.dart';
+import 'package:chatv28/services/notification.dart';
+import 'package:chatv28/utils/global.dart';
 import 'package:chatv28/utils/color_resources.dart';
 import 'package:chatv28/providers/authentication.dart';
 import 'package:chatv28/providers/firebase.dart';
@@ -18,56 +22,64 @@ import 'package:chatv28/pages/login.dart';
 
 import 'container.dart' as core;
 
+Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  // Map<String, dynamic> data = message.data;
+  // Map<String, dynamic> payload = json.decode(data["payload"]);
+  // if(payload["type"] == "image") {
+  //   AwesomeNotifications().createNotification(
+  //     content: NotificationContent(
+  //       id: Utils.createUniqueId(),
+  //       channelKey: 'chat',
+  //       largeIcon: payload["avatar"],
+  //       bigPicture: payload["body"],
+  //       title: payload["title"],
+  //       body: "",
+  //       notificationLayout: NotificationLayout.BigPicture,
+  //       fullScreenIntent: true,
+  //       displayOnBackground: true,
+  //       displayOnForeground: true,
+  //       roundedBigPicture: true,
+  //       roundedLargeIcon: true,
+  //       wakeUpScreen: true,
+  //       showWhen: true
+  //     )
+  //   );
+  // } else {
+    // AwesomeNotifications().createNotification(
+    //   content: NotificationContent(
+    //     id: Utils.createUniqueId(),
+    //     channelKey: 'chat',
+    //     largeIcon: payload["avatar"],
+    //     title: payload["title"],
+    //     body: payload["body"],
+    //     fullScreenIntent: true,
+    //     displayOnBackground: true,
+    //     displayOnForeground: true,
+    //     roundedLargeIcon: true,
+    //     wakeUpScreen: true,
+    //   )
+    // );
+    
+  // }
+}
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  AwesomeNotifications().initialize('resource://drawable/ic_notification',
-    [
-      NotificationChannel(
-        channelGroupKey: 'basic_channel_group',
-        channelKey: 'basic_channel',
-        channelName: 'Basic notifications',
-        channelDescription: 'Notification channel for basic tests',
-        defaultColor: Colors.grey,
-        ledColor: Colors.white,
-        playSound: true,
-        enableLights: true,
-        enableVibration: true
-      )
-    ],
-    channelGroups: [
-      NotificationChannelGroup(
-        channelGroupkey: 'basic_channel_group',
-        channelGroupName: 'Basic group'
-      )
-    ],
-    debug: false
-  );
-  AwesomeNotifications().isNotificationAllowed().then((isAllowed) {
-    if (!isAllowed) {
-      AwesomeNotifications().requestPermissionToSendNotifications();
-    }
-  });
+  await Utils.initSharedPreferences();
   await Firebase.initializeApp();
-  // FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
-  // FirebaseMessaging.onMessageOpenedApp.listen((event) {
-  //   AwesomeNotifications().actionStream.listen(
-  //     (ReceivedNotification receivedNotification) {
-  //       navigatorKey.currentState!.push(PageRouteBuilder(pageBuilder: (BuildContext context, Animation<double> animation, Animation<double> secondaryAnimation) {
-  //         return const HomePage(currentPage: 1);
-  //       },
-  //       transitionsBuilder: (context, animation, secondaryAnimation, child) {
-  //         const begin = Offset(1.0, 0.0);
-  //         const end = Offset.zero;
-  //         const curve = Curves.ease;
-  //         var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-  //         return SlideTransition(
-  //           position: animation.drive(tween),
-  //           child: child,
-  //         );
-  //       }));
-  //     });
-  // });
   await core.init();
+  // AwesomeNotifications().initialize(
+  //   'resource://drawable/ic_notification',
+  //   [
+  //     NotificationChannel(
+  //       channelKey: 'chat',
+  //       channelName: 'chat_channel',
+  //       channelDescription: 'chat_channel',
+  //       importance: NotificationImportance.High,
+  //       channelShowBadge: true,
+  //     ),
+  //   ],
+  // );
   runApp(
     SplashPage(
       key: UniqueKey(), 
@@ -79,27 +91,9 @@ void main() async {
           )
         );
       }
-    ),
+    )
   );
 }
-
-// Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async { 
-//   String title = message.data["title"];
-//   String subtitle = message.data["subtitle"];
-//   AwesomeNotifications().createNotification(
-//     content: NotificationContent(
-//       id: 1,
-//       color: Colors.transparent,
-//       fullScreenIntent: true,
-//       displayOnBackground: true,
-//       displayOnForeground: true,
-//       icon: 'resource://drawable/ic_notification',
-//       channelKey: 'basic_channel',
-//       title: title,
-//       body: subtitle
-//     )
-//   );
-// }
 
 class MainApp extends StatefulWidget {
   const MainApp({Key? key}) : super(key: key);
@@ -142,10 +136,131 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance!.addObserver(this);
+    // AwesomeNotifications().isNotificationAllowed().then((isAllowed) {
+    //   if(!isAllowed) {
+    //     showDialog(
+    //       context: context, 
+    //       builder: (BuildContext context) {
+    //         return AlertDialog(
+    //           title: const Text('Allow Notifications'),
+    //           content: const Text('Our app would like to send you notifications'),
+    //           actions: [
+    //             TextButton(
+    //               onPressed: () {
+    //                 Navigator.of(context).pop();
+    //               },
+    //               child: const Text('Don\'t allow',
+    //                 style: TextStyle(
+    //                   fontSize: 18.0,
+    //                   color: Colors.grey
+    //                 ),
+    //               )
+    //             ),
+    //             TextButton(
+    //               onPressed: () => AwesomeNotifications().requestPermissionToSendNotifications().then((_ ) => Navigator.of(context).pop()),
+    //               child: const Text('Allow',
+    //                 style: TextStyle(
+    //                   fontSize: 18.0,
+    //                   color: Colors.teal,
+    //                   fontWeight: FontWeight.bold
+    //                 ),
+    //               )
+    //             ),
+    //           ],
+    //         );    
+    //       },
+    //     );
+    //   }
+    // }); 
+    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+    context.read<FirebaseProvider>().setupInteractedMessage();
+    context.read<FirebaseProvider>().listenNotification(context);
+    NotificationService.init();
+    listenOnClickNotifications();
+    
+    // AwesomeNotifications().displayedStream.listen((notification) async {
+    //   Utils.prefs!.setString("channel", notification.channelKey!);
+    // });
+      
+    //   AwesomeNotifications().actionStream.listen((notification) async {
+    //     Map<String, dynamic> notifications = json.decode(Utils.prefs!.getString("notifications")!);
+    //     Utils.prefs!.setString("chatId", notifications["chatId"]);
+    //     if(Utils.prefs!.getString("channel") == "chat") {
+    //       GlobalVariable.navState.currentState!.push(
+    //         PageRouteBuilder(pageBuilder: (BuildContext context, Animation<double> animation, Animation<double> secondaryAnimation) {
+    //           return ChatPage(
+    //             avatar: notifications["avatar"],
+    //             title: notifications["title"],  
+    //             subtitle: notifications["subtitle"],
+    //             groupName: notifications["groupName"],
+    //             groupImage: notifications["groupImage"],
+    //             isGroup: notifications["isGroup"] == "true" ? true : false,
+    //             receiverId: notifications["receiverId"],
+    //             receiverName: notifications["receiverName"],
+    //             receiverImage: notifications["receiverImage"],
+    //             tokens: const [],
+    //             members: const [],
+    //           );
+    //         },
+    //         transitionsBuilder: (context, animation, secondaryAnimation, child) {
+    //           const begin = Offset(1.0, 0.0);
+    //           const end = Offset.zero;
+    //           const curve = Curves.ease;
+    //           var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+    //           return SlideTransition(
+    //             position: animation.drive(tween),
+    //             child: child,
+    //           );
+    //         })
+    //       );
+    //       Utils.prefs!.remove("channel");
+    //     }
+    //   });
+  }
+
+  void listenOnClickNotifications() => NotificationService.onNotifications.stream.listen(onClickedNotification);
+
+  void onClickedNotification(String? payload) async {
+    Map<String, dynamic> notifications = json.decode(Utils.prefs!.getString("notifications")!);
+    if(payload == "chat.detail") {
+      Utils.prefs!.setString("chatId", notifications["chatId"]);
+      GlobalVariable.navState.currentState!.pushAndRemoveUntil(
+        PageRouteBuilder(pageBuilder: (BuildContext context, Animation<double> animation, Animation<double> secondaryAnimation) {
+          return ChatPage(
+            avatar: notifications["avatar"],
+            title: notifications["title"],  
+            subtitle: notifications["subtitle"],
+            groupName: notifications["groupName"],
+            groupImage: notifications["groupImage"],
+            isGroup: notifications["isGroup"] == "true" ? true : false,
+            receiverId: notifications["receiverId"],
+            receiverName: notifications["receiverName"],
+            receiverImage: notifications["receiverImage"],
+            tokens: const [],
+            members: const [],
+          );
+        },
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          const begin = Offset(1.0, 0.0);
+          const end = Offset.zero;
+          const curve = Curves.ease;
+          var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+          return SlideTransition(
+            position: animation.drive(tween),
+            child: child,
+          );
+        }),
+        (Route<dynamic> route) => route.isFirst
+      );
+    }
   }
 
   @override
   void dispose() {
+    // AwesomeNotifications().actionSink.close();
+    // AwesomeNotifications().createdSink.close();
+    // AwesomeNotifications().displayedSink.close();
+    // AwesomeNotifications().dispose();
     WidgetsBinding.instance!.removeObserver(this);
     super.dispose();
   }
@@ -167,9 +282,7 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
           ),
           navigatorKey: GlobalVariable.navState,
           home: Builder(
-            builder: (context) {
-              context.read<FirebaseProvider>().setupInteractedMessage();
-              context.read<FirebaseProvider>().listenNotification(context);
+            builder: (BuildContext context) {
               return Consumer<AuthenticationProvider>(
                 builder: (BuildContext context, AuthenticationProvider authenticationProvider, Widget? child) {
                   if(authenticationProvider.isLogin()) {

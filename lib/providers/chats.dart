@@ -56,23 +56,24 @@ class ChatsProvider extends ChangeNotifier {
             for (QueryDocumentSnapshot<Object?> item in readerCountIds.docs) {
               Map<String, dynamic> readerDataCount = item.data() as Map<String, dynamic>;
               List<dynamic> readerCountIds = readerDataCount["readerCountIds"];
-              int readerCount = readerCountIds.where((uids) => uids == authenticationProvider.userId()).toList().length; 
-              messagesGroupCount.add(readerCount);
+              messagesGroupCount.add(readerCountIds.where((el) => el == authenticationProvider.userId()).length);
             }
           }
 
-          QuerySnapshot<Object?>? chatMessageCount = await databaseService.getMessageCountForChat(doc.id);
-          QuerySnapshot<Object?>? chatMessage = await databaseService.getLastMessageForChat(doc.id);
-          if(chatMessage!.docs.isNotEmpty) {
-            for (QueryDocumentSnapshot<Object?> item in chatMessageCount!.docs) {
+          QuerySnapshot<Object?>? messageCount = await databaseService.getMessageCountForChat(doc.id);
+          if(messageCount!.docs.isNotEmpty) {
+            for (QueryDocumentSnapshot<Object?> item in messageCount.docs) {
               Map<String, dynamic> messageDataCount = item.data() as Map<String, dynamic>;
               ChatMessage message = ChatMessage.fromJSON(messageDataCount);
               messagesPersonalCount.add(message);
             }
-            Map<String, dynamic> messageData = chatMessage.docs.first.data() as Map<String, dynamic>;
+          }
+          QuerySnapshot<Object?>? lastMessage = await databaseService.getLastMessageForChat(doc.id);
+          if(lastMessage!.docs.isNotEmpty) {
+            Map<String, dynamic> messageData = lastMessage.docs.first.data() as Map<String, dynamic>;
             ChatMessage message = ChatMessage.fromJSON(messageData);
             messages.add(message);
-          } //* Prevent Bad State No Element
+          } 
           return Chat(
             uid: doc.id, 
             currentUserId: authenticationProvider.userId(), 

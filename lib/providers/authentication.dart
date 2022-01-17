@@ -1,12 +1,9 @@
 import 'dart:async';
 
-import 'package:chatv28/providers/chats.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:provider/src/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:chatv28/services/cloud_storage.dart';
@@ -82,6 +79,7 @@ class AuthenticationProvider extends ChangeNotifier {
       });  
       await databaseService.updateUserOnlineToken(userId(), true);
       sharedPreferences.setString("userName", userData["name"]);
+      sharedPreferences.setString("userImage", userData["image"]);
       setStateAuthStatus(AuthStatus.loaded);
     } catch(e) {
       setStateAuthStatus(AuthStatus.error);

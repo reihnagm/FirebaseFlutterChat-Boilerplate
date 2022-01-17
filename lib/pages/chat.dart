@@ -26,7 +26,6 @@ class ChatPage extends StatefulWidget {
   final String groupName;
   final String groupImage;
   final bool isGroup;
-  final String currentUserId;
   final String receiverId;
   final String receiverName;
   final String receiverImage;
@@ -39,7 +38,6 @@ class ChatPage extends StatefulWidget {
     required this.groupName,
     required this.groupImage,
     required this.isGroup,
-    required this.currentUserId,
     required this.receiverId,
     required this.receiverName,
     required this.receiverImage,
@@ -73,6 +71,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
         receiverId: widget.receiverId,
         isGroup: widget.isGroup,
       );
+      context.read<ChatProvider>().isUserOnline(receiverId: widget.receiverId);
     }
     if(state == AppLifecycleState.inactive) {
       debugPrint("=== APP INACTIVE ===");
@@ -94,12 +93,15 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     chatProvider = context.read<ChatProvider>();
     WidgetsBinding.instance!.addObserver(this);
     WidgetsBinding.instance!.addPostFrameCallback((timeStamp) {
-      chatProvider.isUserTyping();
       chatProvider.listenToMessages();
       chatProvider.joinScreen();
-      chatProvider.isUserOnline(receiverId: widget.receiverId);
+      chatProvider.isUserTyping();
       chatProvider.isScreenOn(receiverId: widget.receiverId);
-      chatProvider.seeMsg(receiverId: widget.receiverId, isGroup: widget.isGroup);
+      chatProvider.isUserOnline(receiverId: widget.receiverId);
+      chatProvider.seeMsg(
+        receiverId: widget.receiverId, 
+        isGroup: widget.isGroup
+      );
     });
   }
 
@@ -124,7 +126,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     return Builder(
       builder: (BuildContext context) {
         return WillPopScope(
-          onWillPop: () {
+          onWillPop: () async {
             context.read<ChatProvider>().leaveScreen();
             context.read<ChatProvider>().clearSelectedMessages();
             return Future.value(true);
@@ -150,14 +152,13 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                                     NavigationService().pushNav(context, ChatsGroupDetail(
                                       title: widget.groupName,
                                       imageUrl: widget.groupImage,
-                                      currentUserId: widget.currentUserId,
                                       members: widget.members
                                     ));
                                   }
                                 },
                                 child: TopBarChat(
                                   avatar: context.watch<ChatProvider>().isSelectedMessages ? "" : widget.avatar,
-                                  barTitle: context.watch<ChatProvider>().isSelectedMessages ? "" :  widget.title,
+                                  barTitle: context.watch<ChatProvider>().isSelectedMessages ? "" : widget.title,
                                   subTitle: context.watch<ChatProvider>().isSelectedMessages ? "" : widget.isGroup 
                                   ? context.watch<ChatProvider>().isTyping != "" 
                                   ? context.read<ChatProvider>().isTyping 
@@ -214,7 +215,9 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                                             ),
                                             context: context, 
                                             builder: (BuildContext context) {
-                                              List<Readers> readers = context.read<ChatProvider>().selectedMessages.last.readers.where((el) => el.isRead == true).toList();
+                                              List<Readers> readers = context.watch<ChatProvider>().whoReads.isEmpty
+                                              ? [] 
+                                              : context.read<ChatProvider>().whoReads;
                                               if(readers.isEmpty) {
                                                 return SizedBox(
                                                   height: 80.0,
@@ -272,9 +275,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                                                 ),
                                               );
                                             },
-                                          ).then((_) {
-                                            context.read<ChatProvider>().clearSelectedMessages();
-                                          });
+                                          );
                                         }
                                         if(val == "delete-msg-bulk-soft") {
                                           context.read<ChatProvider>().deleteMsgBulk(softDelete: true);
@@ -289,8 +290,9 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                                       Icons.delete,
                                       color: ColorResources.white
                                     ),
-                                    onPressed: () {
-                                      context.read<ChatProvider>().deleteChat(context, receiverId: widget.receiverId);
+                                    onPressed: () async {
+                                      await context.read<ChatProvider>().deleteChat(context, receiverId: widget.receiverId);
+                                      Navigator.of(context).pop();
                                     },
                                   ),  
                                   secondaryAction: context.watch<ChatProvider>().selectedMessages.isNotEmpty 
@@ -380,6 +382,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
               );
             },
             order: GroupedListOrder.ASC,
+            groupComparator: (value1, value2) => value2.compareTo(value1),
             shrinkWrap: true,
             reverse: true,
             indexedItemBuilder: (BuildContext context, ChatMessage items, int i) {
@@ -439,7 +442,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
         focusNode: context.read<ChatProvider>().messageFocusNode,
         onSaved: (val) {},
         onChange: (val) async {
-          context.read<ChatProvider>().onChangeMsg(context, val, userId: widget.currentUserId);
+          context.read<ChatProvider>().onChangeMsg(context, val);
           SharedPreferences prefs = await SharedPreferences.getInstance();
           prefs.setString("msg", val);
         },
@@ -456,7 +459,6 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
         if(context.read<ChatProvider>().messageTextEditingController.text.isNotEmpty) {
           context.read<ChatProvider>().sendTextMessage(
             context,
-            avatar: widget.avatar,
             title: widget.title,
             subtitle: widget.subtitle,
             receiverId: widget.receiverId,
@@ -488,7 +490,6 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
         onPressed: () {
           context.read<ChatProvider>().sendImageMessage(
             context,
-            avatar: widget.avatar,
             title: widget.title,
             subtitle: widget.subtitle,
             receiverId: widget.receiverId,
