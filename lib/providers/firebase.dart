@@ -3,7 +3,6 @@ import 'dart:convert';
 
 // import 'package:awesome_notifications/awesome_notifications.dart';
 // import 'package:chatv28/utils/utils.dart';
-import 'package:chatv28/models/chat_user.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dio/dio.dart';
@@ -189,7 +188,7 @@ class FirebaseProvider with ChangeNotifier {
         "collapse_key" : "New Message",
         "priority":"high",
         "notification": {
-          "title": title,
+          "title": authenticationProvider.userName(),
           "body": type == "image" 
           ? "Media Attachment" 
           : body,

@@ -533,7 +533,6 @@ class ChatProvider extends ChangeNotifier {
   void isUserTyping() async {
     try {
       isUserTypingStream = databaseService.isUserTyping(chatId())!.listen((snapshot) {
-        isTyping = "";
         if(snapshot.exists) {
           Map<String, dynamic> data = snapshot.data() as Map<String, dynamic>;
           if(data.isNotEmpty) {
@@ -549,8 +548,8 @@ class ChatProvider extends ChangeNotifier {
               isTyping = "";
             }
           }
+          Future.delayed(Duration.zero, () => notifyListeners());
         }
-        Future.delayed(Duration.zero, () => notifyListeners());
       });
     } catch(e) {
       debugPrint(e.toString());

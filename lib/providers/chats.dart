@@ -15,6 +15,7 @@ class ChatsProvider extends ChangeNotifier {
   final SharedPreferences sharedPreferences;
   final AuthenticationProvider authenticationProvider;
   final DatabaseService databaseService;
+  bool isLoading = true;
 
   ChatsProvider({
     required this.sharedPreferences,
@@ -22,7 +23,7 @@ class ChatsProvider extends ChangeNotifier {
     required this.databaseService
   });
 
-  List<Chat>? chats;
+  List<Chat> chats = [];
   StreamSubscription? chatsStream;
 
   void getChats() async {
@@ -90,6 +91,7 @@ class ChatsProvider extends ChangeNotifier {
             messagesGroupCount: messagesGroupCount,
           );
         }).toList());
+        isLoading = false;
         Future.delayed(Duration.zero, () => notifyListeners());
       });
     } catch (e) {

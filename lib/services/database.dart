@@ -508,13 +508,11 @@ class DatabaseService {
         batch.delete(item.reference);
       }
       batch.commit();
-      Future.delayed(Duration.zero, () async {
-        try {
-          await db.collection(chatCollection).doc(chatId).delete();
-        } catch(e) {
-          debugPrint(e.toString());
-        }
-      });
+      try {
+        await db.collection(chatCollection).doc(chatId).delete();
+      } catch(e) {
+        debugPrint(e.toString());
+      }
     } catch(e) {
       debugPrint(e.toString());
     }

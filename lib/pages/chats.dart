@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:provider/provider.dart';
 
 import 'package:shared_preferences/shared_preferences.dart';
@@ -31,13 +32,11 @@ class _ChatsPageState extends State<ChatsPage> {
   @override 
   void initState() {
     super.initState();
-    chatsProvider = context.read<ChatsProvider>();
     WidgetsBinding.instance!.addPostFrameCallback((_) {
       context.read<AuthenticationProvider>().initAuthStateChanges();
       chatsProvider.getChats();
     });
   }
-
 
   @override  
   void dispose() {
@@ -55,6 +54,7 @@ class _ChatsPageState extends State<ChatsPage> {
   Widget buildUI() {
     return Builder(
       builder: (BuildContext context) {
+        chatsProvider = Provider.of<ChatsProvider>(context);
         return Container(
           decoration: const BoxDecoration(
             color: ColorResources.backgroundColor
@@ -95,17 +95,15 @@ class _ChatsPageState extends State<ChatsPage> {
   }
 
   Widget chatList() {
-    List<Chat>? chats = context.watch<ChatsProvider>().chats;
+    List<Chat>? chats = chatsProvider.chats;
     return Expanded(
       child: (() {
-        if(chats == null) {
+        if(chatsProvider.isLoading) {
           return const Center(
-            child: SizedBox(
-              width: 16.0,
-              height: 16.0,
-              child: CircularProgressIndicator(
-                color: ColorResources.loaderBluePrimary,
-              ),
+            child: SpinKitRotatingCircle(
+              duration: Duration(seconds: 3),
+              color: ColorResources.loaderBluePrimary,
+              size: 30.0,
             ),
           );
         }

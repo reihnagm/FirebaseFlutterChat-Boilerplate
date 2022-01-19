@@ -12,7 +12,6 @@ class NotificationService {
   static final onNotifications = BehaviorSubject<String>();
 
   static Future notificationDetails({required Map<String, dynamic> payload}) async {
-    String largeIconPath = await Utils.downloadFile(payload["avatar"], 'largeIcon');
     // const List<String> lines = <String>[
     //   'Alex Faarborg Check this out',
     //   'Jeff Chang Launch Party'
@@ -31,7 +30,7 @@ class NotificationService {
       //   contentTitle: '2 messages',
       //   summaryText: 'janedoe@example.com'
       // ),
-      largeIcon: FilePathAndroidBitmap(largeIconPath),
+      largeIcon: payload["isGroup"] == "true" ? null : FilePathAndroidBitmap(await Utils.downloadFile(payload["avatar"], 'largeIcon')),
     );
     AndroidNotificationDetails androidNotificationDetailsWithImage = AndroidNotificationDetails(
       'chat',
@@ -49,7 +48,7 @@ class NotificationService {
           ),
         ) 
       : null,
-      largeIcon: FilePathAndroidBitmap(largeIconPath),
+      largeIcon: payload["isGroup"] == "true" ? null : FilePathAndroidBitmap(await Utils.downloadFile(payload["avatar"], 'largeIcon')),
     );
     return NotificationDetails(
       android: payload["type"] == "image" 
