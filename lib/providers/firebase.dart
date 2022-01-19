@@ -3,6 +3,7 @@ import 'dart:convert';
 
 // import 'package:awesome_notifications/awesome_notifications.dart';
 // import 'package:chatv28/utils/utils.dart';
+import 'package:chatv28/models/chat_user.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dio/dio.dart';
@@ -13,7 +14,6 @@ import 'package:chatv28/pages/chat.dart';
 import 'package:chatv28/utils/global.dart';
 import 'package:chatv28/services/notification.dart';
 import 'package:chatv28/providers/authentication.dart';
-import 'package:chatv28/models/chat.dart';
 import 'package:chatv28/utils/constant.dart';
 
 class FirebaseProvider with ChangeNotifier {
@@ -130,7 +130,7 @@ class FirebaseProvider with ChangeNotifier {
   }
 
   Future<void> sendNotification({
-    required List<String> registrationIds,
+    required List<dynamic> registrationIds,
     required String token, 
     required String title, 
     required String subtitle,
@@ -165,9 +165,7 @@ class FirebaseProvider with ChangeNotifier {
         "data": {
           "payload": {
             "chatId": chatId,
-            "avatar": groupImage == "" 
-            ? "https://res.cloudinary.com/dilzovvfk/image/upload/v1642344250/group_o7an9y.png"
-            : groupImage, 
+            "avatar": groupImage, 
             "title": title,
             "subtitle": subtitle,
             "body": type == "image" 
@@ -178,7 +176,7 @@ class FirebaseProvider with ChangeNotifier {
             "receiverImage": receiverImage,
             "groupName": groupName,
             "groupImage": groupImage,
-            "isGroup": true,
+            "isGroup": "true",
             "type": type,
             "screen": "chat.detail"
           },
@@ -214,7 +212,7 @@ class FirebaseProvider with ChangeNotifier {
             "receiverImage": receiverImage,
             "groupName": "-",
             "groupImage": "-",
-            "isGroup": false,
+            "isGroup": "false",
             "type": type,
             "screen": "chat.detail",
           },

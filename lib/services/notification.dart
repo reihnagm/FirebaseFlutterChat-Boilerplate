@@ -26,7 +26,6 @@ class NotificationService {
       channelShowBadge: true,
       enableVibration: true,
       enableLights: true,
-      fullScreenIntent: true,
       // styleInformation: const InboxStyleInformation(
       //   lines,
       //   contentTitle: '2 messages',
@@ -43,7 +42,6 @@ class NotificationService {
       channelShowBadge: true,
       enableVibration: true,
       enableLights: true,
-      fullScreenIntent: true,
       styleInformation: payload["type"] == "image" 
       ? BigPictureStyleInformation(
           FilePathAndroidBitmap(

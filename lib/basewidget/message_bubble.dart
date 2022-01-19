@@ -31,30 +31,20 @@ class _TextMessageBubbleState extends State<TextMessageBubble> {
   @override
   Widget build(BuildContext context) {
 
-    // List<Color> colorScheme = isOwnMessage 
-    // ? [
-    //     const Color.fromRGBO(0, 136, 249, 1.0),
-    //     const Color.fromRGBO(0, 82, 218, 1.0)
-    //   ] 
-    // : [
-    //   const Color.fromRGBO(51, 49, 68, 1.0),
-    //   const Color.fromRGBO(51, 49, 68, 1.0)
-    // ];
-
     Color colorScheme = widget.isOwnMessage 
     ? Colors.lightGreen[100]!
     : const Color.fromRGBO(51, 49, 68, 1.0);
 
     BorderRadiusGeometry borderRadius = widget.isOwnMessage 
     ? const BorderRadius.only(
-        topLeft: Radius.circular(15),
-        bottomRight: Radius.circular(15), 
-        bottomLeft: Radius.circular(15), 
+        topLeft: Radius.circular(15.0),
+        bottomRight: Radius.circular(15.0), 
+        bottomLeft: Radius.circular(15.0), 
       )
     : const BorderRadius.only(
-        topRight: Radius.circular(15),
-        bottomRight: Radius.circular(15), 
-        bottomLeft: Radius.circular(15), 
+        topRight: Radius.circular(15.0),
+        bottomRight: Radius.circular(15.0), 
+        bottomLeft: Radius.circular(15.0), 
       );
 
     return Container(
@@ -194,20 +184,11 @@ class ImageMessageBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // List<Color> colorScheme = isOwnMessage 
-    // ? [
-    //     const Color.fromRGBO(0, 136, 249, 1.0),
-    //     const Color.fromRGBO(0, 82, 218, 1.0)
-    //   ] 
-    // : [
-    //   const Color.fromRGBO(0, 136, 249, 1.0),
-    //   const Color.fromRGBO(0, 82, 218, 1.0)
-    // ];
     Color colorScheme = isOwnMessage 
     ? Colors.lightGreen[100]!
     : const Color.fromRGBO(51, 49, 68, 1.0);
-    return message.content == "loading" ? 
-      Container(
+    return message.content == "loading-img" 
+    ? Container(
         width: width,
         height: 180.0,
         margin: const EdgeInsets.only(top: 15.0),
@@ -233,7 +214,8 @@ class ImageMessageBubble extends StatelessWidget {
             )
           ],
         ),
-      ) : Container(
+      ) 
+    : Container(
       width: width,
       margin: const EdgeInsets.only(top: 15.0),
       padding: const EdgeInsets.symmetric(
@@ -317,7 +299,7 @@ class ImageMessageBubble extends StatelessWidget {
                   color: Colors.green  
                 )  
               : const Icon(
-                  Ionicons.checkmark_done,
+                  Ionicons.checkmark_outline,
                   size: 20.0,
                   color: Colors.black,  
                 ),

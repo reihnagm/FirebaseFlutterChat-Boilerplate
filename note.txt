@@ -18,3 +18,15 @@ await db
 "click_action": "FLUTTER_NOTIFICATION_CLICK" / * Mandatory to Redirect Page  * / 
 
 channelAction: AndroidNotificationChannelAction.update, / * Beware want using this, it can be trouble notification id 
+
+/ * 
+    List<Color> colorScheme = isOwnMessage 
+    ? [
+        const Color.fromRGBO(0, 136, 249, 1.0),
+        const Color.fromRGBO(0, 82, 218, 1.0)
+    ] 
+    : [
+        const Color.fromRGBO(51, 49, 68, 1.0),
+        const Color.fromRGBO(51, 49, 68, 1.0)
+    ];
+/ * 
