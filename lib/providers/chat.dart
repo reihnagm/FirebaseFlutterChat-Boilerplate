@@ -60,6 +60,15 @@ class ChatProvider extends ChangeNotifier {
   StreamSubscription? isUserTypingStream;
   StreamSubscription? messageStream;
 
+  @override
+  void dispose() {
+    messageStream!.cancel();
+    isUserTypingStream!.cancel();
+    isScreenOnStream!.cancel();
+    isUserOnlineStream!.cancel();
+    super.dispose();
+  }
+
   ChatProvider({
     required this.sharedPreferences,
     required this.authenticationProvider, 
@@ -94,7 +103,6 @@ class ChatProvider extends ChangeNotifier {
     try { 
       messageStream = databaseService.streamMessagesForChat(chatId())!.listen((snapshot) {
         _messages = [];
-        Future.delayed(Duration.zero, () => notifyListeners());
         List<ChatMessage> messages = snapshot.docs.map((m) {
           Map<String, dynamic> messageData = m.data() as Map<String, dynamic>;
           return ChatMessage.fromJSON(messageData);
@@ -109,10 +117,9 @@ class ChatProvider extends ChangeNotifier {
 
   void onChangeMsg(BuildContext context, String val) {
     if (debounce?.isActive ?? false) debounce!.cancel();
-    debounce = Timer(const Duration(milliseconds: 100), () {
+    debounce = Timer(Duration.zero, () {
       toggleIsActivity(
-        isActive: val.isNotEmpty ? true : false, 
-        userId: userId(),
+        isActive: val.isNotEmpty ? true : false,
       );
     });
     Future.delayed(Duration.zero, () => notifyListeners());
@@ -228,6 +235,8 @@ class ChatProvider extends ChangeNotifier {
         await context.read<FirebaseProvider>().sendNotification(
           chatId: chatId(),
           registrationIds: registrationIds,
+          members: members,
+          tokens: tokens,
           token: token, 
           title: title,
           subtitle: subtitle,
@@ -377,6 +386,8 @@ class ChatProvider extends ChangeNotifier {
             await Provider.of<FirebaseProvider>(context, listen: false).sendNotification(
               chatId: chatId(),
               registrationIds: registrationIds,
+              members: members,
+              tokens: tokens,
               token: token, 
               title: title,
               subtitle: subtitle,
@@ -480,9 +491,9 @@ class ChatProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> toggleIsActivity({required bool isActive, required String userId}) async {
+  Future<void> toggleIsActivity({required bool isActive}) async {
     try {
-      await databaseService.updateChatIsActivity(userId, chatId(), isActive);
+      await databaseService.updateChatIsActivity(userId(), chatId(), isActive);
     } catch(e) {
       debugPrint(e.toString());
     }

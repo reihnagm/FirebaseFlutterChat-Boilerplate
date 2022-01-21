@@ -53,9 +53,7 @@ class ChatPage extends StatefulWidget {
 class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   late double deviceHeight;
   late double deviceWidth;
-
-  late ChatProvider chatProvider;
-
+  
   @override 
   void didChangeAppLifecycleState(AppLifecycleState state) async {
     super.didChangeAppLifecycleState(state); 
@@ -76,6 +74,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     if(state == AppLifecycleState.inactive) {
       debugPrint("=== APP INACTIVE ===");
       context.read<ChatProvider>().leaveScreen();
+      context.read<ChatProvider>().toggleIsActivity(isActive: false);
     }
     if(state == AppLifecycleState.paused) {
       debugPrint("=== APP PAUSED ===");
@@ -90,15 +89,14 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   @override 
   void initState() {
     super.initState();
-    chatProvider = context.read<ChatProvider>();
     WidgetsBinding.instance!.addObserver(this);
-    WidgetsBinding.instance!.addPostFrameCallback((timeStamp) {
-      chatProvider.listenToMessages();
-      chatProvider.joinScreen();
-      chatProvider.isUserTyping();
-      chatProvider.isScreenOn(receiverId: widget.receiverId);
-      chatProvider.isUserOnline(receiverId: widget.receiverId);
-      chatProvider.seeMsg(
+    WidgetsBinding.instance!.addPostFrameCallback((_) {
+      context.read<ChatProvider>().listenToMessages();
+      context.read<ChatProvider>().joinScreen();
+      context.read<ChatProvider>().isUserTyping();
+      context.read<ChatProvider>().isScreenOn(receiverId: widget.receiverId);
+      context.read<ChatProvider>().isUserOnline(receiverId: widget.receiverId);
+      context.read<ChatProvider>().seeMsg(
         receiverId: widget.receiverId, 
         isGroup: widget.isGroup
       );
@@ -107,10 +105,6 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
 
   @override 
   void dispose() {
-    chatProvider.messageStream!.cancel();
-    chatProvider.isUserTypingStream!.cancel();
-    chatProvider.isScreenOnStream!.cancel();
-    chatProvider.isUserOnlineStream!.cancel();
     WidgetsBinding.instance!.removeObserver(this);
     super.dispose();
   }

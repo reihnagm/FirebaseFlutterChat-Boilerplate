@@ -299,7 +299,7 @@ class ImageMessageBubble extends StatelessWidget {
                   color: Colors.green  
                 )  
               : const Icon(
-                  Ionicons.checkmark_outline,
+                  Ionicons.checkmark_done,
                   size: 20.0,
                   color: Colors.black,  
                 ),

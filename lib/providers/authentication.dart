@@ -90,16 +90,12 @@ class AuthenticationProvider extends ChangeNotifier {
   Future<void> logout(BuildContext context) async {
     setStateLogoutStatus(LogoutStatus.loading);
     try {
-      await databaseService.updateUserOnlineToken(userId(), false);
-      try {
+      databaseService.updateUserOnlineToken(userId(), false).then((_) async{
         await auth.signOut();
         sharedPreferences.clear();
         setStateLogoutStatus(LogoutStatus.loaded);
         NavigationService().pushBackNavReplacement(context, const LoginPage());
-      } catch(e) {
-        debugPrint(e.toString());
-        setStateLogoutStatus(LogoutStatus.error);
-      }
+      });
     } catch(e) {
       setStateLogoutStatus(LogoutStatus.error);
       debugPrint(e.toString());

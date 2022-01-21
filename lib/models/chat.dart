@@ -66,7 +66,7 @@ class Chat {
   final List<IsActivity> activity;
   final bool group;
   final GroupData groupData;
-  late final List<ChatUser> members;
+  final List<ChatUser> members;
   final List<ChatMessage> messages; 
   final List<dynamic> messagesGroupCount;
   final List<ChatMessage> messagesPersonalCount; 
@@ -103,14 +103,27 @@ class Chat {
   int readCount() => messagesPersonalCount.isEmpty 
   ? 0 
   : group 
-  ? messagesGroupCount.fold(0, (prev, el) => el + prev)
+  ? messagesGroupCount.where((el) => el == currentUserId).length
   : messagesPersonalCount.where((el) => el.isRead == false && el.receiverId == currentUserId).toList().length;
   
   bool isRead() => messages.any((m) => m.isRead);
   bool isTyping() => activity.any((el) => el.isActive && el.userId != currentUserId);
   bool isUsersOnline() => recepients.any((el) => el.isUserOnline());
 
-  String type() => messages.isNotEmpty ? messages.last.type == MessageType.text ? "TEXT" : "IMAGE" : "";
+  String type() {
+    String type = "TEXT";
+    switch (messages.isEmpty ? "" : messages.last.type) {
+      case  MessageType.text:
+        type = "TEXT";
+      break;
+      case  MessageType.image:
+        type = "IMAGE";
+      break;
+      default:
+    }
+    return type;
+  }
+
   String title() => !group ? recepients.first.name! : groupData.name;
   String subtitle() => !group ? isUsersOnline() ? "ONLINE" : "OFFLINE" : peopleJoinedGroup.map((user) => user.name!).join(", ");
   String receiverTyping() => group 

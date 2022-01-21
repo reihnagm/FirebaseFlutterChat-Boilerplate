@@ -44,8 +44,8 @@ class FirebaseProvider with ChangeNotifier {
               receiverId: payload["receiverId"],
               receiverName: payload["receiverName"],
               receiverImage: payload["receiverImage"],
-              tokens: const [],
-              members: const [],
+              tokens: payload["tokens"],
+              members: payload["members"],
             );
           },
           transitionsBuilder: (context, animation, secondaryAnimation, child) {
@@ -82,6 +82,8 @@ class FirebaseProvider with ChangeNotifier {
         "groupImage": payload["groupImage"],
         "isGroup": payload["isGroup"],
         "type": payload["type"],
+        "tokens": payload["tokens"],
+        "members": payload["members"]
       }));
       NotificationService.showNotification(
         title: payload["title"],
@@ -130,6 +132,8 @@ class FirebaseProvider with ChangeNotifier {
 
   Future<void> sendNotification({
     required List<dynamic> registrationIds,
+    required List<dynamic> tokens,
+    required List<dynamic> members,
     required String token, 
     required String title, 
     required String subtitle,
@@ -177,6 +181,8 @@ class FirebaseProvider with ChangeNotifier {
             "groupImage": groupImage,
             "isGroup": "true",
             "type": type,
+            "tokens": tokens,
+            "members": members,
             "screen": "chat.detail"
           },
         },
@@ -213,6 +219,8 @@ class FirebaseProvider with ChangeNotifier {
             "groupImage": "-",
             "isGroup": "false",
             "type": type,
+            "tokens": "-",
+            "members": "-",
             "screen": "chat.detail",
           },
           "click_action": "FLUTTER_NOTIFICATION_CLICK",

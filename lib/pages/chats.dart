@@ -27,23 +27,15 @@ class _ChatsPageState extends State<ChatsPage> {
   late double deviceHeight;
   late double deviceWidth;
 
-  late ChatsProvider chatsProvider;
-
   @override 
   void initState() {
     super.initState();
     WidgetsBinding.instance!.addPostFrameCallback((_) {
       context.read<AuthenticationProvider>().initAuthStateChanges();
-      chatsProvider.getChats();
+      context.read<ChatsProvider>().getChats();
     });
   }
-
-  @override  
-  void dispose() {
-    chatsProvider.chatsStream!.cancel();
-    super.dispose();
-  }
-  
+ 
   @override
   Widget build(BuildContext context) {
     deviceHeight = MediaQuery.of(context).size.height;
@@ -54,7 +46,6 @@ class _ChatsPageState extends State<ChatsPage> {
   Widget buildUI() {
     return Builder(
       builder: (BuildContext context) {
-        chatsProvider = Provider.of<ChatsProvider>(context);
         return Container(
           decoration: const BoxDecoration(
             color: ColorResources.backgroundColor
@@ -95,10 +86,10 @@ class _ChatsPageState extends State<ChatsPage> {
   }
 
   Widget chatList() {
-    List<Chat>? chats = chatsProvider.chats;
+    List<Chat>? chats = context.watch<ChatsProvider>().chats;
     return Expanded(
       child: (() {
-        if(chatsProvider.isLoading) {
+        if(context.watch<ChatsProvider>().isLoading) {
           return const Center(
             child: SpinKitRotatingCircle(
               duration: Duration(seconds: 3),
@@ -270,8 +261,8 @@ class _ChatsPageState extends State<ChatsPage> {
           groupName: chat.groupData.name,
           groupImage: chat.groupData.image,
           isGroup: chat.group,
-          tokens: chat.groupData.tokens,
-          members: chat.members,
+          tokens: chat.group ? chat.groupData.tokens : [],
+          members: chat.group ? chat.members : [],
           receiverId: chat.recepients.first.uid!, 
           receiverName: chat.recepients.first.name!,
           receiverImage: chat.group ? "" : chat.recepients.first.image!,

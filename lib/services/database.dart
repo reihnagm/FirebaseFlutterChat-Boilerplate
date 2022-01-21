@@ -6,10 +6,8 @@ import 'package:uuid/uuid.dart';
 import 'package:chatv28/models/chat_message.dart';
 
 const String userCollection = "Users";
-const String conversationCollection = "Conversations";
 const String usersOnlineCollection = "UsersOnline";
 const String onScreenCollection = "OnScreens";
-const String conversationsCollection = "Conversations";
 const String chatCollection = "Chats";
 const String messageCollection = "Messages"; 
 
@@ -274,14 +272,14 @@ class DatabaseService {
       try {
         if(isGroup) {
           for (QueryDocumentSnapshot<Map<String, dynamic>> msgDoc in msg.docs) {
-            DocumentSnapshot<Map<String, dynamic>> msgDoc1 = await db
+            DocumentSnapshot<Map<String, dynamic>> msgList = await db
             .collection(chatCollection)
             .doc(chatId)
             .collection(messageCollection)
             .doc(msgDoc.id)
             .get();
-            Map<String, dynamic> msgObj = msgDoc1.data() as Map<String, dynamic>;
 
+            Map<String, dynamic> msgObj = msgList.data() as Map<String, dynamic>;
             List<dynamic> readers = msgObj["readers"];
             int indexReader = readers.indexWhere((el) => el["uid"] == userId);
 
@@ -305,26 +303,15 @@ class DatabaseService {
                   }]
                 });
               }
-            } else {
-              msgDoc.reference.update({
-                "content": msgObj["content"],
-                "type": msgObj["type"],
-                "sender_name": msgObj["sender_name"],
-                "receiver_id": msgObj["receiver_id"],
-                "is_read": msgObj["is_read"],
-                "sent_time": Timestamp.fromDate(msgObj["sent_time"].toDate()),             
-              });
-            }
-          }         
-        }
-        if(isGroup) {
+            } 
+          }     
           for (QueryDocumentSnapshot<Map<String, dynamic>> msgDoc in msg.docs) {
             Map<String, dynamic> msgObj = msgDoc.data();
             List<dynamic> readers = msgObj["readers"];
             if(readers.every((el) => el["is_read"] == true)) {
               msgDoc.reference.update({"is_read": true});
             }
-          }
+          }    
         } else {
           List<dynamic> data = msg.docs
           .where((el) => el["receiver_id"] == userId)
@@ -381,7 +368,7 @@ class DatabaseService {
         QuerySnapshot<Map<String, dynamic>> onscreens = await db
         .collection(onScreenCollection)
         .get();
-         QuerySnapshot<Map<String, dynamic>> chats = await db
+        QuerySnapshot<Map<String, dynamic>> chats = await db
         .collection(chatCollection)
         .get();
         if(onscreens.docs.isNotEmpty) {
@@ -413,8 +400,6 @@ class DatabaseService {
             } 
           }
         }
-      }).then((_) async {
-        await updateUserLastSeenTime(userId);
       });
     } catch(e) {
       debugPrint(e.toString());
@@ -464,18 +449,7 @@ class DatabaseService {
       debugPrint(e.toString());
     }
   }
-
-  Future<void> createConversation(String userId, Map<String, dynamic> data) async {
-    try {
-      return await db
-      .collection(conversationCollection)
-      .doc(userId)
-      .set(data);
-    } catch(e) {
-      debugPrint(e.toString());
-    }
-  }
-
+  
   Future<void> createChatGroup(String chatId, Map<String, dynamic> data) async {
     try {
       return await db

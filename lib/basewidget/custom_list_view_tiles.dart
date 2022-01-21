@@ -355,7 +355,6 @@ class CustomListViewTileWithoutActivity extends StatelessWidget {
                     Text(isOwnMessage ? "You" : subtitle, 
                       softWrap: true,
                       style: TextStyle(
-                        overflow: TextOverflow.ellipsis,
                         fontWeight: FontWeight.bold,
                         color: ColorResources.textBlackPrimary,
                         fontSize: Dimensions.fontSizeExtraSmall,
@@ -371,7 +370,7 @@ class CustomListViewTileWithoutActivity extends StatelessWidget {
                     ),
                   const SizedBox(width: 5.0),
                   SizedBox(
-                    width: MediaQuery.of(context).size.width * 0.30,
+                    width: MediaQuery.of(context).size.width * 0.20,
                     child: messageType == "IMAGE" 
                     ? Row(
                         children: [
@@ -425,8 +424,8 @@ class CustomListViewTileWithoutActivity extends StatelessWidget {
                   isOwnMessage 
                   ? const SizedBox(width: 5.0)
                   : const SizedBox(),
-                  SizedBox(
-                    width: MediaQuery.of(context).size.width * 0.40,
+                  ConstrainedBox(
+                    constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.40),
                     child: messageType == "IMAGE" ?
                       Row(
                         children: [
@@ -441,7 +440,7 @@ class CustomListViewTileWithoutActivity extends StatelessWidget {
                           const SizedBox(width: 5.0),
                           const Icon(
                             Icons.image, 
-                            size: 16.0
+                            size: 12.0
                           )
                         ],
                       )

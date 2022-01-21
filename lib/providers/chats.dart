@@ -17,6 +17,12 @@ class ChatsProvider extends ChangeNotifier {
   final DatabaseService databaseService;
   bool isLoading = true;
 
+  @override
+  void dispose() {
+    super.dispose();
+    chatsStream!.cancel();
+  }
+
   ChatsProvider({
     required this.sharedPreferences,
     required this.authenticationProvider,
@@ -57,10 +63,14 @@ class ChatsProvider extends ChangeNotifier {
             for (QueryDocumentSnapshot<Object?> item in readerCountIds.docs) {
               Map<String, dynamic> readerDataCount = item.data() as Map<String, dynamic>;
               List<dynamic> readerCountIds = readerDataCount["readerCountIds"];
-              messagesGroupCount.add(readerCountIds.where((el) => el == authenticationProvider.userId()).length);
+              for (var readerCountId in readerCountIds) {
+                if(readerCountId == authenticationProvider.userId()) {
+                  messagesGroupCount.add(readerCountId);
+                }
+              }
             }
           }
-
+          
           QuerySnapshot<Object?>? messageCount = await databaseService.getMessageCountForChat(doc.id);
           if(messageCount!.docs.isNotEmpty) {
             for (QueryDocumentSnapshot<Object?> item in messageCount.docs) {
