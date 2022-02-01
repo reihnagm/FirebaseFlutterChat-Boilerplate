@@ -431,7 +431,7 @@ class DatabaseService {
         .update({
           "token": await FirebaseMessaging.instance.getToken()
         });
-      }).then((_) async {
+      });
         QuerySnapshot<Map<String, dynamic>> tokens = await db
         .collection(tokenCollection)
         .get();
@@ -445,43 +445,42 @@ class DatabaseService {
         if(tokens.docs.isNotEmpty) {
           for (QueryDocumentSnapshot<Map<String, dynamic>> tokenDoc in tokens.docs) {
             List<dynamic> tokens = tokenDoc.data()["tokens"];
-            int index = tokens.indexWhere((el) => el["user_id"] == userId);
-            if(index != -1) {
+            if(tokens.where((el) => el["user_id"] == userId).isNotEmpty) {
+              int index = tokens.indexWhere((el) => el["user_id"] == userId);
               tokens[index]["token"] = await FirebaseMessaging.instance.getToken();
               tokenDoc.reference.update({
                 "tokens": tokens
-              }); // Update existing data
-            } 
+              }); 
+            }
           }
         }
 
         if(onscreens.docs.isNotEmpty) {
           for (QueryDocumentSnapshot<Map<String, dynamic>> screenDoc in onscreens.docs) {
             List<dynamic> onscreens = screenDoc.data()["on_screens"];
-            int index = onscreens.indexWhere((el) => el["user_id"] == userId);
-            if(index != -1) {
+            if(onscreens.where((el) => el["user_id"] == userId).isNotEmpty) {
+              int index = onscreens.indexWhere((el) => el["user_id"] == userId);
               onscreens[index]["token"] = await FirebaseMessaging.instance.getToken();
               screenDoc.reference.update({
                 "on_screens": onscreens
-              }); // Update existing data
-            } 
+              });
+            }
           }
         }
         
         if(members.docs.isNotEmpty) {
           for (QueryDocumentSnapshot<Map<String, dynamic>> memberDoc in members.docs) {
             List<dynamic> members = memberDoc.data()["members"];
-            int index = members.indexWhere((el) => el["uid"] == userId);
-            if(index != -1) {
+            if(members.where((el) => el["uid"] == userId).isNotEmpty) {
+              int index = members.indexWhere((el) => el["uid"] == userId);
               members[index]["isOnline"] = isOnline;
+              members[index]["last_active"] = DateTime.now().toUtc();
               memberDoc.reference.update({
                 "members": members
-              }); // Update existing data
-            } 
+              });
+            }
           }
         }
-
-      });
     } catch(e) {
       debugPrint(e.toString());
     }

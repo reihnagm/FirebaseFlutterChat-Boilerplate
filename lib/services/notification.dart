@@ -44,7 +44,7 @@ class NotificationService {
       styleInformation: payload["type"] == "image" 
       ? BigPictureStyleInformation(
           FilePathAndroidBitmap(
-            await Utils.downloadFile(payload["body"], 'bigPicture')
+            await Utils.downloadFile(payload["bodyImg"], 'bigPicture')
           ),
         ) 
       : null,

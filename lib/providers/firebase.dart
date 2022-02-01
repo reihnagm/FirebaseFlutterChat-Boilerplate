@@ -131,8 +131,9 @@ class FirebaseProvider with ChangeNotifier {
             "title": title,
             "subtitle": subtitle,
             "body": type == "image" 
-            ? body  
+            ? "${authenticationProvider.userName()} Media Attachement"  
             : "${authenticationProvider.userName()} $body",
+            "bodyImg": body,
             "receiverId": receiverId,
             "receiverName": receiverName,
             "receiverImage": receiverImage,
@@ -170,7 +171,10 @@ class FirebaseProvider with ChangeNotifier {
             "avatar": authenticationProvider.userImage(),
             "title": authenticationProvider.userName(),
             "subtitle": subtitle,
-            "body": body,
+            "body": type == "image" 
+            ? "Media Attachment" 
+            : body,
+            "bodyImg": body,
             "receiverId": receiverId,
             "receiverName": receiverName,
             "receiverImage": receiverImage,
