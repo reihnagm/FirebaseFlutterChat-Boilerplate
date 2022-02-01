@@ -1,3 +1,5 @@
+import 'package:chatv28/utils/custom_themes.dart';
+import 'package:chatv28/utils/dimensions.dart';
 import 'package:flutter/material.dart';
 
 import 'package:chatv28/utils/color_resources.dart';
@@ -37,6 +39,12 @@ class _HomePageState extends State<HomePage> {
             currentPage = index;
           });
         },
+        selectedLabelStyle: dongleLight.copyWith(
+          fontSize: Dimensions.fontSizeDefault,
+        ),
+        unselectedLabelStyle: dongleLight.copyWith(
+          fontSize: Dimensions.fontSizeDefault,
+        ),
         selectedItemColor: ColorResources.white,
         unselectedItemColor: ColorResources.gainsBoro,
         items: const [

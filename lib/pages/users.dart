@@ -1,14 +1,15 @@
 import 'dart:io';
 
+import 'package:chatv28/utils/utils.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
+import 'package:chatv28/utils/custom_themes.dart';
 import 'package:chatv28/services/media.dart';
 import 'package:chatv28/utils/dimensions.dart';
 import 'package:chatv28/utils/box_shadow.dart';
@@ -39,6 +40,7 @@ class _UsersPageState extends State<UsersPage> {
   late double deviceWidth;
 
   late DatabaseService databaseService; 
+  late UserProvider userProvider;
   late MediaService mediaService;
   late TextEditingController searchFieldTextEditingController;
 
@@ -57,7 +59,7 @@ class _UsersPageState extends State<UsersPage> {
         androidUiSettings: AndroidUiSettings(
           toolbarTitle: "Crop It"
           toolbarColor: Colors.blueGrey[900],
-          toolbarWidgetColor: Colors.white,
+          toolbarWidgetColor: ColorResources.white,
           initAspectRatio: CropAspectRatioPreset.original,
           lockAspectRatio: false
         ),
@@ -76,10 +78,11 @@ class _UsersPageState extends State<UsersPage> {
   @override 
   void initState() {
     super.initState();
+    userProvider = context.read<UserProvider>();
     searchFieldTextEditingController = TextEditingController();
     WidgetsBinding.instance!.addPostFrameCallback((_) {
       context.read<AuthenticationProvider>().initAuthStateChanges();
-      context.read<UserProvider>().getUsers();
+      userProvider.getUsers();
     });
   }
 
@@ -166,10 +169,9 @@ class _UsersPageState extends State<UsersPage> {
                                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                                 children: [
                                                   Text("Create a group",
-                                                    style: TextStyle(
+                                                    style: dongleLight.copyWith(
                                                       color: ColorResources.textBlackPrimary,
-                                                      fontSize: Dimensions.fontSizeLarge,
-                                                      fontWeight: FontWeight.bold
+                                                      fontSize: Dimensions.fontSizeSmall,
                                                     ),
                                                   ),
                                                 ],
@@ -245,7 +247,7 @@ class _UsersPageState extends State<UsersPage> {
                                                 child: Column(
                                                   children: [
                                                     TextFormField(
-                                                      style: TextStyle(
+                                                      style: dongleLight.copyWith(
                                                         fontSize: Dimensions.fontSizeSmall
                                                       ),
                                                       cursorColor: ColorResources.backgroundBlueSecondary,
@@ -263,49 +265,53 @@ class _UsersPageState extends State<UsersPage> {
                                                       },
                                                       autovalidateMode: AutovalidateMode.onUserInteraction,
                                                       focusNode: focusNodeGroupName,
-                                                      decoration: const InputDecoration(
+                                                      decoration: InputDecoration(
                                                         filled: true,
                                                         fillColor: ColorResources.white,
                                                         floatingLabelBehavior: FloatingLabelBehavior.always,
                                                         labelText: "Name",
-                                                        labelStyle: TextStyle(
+                                                        labelStyle: dongleLight.copyWith(
+                                                          fontSize: Dimensions.fontSizeDefault,
                                                           color: ColorResources.textBlackPrimary
                                                         ),
+                                                        errorStyle: dongleLight.copyWith(
+                                                          fontSize: Dimensions.fontSizeSmall
+                                                        ),
                                                         alignLabelWithHint: true,
-                                                        contentPadding: EdgeInsets.all(16.0),
-                                                        border: OutlineInputBorder(
+                                                        contentPadding: const EdgeInsets.all(16.0),
+                                                        border: const OutlineInputBorder(
                                                           borderRadius: BorderRadius.all(Radius.circular(8.0)),
                                                           borderSide: BorderSide(
                                                             color: ColorResources.backgroundBlueSecondary,
                                                             width: 2.0                                                             
                                                           )
                                                         ),
-                                                        enabledBorder: OutlineInputBorder(
+                                                        enabledBorder: const OutlineInputBorder(
                                                           borderRadius: BorderRadius.all(Radius.circular(8.0)),
                                                           borderSide: BorderSide(
                                                             color: ColorResources.backgroundBlueSecondary,
                                                             width: 2.0                                                             
                                                           )
                                                         ),
-                                                        errorBorder: OutlineInputBorder(
+                                                        errorBorder: const OutlineInputBorder(
                                                           borderRadius: BorderRadius.all(Radius.circular(8.0)),
                                                           borderSide: BorderSide.none
                                                         ),
-                                                        focusedErrorBorder: OutlineInputBorder(
+                                                        focusedErrorBorder: const OutlineInputBorder(
                                                           borderRadius: BorderRadius.all(Radius.circular(8.0)),
                                                           borderSide: BorderSide(
                                                             color: ColorResources.error,
                                                             width: 2.0                                                             
                                                           )
                                                         ),
-                                                        disabledBorder: OutlineInputBorder(
+                                                        disabledBorder: const OutlineInputBorder(
                                                           borderRadius: BorderRadius.all(Radius.circular(8.0)),
                                                           borderSide: BorderSide(
                                                             color: ColorResources.backgroundBlueSecondary,
                                                             width: 2.0   
                                                           )
                                                         ),
-                                                        focusedBorder:  OutlineInputBorder(
+                                                        focusedBorder: const OutlineInputBorder(
                                                           borderRadius: BorderRadius.all(Radius.circular(8.0)),
                                                           borderSide: BorderSide(
                                                             color: ColorResources.backgroundBlueSecondary,
@@ -463,10 +469,9 @@ class _UsersPageState extends State<UsersPage> {
                   } else {
                     groupChatId = '$peerId-$currentUserId';
                   }
-                  DocumentSnapshot? createChatDoc = await databaseService.checkChat(groupChatId);
+                  DocumentSnapshot? createChatDoc = await databaseService.checkChat(chatId: groupChatId);
                   if(createChatDoc!.exists) {  
-                    SharedPreferences prefs = await SharedPreferences.getInstance();
-                    prefs.setString("chatId", createChatDoc.id);
+                    Utils.prefs!.setString("chatId", createChatDoc.id);
                     NavigationService().pushNav(context, ChatPage(
                       avatar: users[i].image!,
                       title: users[i].name!,
@@ -477,12 +482,9 @@ class _UsersPageState extends State<UsersPage> {
                       groupName: "",
                       groupImage: "",
                       isGroup: false,
-                      tokens: const [],
-                      members: const [],
                     ));
                   } else {
-                    SharedPreferences prefs = await SharedPreferences.getInstance();
-                    prefs.setString("chatId", groupChatId);
+                    Utils.prefs!.setString("chatId", groupChatId);
                     NavigationService().pushNav(context, ChatPage(
                       avatar: users[i].image!,
                       title: users[i].name!,
@@ -493,13 +495,10 @@ class _UsersPageState extends State<UsersPage> {
                       groupName: "",
                       groupImage: "",
                       isGroup: false,
-                      tokens: const [],
-                      members: const [],
                     ));
                     await databaseService.createChat(
                       groupChatId,
                       {
-                        "id": groupChatId,
                         "is_group": false,
                         "is_activity": [
                           {
@@ -520,7 +519,6 @@ class _UsersPageState extends State<UsersPage> {
                         "group": {
                           "name": "",
                           "image": "",
-                          "tokens": []
                         },
                         "members": [
                           {
@@ -569,9 +567,10 @@ class _UsersPageState extends State<UsersPage> {
             },
           );
         } else {
-          return const Center(
+          return Center(
             child: Text("No Users Found.",
-              style: TextStyle(
+              style: dongleLight.copyWith(
+                fontSize: Dimensions.fontSizeSmall,
                 color: ColorResources.textBlackPrimary
               ),
             ),

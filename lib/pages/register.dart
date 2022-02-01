@@ -1,14 +1,15 @@
 import 'dart:io';
 
-import 'package:chatv28/basewidget/snackbar/snackbar.dart';
-import 'package:chatv28/services/cloud_storage.dart';
-import 'package:chatv28/services/media.dart';
-import 'package:chatv28/utils/box_shadow.dart';
+import 'package:chatv28/utils/custom_themes.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:provider/provider.dart';
 
+import 'package:chatv28/basewidget/snackbar/snackbar.dart';
+import 'package:chatv28/services/cloud_storage.dart';
+import 'package:chatv28/services/media.dart';
+import 'package:chatv28/utils/box_shadow.dart';
 import 'package:chatv28/pages/login.dart';
 import 'package:chatv28/utils/dimensions.dart';
 import 'package:chatv28/utils/color_resources.dart';
@@ -184,16 +185,16 @@ class _RegisterPageState extends State<RegisterPage> {
       height: deviceHeight * 0.10,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
-        children: const [
+        children: [
           Text("Chatify",
-            style: TextStyle(
+            style: dongleLight.copyWith(
               color: ColorResources.textBlackPrimary,
-              fontSize: 40.0,
+              fontSize: Dimensions.fontSizeOverLarge,
               fontWeight: FontWeight.bold
             ),
           ),
-          SizedBox(width: 3.0),
-          Icon(
+          const SizedBox(width: 3.0),
+          const Icon(
             Icons.chat_bubble_rounded,
             size: 20.0,  
           ),
@@ -228,8 +229,9 @@ class _RegisterPageState extends State<RegisterPage> {
                 });
               },
               hintText: "", 
-              label: const Text("Name",
-                style: TextStyle(
+              label: Text("Name",
+                style: dongleLight.copyWith(
+                  fontSize: Dimensions.fontSizeDefault,
                   color: ColorResources.textBlackPrimary
                 ),
               ),
@@ -254,8 +256,9 @@ class _RegisterPageState extends State<RegisterPage> {
               },
               regex: r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+", 
               hintText: "", 
-              label: const Text("E-mail Address",
-                style: TextStyle(
+              label: Text("E-mail Address",
+                style: dongleLight.copyWith(
+                  fontSize: Dimensions.fontSizeDefault,
                   color: ColorResources.textBlackPrimary
                 ),
               ),
@@ -270,8 +273,9 @@ class _RegisterPageState extends State<RegisterPage> {
               }, 
               regex: r".{8,}", 
               hintText: "", 
-              label: const Text("Password",
-                style: TextStyle(
+              label: Text("Password",
+                style: dongleLight.copyWith(
+                  fontSize: Dimensions.fontSizeDefault,
                   color: ColorResources.textBlackPrimary
                 ),
               ),
@@ -326,9 +330,9 @@ class _RegisterPageState extends State<RegisterPage> {
               child: Padding(
                 padding: const EdgeInsets.all(8.0),
                 child: Text("Login",
-                  style: TextStyle(
+                  style: dongleLight.copyWith(
                     color: ColorResources.textBlackPrimary,
-                    fontSize: Dimensions.fontSizeExtraSmall
+                    fontSize: Dimensions.fontSizeSmall
                   ),
                 ),
               ),

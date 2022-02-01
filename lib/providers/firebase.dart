@@ -4,7 +4,6 @@ import 'dart:convert';
 // import 'package:awesome_notifications/awesome_notifications.dart';
 // import 'package:chatv28/utils/utils.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dio/dio.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
@@ -18,7 +17,6 @@ import 'package:chatv28/utils/constant.dart';
 class FirebaseProvider with ChangeNotifier {
   final AuthenticationProvider authenticationProvider; 
   final SharedPreferences sharedPreferences;
-  final FirebaseFirestore db = FirebaseFirestore.instance;
 
   FirebaseProvider({
     required this.sharedPreferences,
@@ -44,8 +42,6 @@ class FirebaseProvider with ChangeNotifier {
               receiverId: payload["receiverId"],
               receiverName: payload["receiverName"],
               receiverImage: payload["receiverImage"],
-              tokens: payload["tokens"],
-              members: payload["members"],
             );
           },
           transitionsBuilder: (context, animation, secondaryAnimation, child) {
@@ -90,43 +86,6 @@ class FirebaseProvider with ChangeNotifier {
         body: payload["body"],
         payload: payload,
       );
-      // if(payload["type"] == "image") {
-      //   AwesomeNotifications().createNotification(
-      //     content: NotificationContent(
-      //       id: Utils.createUniqueId(),
-      //       channelKey: 'chat',
-      //       largeIcon: payload["avatar"],
-      //       bigPicture: payload["body"],
-      //       title: payload["title"],
-      //       body: "",
-      //       notificationLayout: NotificationLayout.BigPicture,
-      //       hideLargeIconOnExpand: false,
-      //       fullScreenIntent: true,
-      //       displayOnBackground: true,
-      //       displayOnForeground: true,
-      //       roundedBigPicture: true,
-      //       roundedLargeIcon: true,
-      //       wakeUpScreen: true,
-      //       showWhen: true
-      //     )
-      //   );
-      // } else {
-      //   AwesomeNotifications().createNotification(
-      //     content: NotificationContent(
-      //       id: Utils.createUniqueId(),
-      //       channelKey: 'chat',
-      //       largeIcon: payload["avatar"],
-      //       title: payload["title"],
-      //       body: payload["body"],
-      //       fullScreenIntent: true,
-      //       displayOnBackground: true,
-      //       displayOnForeground: true,
-      //       roundedLargeIcon: true,
-      //       wakeUpScreen: true,
-      //       showWhen: true
-      //     )
-      //   );
-      // }
     });
   }
 

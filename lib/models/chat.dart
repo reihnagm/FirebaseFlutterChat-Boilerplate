@@ -4,19 +4,16 @@ import 'package:chatv28/models/chat_user.dart';
 class GroupData {
   final String name;
   final String image;
-  final List<Token> tokens;
 
   GroupData({
     required this.name,
     required this.image,
-    required this.tokens
   });
 
   factory GroupData.fromJson(Map<String, dynamic> json) {
     return GroupData(
       name: json["name"],
       image: json["image"],
-      tokens: List<Token>.from(json["tokens"].map((x) => Token.fromJson(x)))
     );
   }
 }
@@ -131,5 +128,5 @@ class Chat {
   ? activity.firstWhere((el) => el.isActive == true && el.chatId == uid).name 
   : ""
   : "";
-  String image() => !group ? recepients.first.image! : groupData.image == "" ? "https://www.iconpacks.net/icons/1/free-user-group-icon-296-thumb.png" : groupData.image;
+  String image() => !group ? recepients.first.image! : groupData.image == "" ? "" : groupData.image;
 }

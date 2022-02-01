@@ -1,3 +1,4 @@
+import 'package:chatv28/utils/custom_themes.dart';
 import 'package:flutter/material.dart';
 
 import 'package:chatv28/utils/color_resources.dart';
@@ -34,7 +35,8 @@ class CustomTextFormField extends StatelessWidget {
       onChanged: (val) => onChanged(val),
       onSaved: (val) => onSaved(val!),
       cursorColor: ColorResources.hintColor,
-      style: TextStyle(
+      autovalidateMode: AutovalidateMode.onUserInteraction,
+      style: dongleLight.copyWith(
         letterSpacing: 1.3,
         color: ColorResources.textBlackPrimary,
         fontSize: Dimensions.fontSizeSmall
@@ -55,7 +57,7 @@ class CustomTextFormField extends StatelessWidget {
           borderSide: BorderSide.none
         ),
         hintText: hintText,
-        hintStyle: TextStyle(
+        hintStyle: dongleLight.copyWith(
           color: ColorResources.hintColor,
           fontSize: Dimensions.fontSizeSmall
         )
@@ -97,9 +99,9 @@ class CustomTextMessageFormField extends StatelessWidget {
       focusNode: focusNode,
       textCapitalization: TextCapitalization.sentences,
       cursorColor: ColorResources.white,
-      style: TextStyle(
+      style: dongleLight.copyWith(
         color: ColorResources.white,
-        fontSize: Dimensions.fontSizeSmall
+        fontSize: Dimensions.fontSizeSmall,
       ),
       maxLines: null,
       decoration: InputDecoration(
@@ -115,7 +117,7 @@ class CustomTextMessageFormField extends StatelessWidget {
         ),
         alignLabelWithHint: true,
         hintText: hintText,
-        hintStyle: TextStyle(
+        hintStyle: dongleLight.copyWith(
           color: ColorResources.gainsBoro,
           fontSize: Dimensions.fontSizeSmall
         )
@@ -155,7 +157,7 @@ class _CustomTextPasswordFormFieldState extends State<CustomTextPasswordFormFiel
       controller: widget.controller,
       onSaved: (val) => widget.onSaved(val!),
       cursorColor: ColorResources.hintColor,
-      style: TextStyle(
+      style: dongleLight.copyWith(
         letterSpacing: 1.3,
         color: ColorResources.textBlackPrimary,
         fontSize: Dimensions.fontSizeSmall
@@ -194,7 +196,7 @@ class _CustomTextPasswordFormFieldState extends State<CustomTextPasswordFormFiel
         floatingLabelBehavior: FloatingLabelBehavior.always,
         label: widget.label,
         hintText: widget.hintText,
-        hintStyle: TextStyle(
+        hintStyle: dongleLight.copyWith(
           color: ColorResources.hintColor,
           fontSize: Dimensions.fontSizeSmall
         )
@@ -223,9 +225,10 @@ class CustomTextField extends StatelessWidget {
     return TextField(
       controller: controller,
       onEditingComplete: () => onEditingComplete(controller.value.text),
-      cursorColor: Colors.white,
-      style: const TextStyle(
-        color: Colors.white
+      cursorColor: ColorResources.white,
+      style: dongleLight.copyWith(
+        color: ColorResources.white,
+        fontSize: Dimensions.fontSizeSmall
       ),
       obscureText: obscureText,
       decoration: InputDecoration(
@@ -237,7 +240,7 @@ class CustomTextField extends StatelessWidget {
           borderSide: BorderSide.none
         ),
         hintText: hintText,
-        hintStyle: const TextStyle(
+        hintStyle: dongleLight.copyWith(
           color: Colors.white54,
         ),
         prefixIcon: Icon(
@@ -268,7 +271,7 @@ class CustomTextSearchField extends StatelessWidget {
       controller: controller,
       onEditingComplete: () => onEditingComplete(controller.value.text),
       cursorColor: ColorResources.textBlackPrimary,
-      style: TextStyle(
+      style: dongleLight.copyWith(
         fontSize: Dimensions.fontSizeSmall,
         color: ColorResources.textBlackPrimary
       ),
@@ -282,7 +285,7 @@ class CustomTextSearchField extends StatelessWidget {
           borderSide: BorderSide.none
         ),
         hintText: hintText,
-        hintStyle: TextStyle(
+        hintStyle: dongleLight.copyWith(
           fontSize: Dimensions.fontSizeSmall,
           color: ColorResources.textBlackPrimary,
         ),

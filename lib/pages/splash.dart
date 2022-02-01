@@ -1,8 +1,7 @@
-
-import 'package:chatv28/providers/authentication.dart';
-import 'package:chatv28/utils/color_resources.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/src/provider.dart';
+
+import 'package:chatv28/utils/custom_themes.dart';
+import 'package:chatv28/utils/color_resources.dart';
 
 class SplashPage extends StatefulWidget {
   final VoidCallback onInitializationComplete;
@@ -37,16 +36,16 @@ class _SplashPageState extends State<SplashPage> {
         body: Center(
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: const [
+          children: [
             Text("Chatify",
-              style: TextStyle(
+              style: dongleLight.copyWith(
                 color: ColorResources.white,
-                fontSize: 40.0,
-                fontWeight: FontWeight.bold
+                fontWeight: FontWeight.bold,
+                fontSize: 60,
               ),
             ),
-            SizedBox(width: 3.0),
-            Icon(
+            const SizedBox(width: 3.0),
+            const Icon(
               Icons.chat_bubble_rounded,
               size: 20.0,  
               color: Colors.white,

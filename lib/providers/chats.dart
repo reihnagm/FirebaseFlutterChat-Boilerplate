@@ -10,17 +10,46 @@ import 'package:chatv28/providers/authentication.dart';
 import 'package:chatv28/services/database.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+enum ChatsStatus { idle, loading, loaded, empty, error }
+enum MembersStatus { idle, loading, loaded, empty, error }
+enum TokensStatus { idle, loading, loaded, empty, error }
 
 class ChatsProvider extends ChangeNotifier {
   final SharedPreferences sharedPreferences;
   final AuthenticationProvider authenticationProvider;
   final DatabaseService databaseService;
-  bool isLoading = true;
+
+  ChatsStatus _chatsStatus = ChatsStatus.loading;
+  ChatsStatus get chatStatus => _chatsStatus;
+
+  MembersStatus _membersStatus = MembersStatus.loading;
+  MembersStatus get memberStatus => _membersStatus;
+
+  TokensStatus _tokensStatus = TokensStatus.loading;
+  TokensStatus get tokensStatus => _tokensStatus;
+
+  void setStateChatsStatus(ChatsStatus chatsStatus) {
+    _chatsStatus = chatsStatus;
+    Future.delayed(Duration.zero, () => notifyListeners());
+  }
+
+  void setStateMembersStatus(MembersStatus membersStatus) {
+    _membersStatus = membersStatus;
+    Future.delayed(Duration.zero, () => notifyListeners());
+  }
+
+  void setStateTokensStatus(TokensStatus tokensStatus) {
+    _tokensStatus = tokensStatus;
+    Future.delayed(Duration.zero, () => notifyListeners());
+  }
+
 
   @override
   void dispose() {
     super.dispose();
+    tokensStream!.cancel();
     chatsStream!.cancel();
+    membersStream!.cancel();
   }
 
   ChatsProvider({
@@ -29,12 +58,20 @@ class ChatsProvider extends ChangeNotifier {
     required this.databaseService
   });
 
-  List<Chat> chats = [];
-  StreamSubscription? chatsStream;
+  List<Chat>? chats;
+  List<ChatUser> _members = [];
+  List<ChatUser> get members => [..._members];
 
-  void getChats() async {
+  List<Token> _tokens = [];
+  List<Token> get tokens => [..._tokens];
+
+  StreamSubscription? tokensStream;
+  StreamSubscription? chatsStream;
+  StreamSubscription? membersStream;
+
+  void getChats() {
     try {      
-      chatsStream = databaseService.getChatsForUser(authenticationProvider.userId())!.listen((snapshot) async {
+      chatsStream = databaseService.getChatsForUser(userId: authenticationProvider.userId())!.listen((snapshot) async {
         chats = await Future.wait(snapshot.docs.map((doc) async {
           Map<String, dynamic> chatData = doc.data() as Map<String, dynamic>;
           List<ChatUser> members = [];
@@ -64,14 +101,12 @@ class ChatsProvider extends ChangeNotifier {
               Map<String, dynamic> readerDataCount = item.data() as Map<String, dynamic>;
               List<dynamic> readerCountIds = readerDataCount["readerCountIds"];
               for (var readerCountId in readerCountIds) {
-                if(readerCountId == authenticationProvider.userId()) {
-                  messagesGroupCount.add(readerCountId);
-                }
+                messagesGroupCount.add(readerCountId);
               }
             }
           }
           
-          QuerySnapshot<Object?>? messageCount = await databaseService.getMessageCountForChat(doc.id);
+          QuerySnapshot<Object?>? messageCount = await databaseService.getMessageCountForChat(chatId: doc.id);
           if(messageCount!.docs.isNotEmpty) {
             for (QueryDocumentSnapshot<Object?> item in messageCount.docs) {
               Map<String, dynamic> messageDataCount = item.data() as Map<String, dynamic>;
@@ -79,7 +114,7 @@ class ChatsProvider extends ChangeNotifier {
               messagesPersonalCount.add(message);
             }
           }
-          QuerySnapshot<Object?>? lastMessage = await databaseService.getLastMessageForChat(doc.id);
+          QuerySnapshot<Object?>? lastMessage = await databaseService.getLastMessageForChat(chatId: doc.id);
           if(lastMessage!.docs.isNotEmpty) {
             Map<String, dynamic> messageData = lastMessage.docs.first.data() as Map<String, dynamic>;
             ChatMessage message = ChatMessage.fromJSON(messageData);
@@ -93,7 +128,6 @@ class ChatsProvider extends ChangeNotifier {
             groupData: GroupData(
               image: groupData.image,
               name: groupData.name,
-              tokens: groupData.tokens
             ),
             members: members,
             messages: messages, 
@@ -101,7 +135,6 @@ class ChatsProvider extends ChangeNotifier {
             messagesGroupCount: messagesGroupCount,
           );
         }).toList());
-        isLoading = false;
         Future.delayed(Duration.zero, () => notifyListeners());
       });
     } catch (e) {
@@ -109,9 +142,49 @@ class ChatsProvider extends ChangeNotifier {
     }
   }
 
+  void getMembersByChat() async {
+    try {
+      membersStream = databaseService.getMembersChat(chatId: chatId())!.listen((snapshot) {
+        if(snapshot.exists) {
+          Map<String, dynamic> item = snapshot.data() as Map<String, dynamic>; 
+          List<ChatUser> membersAssign = [];
+          List<dynamic> membersList = item["members"];
+          for (var memberList in membersList) {
+            membersAssign.add(ChatUser.fromJson(memberList));
+          }
+          _members = membersAssign;
+          _members.sort((a, b) => a.name!.toLowerCase().compareTo(b.name!.toLowerCase()));
+          setStateMembersStatus(MembersStatus.loaded);
+        }
+      });
+    } catch(e) {
+      debugPrint(e.toString());
+    }
+  }
+
+  void getTokensByChat() {
+    try {
+      tokensStream = databaseService.getTokensChat(chatId: chatId())!.listen((snapshot) {
+        if(snapshot.exists) {
+          Map<String, dynamic> item = snapshot.data() as Map<String, dynamic>; 
+          List<Token> tokensAssign = [];
+          List<dynamic> tokensList = item["tokens"];
+          for (var tokenList in tokensList) {
+            tokensAssign.add(Token.fromJson(tokenList));
+          }
+          _tokens = tokensAssign;
+          setStateTokensStatus(TokensStatus.loaded);
+        }
+      });
+    } catch(e) {
+      debugPrint(e.toString());
+    }
+  }
+
+
   Future<void> deleteChat({required String chatId}) async {
     try {
-      await databaseService.deleteChat(chatId);
+      await databaseService.deleteChat(chatId: chatId);
     } catch(e) {
       debugPrint(e.toString());
     }

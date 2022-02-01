@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-
 class NavigationService {
   pushNav(BuildContext context, Widget pushNav) {
     Navigator.push(context,
@@ -53,7 +52,7 @@ class NavigationService {
       })
     );
   }
-  static goBack(BuildContext context) {
+  goBack(BuildContext context) {
     Navigator.pop(context);
   }
 }

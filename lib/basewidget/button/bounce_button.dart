@@ -28,7 +28,6 @@ class _BouncingState extends State<Bouncing> with SingleTickerProviderStateMixin
     );
     scale = Tween<double>(begin: 1.0, end: 0.0).animate(CurvedAnimation(parent: controller!, curve: Curves.ease));
   }
-
   
   @override
   void dispose() {

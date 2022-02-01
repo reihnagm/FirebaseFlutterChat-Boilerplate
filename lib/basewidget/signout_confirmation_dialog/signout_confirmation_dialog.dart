@@ -1,3 +1,4 @@
+import 'package:chatv28/utils/custom_themes.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -23,7 +24,7 @@ class SignOutConfirmationDialog extends StatelessWidget {
               vertical: 50.0
             ),
             child: Text("Apakah kamu yakin ingin keluar?", 
-              style: TextStyle(
+              style: dongleLight.copyWith(
                 fontSize: Dimensions.fontSizeSmall
               ), 
               textAlign: TextAlign.center
@@ -53,13 +54,13 @@ class SignOutConfirmationDialog extends StatelessWidget {
                       ),
                       child: context.watch<AuthenticationProvider>().logoutStatus == LogoutStatus.loading 
                       ? Text("...", 
-                          style: TextStyle(
+                          style: dongleLight.copyWith(
                             color: ColorResources.white,
                             fontSize: Dimensions.fontSizeSmall
                           )
                         )
                       : Text("Ya", 
-                          style: TextStyle(
+                          style: dongleLight.copyWith(
                             color: ColorResources.white,
                             fontSize: Dimensions.fontSizeSmall
                           )
@@ -81,7 +82,7 @@ class SignOutConfirmationDialog extends StatelessWidget {
                     )
                   ),
                   child: Text("Tidak", 
-                    style: TextStyle(
+                    style: dongleLight.copyWith(
                       color: ColorResources.black,
                       fontSize: Dimensions.fontSizeSmall,
                     )

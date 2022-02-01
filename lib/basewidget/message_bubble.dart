@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 import 'package:ionicons/ionicons.dart';
 
+import 'package:chatv28/utils/custom_themes.dart';
 import 'package:chatv28/basewidget/full_photo.dart';
 import 'package:chatv28/services/navigation.dart';
 import 'package:chatv28/utils/color_resources.dart';
@@ -71,7 +72,7 @@ class _TextMessageBubbleState extends State<TextMessageBubble> {
                 ? const SizedBox() 
                 : Text(
                   widget.message.senderName,
-                  style: TextStyle(
+                  style: dongleLight.copyWith(
                     color: widget.isOwnMessage 
                     ? ColorResources.textBlackPrimary 
                     : ColorResources.white,
@@ -87,11 +88,11 @@ class _TextMessageBubbleState extends State<TextMessageBubble> {
                     constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width - 130),
                     child: Text(widget.message.content,
                       textAlign: TextAlign.justify,
-                      style: TextStyle(
+                      style: dongleLight.copyWith(
                         color: widget.isOwnMessage 
                         ? ColorResources.black  
                         : ColorResources.white,
-                        height: 1.5,
+                        height: 0.0,
                         fontSize: Dimensions.fontSizeExtraSmall,
                       ),
                     ),
@@ -108,14 +109,14 @@ class _TextMessageBubbleState extends State<TextMessageBubble> {
                         Ionicons.checkmark_done,
                         size: 16.0,
                         color: widget.isOwnMessage 
-                        ? Colors.black 
-                        : Colors.white  
+                        ? ColorResources.black 
+                        : ColorResources.white 
                       ),
                     ],
                 ) 
               ],
             ) 
-          :  Row(
+          : Row(
               mainAxisSize: MainAxisSize.min,
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -126,11 +127,11 @@ class _TextMessageBubbleState extends State<TextMessageBubble> {
                       constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width - 130),
                       child: Text(widget.message.content,
                         textAlign: TextAlign.justify,
-                        style: TextStyle(
+                        style: dongleLight.copyWith(
                           color: widget.isOwnMessage 
                           ? ColorResources.black  
                           : ColorResources.white,
-                          height: 1.5,
+                          height: 1.2,
                           fontSize: Dimensions.fontSizeExtraSmall,
                         ),
                       ),
@@ -149,18 +150,18 @@ class _TextMessageBubbleState extends State<TextMessageBubble> {
                       Ionicons.checkmark_done,
                       size: 16.0,
                       color: widget.isOwnMessage 
-                      ? Colors.black 
-                      : Colors.white  
+                      ? ColorResources.black 
+                      : ColorResources.white  
                     ), 
               ],
             ),
             const SizedBox(height: 6.0),
             Text(DateFormat("HH:mm").format(widget.message.sentTime),
-              style: TextStyle(
+              style: dongleLight.copyWith(
                 color: widget.isOwnMessage 
-                ? Colors.black
-                : Colors.white,
-                fontSize: Dimensions.fontSizeOverExtraSmall,
+                ? ColorResources.black
+                : ColorResources.white,
+                fontSize: Dimensions.fontSizeExtraSmall,
               ),
             ),
         ],
@@ -184,9 +185,23 @@ class ImageMessageBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    
     Color colorScheme = isOwnMessage 
     ? Colors.lightGreen[100]!
     : const Color.fromRGBO(51, 49, 68, 1.0);
+
+    BorderRadiusGeometry borderRadius = isOwnMessage 
+    ? const BorderRadius.only(
+        topLeft: Radius.circular(15.0),
+        bottomRight: Radius.circular(15.0), 
+        bottomLeft: Radius.circular(15.0), 
+      )
+    : const BorderRadius.only(
+        topRight: Radius.circular(15.0),
+        bottomRight: Radius.circular(15.0), 
+        bottomLeft: Radius.circular(15.0), 
+      );
+
     return message.content == "loading-img" 
     ? Container(
         width: width,
@@ -224,7 +239,7 @@ class ImageMessageBubble extends StatelessWidget {
       ),
       decoration: BoxDecoration(
         color: colorScheme,
-        borderRadius: BorderRadius.circular(15.0),
+        borderRadius: borderRadius,
       ), 
       child: Column(
         mainAxisSize: MainAxisSize.max,
@@ -283,10 +298,10 @@ class ImageMessageBubble extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
             Text(DateFormat("HH:mm").format(message.sentTime),
-              style: TextStyle(
+              style: dongleLight.copyWith(
                 color: isOwnMessage 
-                ? Colors.black 
-                : Colors.white,
+                ? ColorResources.black 
+                : ColorResources.white,
                 fontSize: Dimensions.fontSizeOverExtraSmall,
               ),
             ),
@@ -301,7 +316,7 @@ class ImageMessageBubble extends StatelessWidget {
               : const Icon(
                   Ionicons.checkmark_done,
                   size: 20.0,
-                  color: Colors.black,  
+                  color: ColorResources.black,  
                 ),
             ],
           ),

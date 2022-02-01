@@ -1,4 +1,6 @@
 import 'package:chatv28/utils/box_shadow.dart';
+import 'package:chatv28/utils/custom_themes.dart';
+import 'package:chatv28/utils/dimensions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 
@@ -54,9 +56,9 @@ class CustomButton extends StatelessWidget {
           )
         : Center(
           child: Text(btnTxt,
-            style: TextStyle(
+            style: dongleLight.copyWith(
               color: btnTextColor,
-              fontSize: 14.0
+              fontSize: Dimensions.fontSizeSmall,
             )
           ),
         )

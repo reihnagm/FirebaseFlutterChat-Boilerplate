@@ -236,8 +236,6 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
             receiverId: notifications["receiverId"],
             receiverName: notifications["receiverName"],
             receiverImage: notifications["receiverImage"],
-            tokens: const [],
-            members: const [],
           );
         },
         transitionsBuilder: (context, animation, secondaryAnimation, child) {

@@ -1,3 +1,5 @@
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:chatv28/utils/color_resources.dart';
 import 'package:flutter/material.dart';
 
 class RoundedImageNetwork extends StatelessWidget {
@@ -12,17 +14,50 @@ class RoundedImageNetwork extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        image: DecorationImage(
-          fit: BoxFit.cover,
-          image: NetworkImage(imagePath),
-        ),
-        borderRadius: BorderRadius.circular(30.0),
-        color: Colors.black,
-      ),
+    return CachedNetworkImage(
+      imageUrl: imagePath,
+      imageBuilder: (BuildContext context, ImageProvider<Object> imageProvider) {
+        return Container(
+          width: size,
+          height: size,
+          decoration: BoxDecoration(
+            image: DecorationImage(
+              fit: BoxFit.cover,
+              image: imageProvider,
+            ),
+            borderRadius: BorderRadius.circular(30.0),
+            color: ColorResources.black,
+          ),
+        );
+      },
+      placeholder: (BuildContext context, String url) {
+        return Container(
+          width: size,
+          height: size,
+          decoration: BoxDecoration(
+            image: const DecorationImage(
+              fit: BoxFit.cover,
+              image: AssetImage('assets/images/default_image.png'),
+            ),
+            borderRadius: BorderRadius.circular(30.0),
+            color: ColorResources.black,
+          ),
+        );
+      },
+      errorWidget: (BuildContext context, String url, dynamic error) {
+        return Container(
+          width: size,
+          height: size,
+          decoration: BoxDecoration(
+            image: const DecorationImage(
+              fit: BoxFit.cover,
+              image: AssetImage('assets/images/default_image.png'),
+            ),
+            borderRadius: BorderRadius.circular(30.0),
+            color: ColorResources.black,
+          ),
+        );
+      },
     );
   }
 }

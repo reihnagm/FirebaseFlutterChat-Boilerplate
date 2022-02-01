@@ -3,13 +3,13 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:uuid/uuid.dart';
 
 import 'package:chatv28/services/cloud_storage.dart';
 import 'package:chatv28/models/chat_user.dart';
 import 'package:chatv28/providers/authentication.dart';
 import 'package:chatv28/services/database.dart';
 import 'package:chatv28/services/navigation.dart';
-import 'package:uuid/uuid.dart';
 
 enum CreateGroupStatus { idle, loading, loaded, empty, error }
 
@@ -90,7 +90,7 @@ class UserProvider extends ChangeNotifier {
       setStateCreateGroupStatus(CreateGroupStatus.loading);
       for (String uid in relations) {
         try {
-          DocumentSnapshot<Object?> snapshot = await databaseService.getUser(uid)!;
+          DocumentSnapshot<Object?> snapshot = await databaseService.getUser(userId: uid)!;
           Map<String, dynamic> userData = snapshot.data() as Map<String, dynamic>;
           members.add({
             "uid": snapshot.id,
@@ -131,6 +131,26 @@ class UserProvider extends ChangeNotifier {
         debugPrint(e.toString());
       }
       try {
+        await databaseService.insertTokens(
+          chatId: chatId, 
+          data: {
+            "tokens": tokens,
+          }
+        );
+      } catch(e) {
+        debugPrint(e.toString());
+      }
+      try {
+        await databaseService.insertMembers(
+          chatId: chatId, 
+          data: {
+            "members": members
+          }
+        );
+      } catch(e) {
+        debugPrint(e.toString());
+      }
+      try {
         String? groupImageUrl = "";
         if(groupImage != null) {
           groupImageUrl = await cloudStorageService.saveGroupImageToStorage(
@@ -145,7 +165,6 @@ class UserProvider extends ChangeNotifier {
             "group": {
               "name": groupName,
               "image": groupImageUrl,
-              "tokens": FieldValue.arrayUnion(tokens)
             },  
             "members": members,
             "relations": relations,
@@ -164,4 +183,5 @@ class UserProvider extends ChangeNotifier {
       }
     }
   }
+  
 }

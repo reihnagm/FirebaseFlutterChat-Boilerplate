@@ -10,13 +10,20 @@ const String usersOnlineCollection = "UsersOnline";
 const String onScreenCollection = "OnScreens";
 const String chatCollection = "Chats";
 const String messageCollection = "Messages"; 
+const String tokenCollection = "Tokens";
+const String membersCollection = "Members";
+const String readerCountIdsCollection = "ReaderCountIds";
+
 
 class DatabaseService {
   final FirebaseFirestore db = FirebaseFirestore.instance;
 
-   Future<void> register(String uid, String name, String email, String imageUrl) async {
+   Future<void> register({required String uid, required String name, required String email, required String imageUrl}) async {
     try{  
-      return await db.collection(userCollection).doc(uid).set({
+      return await db
+      .collection(userCollection)
+      .doc(uid)
+      .set({
         "name": name,
         "email": email, 
         "image": imageUrl,
@@ -29,29 +36,52 @@ class DatabaseService {
     }
   }
 
-  Future<DocumentSnapshot>? getUser(String uid) {
+  Future<void> insertTokens({required String chatId, required Map<String, dynamic> data}) async {
+    try {
+      return await db
+      .collection(tokenCollection)
+      .doc(chatId)
+      .set(data);
+    } catch(e) {
+      debugPrint(e.toString());
+    }
+  }
+
+  Future<void> insertMembers({required String chatId, required Map<String, dynamic> data}) async {
+    try {
+      return await db
+      .collection(membersCollection)
+      .doc(chatId)
+      .set(data);
+    } catch(e) {
+      debugPrint(e.toString());
+    }
+  }
+
+
+  Future<DocumentSnapshot>? getUser({required String userId}) {
     try{
       return db
       .collection(userCollection)
-      .doc(uid)
+      .doc(userId)
       .get();
     } catch(e) {
       debugPrint(e.toString());
     }
   }
 
-  Stream<DocumentSnapshot>? getChatUserOnline(String uid) {
+  Stream<DocumentSnapshot>? getChatUserOnline({required String userId}) {
     try{
       return db
       .collection(userCollection)
-      .doc(uid)
+      .doc(userId)
       .snapshots();
     } catch(e) {
       debugPrint(e.toString());
     }
   }
 
-  Stream<DocumentSnapshot>? isUserTyping(String chatId) {
+  Stream<DocumentSnapshot>? isUserTyping({required String chatId}) {
     try{
       return db
       .collection(chatCollection)
@@ -62,30 +92,54 @@ class DatabaseService {
     }
   }
 
-  Stream<QuerySnapshot>? getChatsForUser(String userId) {
+  Stream<QuerySnapshot>? getChatsForUser({required String userId}) {
     try {
       return db
       .collection(chatCollection)
       .where('relations', arrayContains: userId)
-      .snapshots();
+      .snapshots()
+      .distinct();
     } catch(e) {
       debugPrint(e.toString());
     } 
   }
 
-  Stream<QuerySnapshot>? streamMessagesForChat(String chatId) {
+  Stream<QuerySnapshot>? streamMessagesForChat({required String chatId, required int limit}) {
     try {
       return db.collection(chatCollection)
       .doc(chatId)
       .collection(messageCollection)
       .orderBy("sent_time", descending: true)
+      .limitToLast(limit)
       .snapshots();
     } catch(e) {
       debugPrint(e.toString());
     }
   }
 
-  Future<QuerySnapshot>? getLastMessageForChat(String chatId) {
+  Stream<DocumentSnapshot>? getMembersChat({required String chatId}) {
+    try {
+      return db
+      .collection(membersCollection)
+      .doc(chatId)
+      .snapshots();
+    } catch(e) {
+      debugPrint(e.toString());
+    }
+  }
+
+  Stream<DocumentSnapshot>? getTokensChat({required String chatId}) {
+    try {
+      return db
+      .collection(tokenCollection)
+      .doc(chatId)
+      .snapshots();
+    } catch(e) {
+      debugPrint(e.toString());
+    }
+  }
+
+  Future<QuerySnapshot>? getLastMessageForChat({required String chatId}) {
     try {
       return db.collection(chatCollection)
       .doc(chatId)
@@ -98,7 +152,7 @@ class DatabaseService {
     }
   }
 
-  Future<QuerySnapshot>? getMessageCountForChat(String chatId) {
+  Future<QuerySnapshot>? getMessageCountForChat({required String chatId }) {
     try {
       return db
       .collection(chatCollection)
@@ -156,6 +210,20 @@ class DatabaseService {
       default:
         messageType = "";
     }
+    try {
+      db
+      .collection(readerCountIdsCollection)
+      .doc(msgId)
+      .set({
+        "chat_id": chatId,
+        "readerCountIds": isGroup ? userIdNotRead : [],
+        "is_read": message.isRead,
+        "is_group": isGroup ? true : false,
+        "receiver_id": message.receiverId
+      }); 
+    } catch(e) {
+      debugPrint(e.toString());
+    }
     try { 
       String msgId = const Uuid().v4();
       db.collection(chatCollection)
@@ -175,7 +243,10 @@ class DatabaseService {
         "readers": readers,
         "readerCountIds": isGroup ? userIdNotRead : []
       }).then((_) async {
-        DocumentSnapshot doc = await db.collection(chatCollection).doc(chatId).get();
+        DocumentSnapshot doc = await db
+        .collection(chatCollection)
+        .doc(chatId)
+        .get();
         Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
         List<dynamic> isActivity = data["is_activity"];
         int index = isActivity.indexWhere((el) => el["user_id"] == currentUserId && el["chat_id"] == chatId);
@@ -184,31 +255,6 @@ class DatabaseService {
           "is_activity": isActivity
         });
       });
-    } catch(e) {
-      debugPrint(e.toString());
-    }
-  }
-
-  Future<void> deleteMsgBulk({required String chatId, required String msgId, required bool softDelete}) async {
-    try {
-      if(softDelete) {
-        await db
-        .collection(chatCollection)
-        .doc(chatId)
-        .collection(messageCollection)
-        .doc(msgId)
-        .update({
-          "soft_delete": softDelete
-        });
-      } 
-      else {
-        await db
-        .collection(chatCollection)
-        .doc(chatId)
-        .collection(messageCollection)
-        .doc(msgId)
-        .delete();
-      }
     } catch(e) {
       debugPrint(e.toString());
     }
@@ -229,11 +275,11 @@ class DatabaseService {
     }
   }
 
-  Future<void> updateUserLastSeenTime(String uid) async {
+  Future<void> updateUserLastSeenTime({required String userId}) async {
     try {
       await db
       .collection(userCollection)
-      .doc(uid)
+      .doc(userId)
       .update({
         "last_active": DateTime.now().toUtc()
       });
@@ -242,18 +288,32 @@ class DatabaseService {
     }
   }
 
-  Future<void> updateMicroTask(String chatId) async {
+  Future<void> updateMicroTask({required String chatId}) async {
     try {
       await db
       .collection(chatCollection)
       .doc(chatId)
       .update({
-        "updated_at": DateTime.now().toUtc()
+        "updated_at": DateTime.now()
       });
     } catch(e) {
       debugPrint(e.toString());
     }
   }
+
+  Future<void> removeReaderCountIds({required String chatId}) async {
+    try {
+      QuerySnapshot<Map<String, dynamic>> qs =  await db
+      .collection(readerCountIdsCollection)
+      .where("chat_id", isEqualTo: chatId)
+      .get();
+      for (QueryDocumentSnapshot<Map<String, dynamic>> doc in qs.docs) {
+        doc.reference.delete();
+      }
+    } catch(e) {
+      debugPrint(e.toString());
+    }
+  } 
 
   Future<void> seeMsg({
     required String chatId, 
@@ -269,17 +329,28 @@ class DatabaseService {
       .doc(chatId)
       .collection(messageCollection)
       .get();
+      QuerySnapshot<Map<String, dynamic>> readerCountIds = await db
+      .collection(readerCountIdsCollection)
+      .where("chat_id", isEqualTo: chatId)
+      .get();
       try {
         if(isGroup) {
-          for (QueryDocumentSnapshot<Map<String, dynamic>> msgDoc in msg.docs) {
-            DocumentSnapshot<Map<String, dynamic>> msgList = await db
-            .collection(chatCollection)
-            .doc(chatId)
-            .collection(messageCollection)
-            .doc(msgDoc.id)
-            .get();
+          for (QueryDocumentSnapshot<Map<String, dynamic>> readerCountId in readerCountIds.docs) {
+            Map<String, dynamic> readerCountIdsObj = readerCountId.data(); 
+            bool isGroup = readerCountIdsObj["is_group"];
+            if(isGroup) {
+              readerCountId.reference.update({ 
+                "readerCountIds": FieldValue.arrayRemove([userId]),
+              });
+            } else {
+              readerCountId.reference.update({
+                "is_read": true
+              });
+            }
+          }
 
-            Map<String, dynamic> msgObj = msgList.data() as Map<String, dynamic>;
+          for (QueryDocumentSnapshot<Map<String, dynamic>> msg in msg.docs) {
+            Map<String, dynamic> msgObj = msg.data();
             List<dynamic> readers = msgObj["readers"];
             int indexReader = readers.indexWhere((el) => el["uid"] == userId);
 
@@ -287,12 +358,12 @@ class DatabaseService {
               if(indexReader != -1) { 
                 readers[indexReader]["seen"] = DateTime.now();
                 readers[indexReader]["is_read"] = true;
-                msgDoc.reference.update({
+                msg.reference.update({
                   "readerCountIds": FieldValue.arrayRemove([userId]),
                   "readers": readers               
                 }); // Update existing data
               } else {
-                msgDoc.reference.update({
+                msg.reference.update({
                   "readerCountIds": FieldValue.arrayRemove([userId]),
                   "readers": [{
                     "uid": readers[indexReader]["uid"],
@@ -304,14 +375,10 @@ class DatabaseService {
                 });
               }
             } 
-          }     
-          for (QueryDocumentSnapshot<Map<String, dynamic>> msgDoc in msg.docs) {
-            Map<String, dynamic> msgObj = msgDoc.data();
-            List<dynamic> readers = msgObj["readers"];
             if(readers.every((el) => el["is_read"] == true)) {
-              msgDoc.reference.update({"is_read": true});
+              msg.reference.update({"is_read": true});
             }
-          }    
+          }      
         } else {
           List<dynamic> data = msg.docs
           .where((el) => el["receiver_id"] == userId)
@@ -365,12 +432,29 @@ class DatabaseService {
           "token": await FirebaseMessaging.instance.getToken()
         });
       }).then((_) async {
+        QuerySnapshot<Map<String, dynamic>> tokens = await db
+        .collection(tokenCollection)
+        .get();
         QuerySnapshot<Map<String, dynamic>> onscreens = await db
         .collection(onScreenCollection)
         .get();
-        QuerySnapshot<Map<String, dynamic>> chats = await db
-        .collection(chatCollection)
+        QuerySnapshot<Map<String, dynamic>> members = await db
+        .collection(membersCollection)
         .get();
+
+        if(tokens.docs.isNotEmpty) {
+          for (QueryDocumentSnapshot<Map<String, dynamic>> tokenDoc in tokens.docs) {
+            List<dynamic> tokens = tokenDoc.data()["tokens"];
+            int index = tokens.indexWhere((el) => el["user_id"] == userId);
+            if(index != -1) {
+              tokens[index]["token"] = await FirebaseMessaging.instance.getToken();
+              tokenDoc.reference.update({
+                "tokens": tokens
+              }); // Update existing data
+            } 
+          }
+        }
+
         if(onscreens.docs.isNotEmpty) {
           for (QueryDocumentSnapshot<Map<String, dynamic>> screenDoc in onscreens.docs) {
             List<dynamic> onscreens = screenDoc.data()["on_screens"];
@@ -383,23 +467,20 @@ class DatabaseService {
             } 
           }
         }
-        if(chats.docs.isNotEmpty) {
-          for (QueryDocumentSnapshot<Map<String, dynamic>> chatDoc in chats.docs) {
-            Map<String, dynamic> group = chatDoc.data()["group"];
-            List<dynamic> tokens = group["tokens"];
-            int index = tokens.indexWhere((el) => el["user_id"] == userId);
+        
+        if(members.docs.isNotEmpty) {
+          for (QueryDocumentSnapshot<Map<String, dynamic>> memberDoc in members.docs) {
+            List<dynamic> members = memberDoc.data()["members"];
+            int index = members.indexWhere((el) => el["uid"] == userId);
             if(index != -1) {
-              tokens[index]["token"] = await FirebaseMessaging.instance.getToken();
-              chatDoc.reference.update({
-                "group": {
-                  "name": group["name"],
-                  "image": group["image"],
-                  "tokens": tokens
-                }
+              members[index]["isOnline"] = isOnline;
+              memberDoc.reference.update({
+                "members": members
               }); // Update existing data
             } 
           }
         }
+
       });
     } catch(e) {
       debugPrint(e.toString());
@@ -417,18 +498,7 @@ class DatabaseService {
     }
   }
 
-  Future<QuerySnapshot<Map<String, dynamic>>?> checkConversation(String userId) async {
-    try {
-      return await db
-      .collection(chatCollection)
-      .where("relations", arrayContains: userId)
-      .get();
-    } catch(e) {
-      debugPrint(e.toString());
-    }
-  }
-
-  Future<DocumentSnapshot?> checkChat(String chatId) async {
+  Future<DocumentSnapshot?> checkChat({required String chatId}) async {
     try {
       return await db
       .collection(chatCollection)
@@ -472,20 +542,41 @@ class DatabaseService {
     }
   }
 
-  Future<void> deleteChat(String chatId) async {
+  Future<void> deleteChat({ required String chatId}) async {
     WriteBatch batch = FirebaseFirestore.instance.batch();
     try {
-      QuerySnapshot<Map<String, dynamic>> chatData = await db.collection(chatCollection).doc(chatId).collection(messageCollection).get();
+      DocumentSnapshot<Map<String, dynamic>> chatData = await db.collection(chatCollection).doc(chatId).get();
       DocumentSnapshot<Map<String, dynamic>> onScreens = await db.collection(onScreenCollection).doc(chatId).get();
+      DocumentSnapshot<Map<String, dynamic>> members = await db.collection(membersCollection).doc(chatId).get();
+      DocumentSnapshot<Map<String, dynamic>> tokens = await db.collection(tokenCollection).doc(chatId).get();
       batch.delete(onScreens.reference);
-      for (QueryDocumentSnapshot<Map<String, dynamic>> item in chatData.docs) {
-        batch.delete(item.reference);
-      }
+      batch.delete(members.reference);
+      batch.delete(tokens.reference);
+      batch.delete(chatData.reference);
       batch.commit();
-      try {
-        await db.collection(chatCollection).doc(chatId).delete();
-      } catch(e) {
-        debugPrint(e.toString());
+    } catch(e) {
+      debugPrint(e.toString());
+    }
+  }
+
+  Future<void> deleteMsgBulk({required String chatId, required String msgId, required bool softDelete}) async {
+    try {
+      if(softDelete) {
+        await db
+        .collection(chatCollection)
+        .doc(chatId)
+        .collection(messageCollection)
+        .doc(msgId)
+        .update({
+          "soft_delete": softDelete
+        });
+      } else {
+        await db
+        .collection(chatCollection)
+        .doc(chatId)
+        .collection(messageCollection)
+        .doc(msgId)
+        .delete();
       }
     } catch(e) {
       debugPrint(e.toString());

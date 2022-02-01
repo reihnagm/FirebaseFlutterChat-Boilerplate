@@ -1,3 +1,5 @@
+import 'package:chatv28/utils/custom_themes.dart';
+import 'package:chatv28/utils/dimensions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:provider/provider.dart';
@@ -27,12 +29,19 @@ class _ChatsPageState extends State<ChatsPage> {
   late double deviceHeight;
   late double deviceWidth;
 
+  late AuthenticationProvider authenticationProvider;
+  late ChatsProvider chatsProvider;
+
   @override 
   void initState() {
     super.initState();
+    authenticationProvider = context.read<AuthenticationProvider>();
+    chatsProvider = context.read<ChatsProvider>();
     WidgetsBinding.instance!.addPostFrameCallback((_) {
       context.read<AuthenticationProvider>().initAuthStateChanges();
-      context.read<ChatsProvider>().getChats();
+      if(mounted) {
+        chatsProvider.getChats();
+      }
     });
   }
  
@@ -89,12 +98,14 @@ class _ChatsPageState extends State<ChatsPage> {
     List<Chat>? chats = context.watch<ChatsProvider>().chats;
     return Expanded(
       child: (() {
-        if(context.watch<ChatsProvider>().isLoading) {
+        if(chats == null) {
           return const Center(
-            child: SpinKitRotatingCircle(
-              duration: Duration(seconds: 3),
-              color: ColorResources.loaderBluePrimary,
-              size: 30.0,
+            child: SizedBox(
+              width: 16.0,
+              height: 16.0,
+              child: CircularProgressIndicator(
+                color: ColorResources.loaderBluePrimary,
+              ),
             ),
           );
         }
@@ -106,9 +117,10 @@ class _ChatsPageState extends State<ChatsPage> {
             } 
           );
         } else {
-          return const Center(
+          return Center(
             child: Text("No Chats Found.",
-              style: TextStyle(
+              style: dongleLight.copyWith(
+                fontSize: Dimensions.fontSizeDefault,
                 color: ColorResources.textBlackPrimary
               ),
             ),
@@ -176,7 +188,7 @@ class _ChatsPageState extends State<ChatsPage> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Text("Hapus semua pesan dengan ${chat.recepients.first.name} ?",
-                            style: const TextStyle(
+                            style: dongleLight.copyWith(
                               fontSize: 12.0,
                               fontWeight: FontWeight.bold,
                               color: ColorResources.black
@@ -201,9 +213,9 @@ class _ChatsPageState extends State<ChatsPage> {
                                         borderRadius: BorderRadius.circular(10.0),
                                         color: ColorResources.loaderBluePrimary,
                                       ),
-                                      child: const Center(
+                                      child: Center(
                                         child: Text("Batal",
-                                          style: TextStyle(
+                                          style: dongleLight.copyWith(
                                             fontSize: 12.0,
                                             color: ColorResources.white
                                           ),
@@ -227,9 +239,9 @@ class _ChatsPageState extends State<ChatsPage> {
                                         borderRadius: BorderRadius.circular(10.0),
                                         color: ColorResources.error,
                                       ),
-                                      child: const Center(
+                                      child: Center(
                                         child: Text("Ok",
-                                          style: TextStyle(
+                                          style: dongleLight.copyWith(
                                             fontSize: 12.0,
                                             color: ColorResources.white
                                           ),
@@ -261,8 +273,6 @@ class _ChatsPageState extends State<ChatsPage> {
           groupName: chat.groupData.name,
           groupImage: chat.groupData.image,
           isGroup: chat.group,
-          tokens: chat.group ? chat.groupData.tokens : [],
-          members: chat.group ? chat.members : [],
           receiverId: chat.recepients.first.uid!, 
           receiverName: chat.recepients.first.name!,
           receiverImage: chat.group ? "" : chat.recepients.first.image!,
@@ -270,7 +280,4 @@ class _ChatsPageState extends State<ChatsPage> {
       }
     );
   }
-
- 
-
 }

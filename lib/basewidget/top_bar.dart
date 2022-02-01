@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import 'package:chatv28/utils/custom_themes.dart';
 import 'package:chatv28/utils/color_resources.dart';
 
 class TopBar extends StatefulWidget {
@@ -19,7 +20,7 @@ class TopBar extends StatefulWidget {
     this.primaryAction,
     this.secondaryAction,
   })  : super(key: key) {
-    barTitleFontSize = 14.0.sp;
+    barTitleFontSize = 30.0.sp;
   }
 
   @override
@@ -59,10 +60,9 @@ class _TopBarState extends State<TopBar> {
     return Text(
       widget.barTitle!, 
       overflow: TextOverflow.ellipsis,
-      style: TextStyle(
+      style: dongleLight.copyWith(
         color: widget.barTitleColor,
         fontSize: widget.barTitleFontSize,
-        fontWeight: FontWeight.w700
       ),
     );
   }

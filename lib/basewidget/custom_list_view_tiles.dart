@@ -1,5 +1,6 @@
 // import 'package:chatv28/widgets/message_bubble.dart';
 
+import 'package:chatv28/utils/custom_themes.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
@@ -48,7 +49,6 @@ class CustomListViewTile extends StatelessWidget {
       : null,
       onTap: () => onTap(),
       onLongPress: () => onLongPress!(),
-      minVerticalPadding: height * 0.20,
       leading: RoundedImageNetworkWithStatusIndicator(
         imagePath: imagePath,
         isActive: isActive,
@@ -57,14 +57,14 @@ class CustomListViewTile extends StatelessWidget {
         size: height / 2,
       ),
       title: Text(title,
-        style: TextStyle(
+        style: dongleLight.copyWith(
           color: ColorResources.textBlackPrimary,
           fontSize: Dimensions.fontSizeSmall,
-          fontWeight: FontWeight.bold
+          height: 0.0
         ),
       ),
       subtitle: Text(subtitle,
-        style: TextStyle(
+        style: dongleLight.copyWith(
           color: ColorResources.textBlackPrimary,
           fontSize: Dimensions.fontSizeExtraSmall,
         ),
@@ -100,7 +100,6 @@ class CustomListViewUsersTile extends StatelessWidget {
     return ListTile(
       onTap: () => onTap(),
       onLongPress: () => onLongPress!(),
-      minVerticalPadding: height * 0.20,
       leading: RoundedImageNetworkWithStatusIndicator(
         imagePath: imagePath,
         isActive: isActive,
@@ -109,14 +108,14 @@ class CustomListViewUsersTile extends StatelessWidget {
         size: height / 2,
       ),
       title: Text(title,
-        style: TextStyle(
+        style: dongleLight.copyWith(
           color: ColorResources.textBlackPrimary,
           fontSize: Dimensions.fontSizeSmall,
-          fontWeight: FontWeight.bold
+          height: 0.0
         ),
       ),
       subtitle: Text(subtitle,
-        style: TextStyle(
+        style: dongleLight.copyWith(
           color: ColorResources.textBlackPrimary,
           fontSize: Dimensions.fontSizeExtraSmall,
         ),
@@ -285,10 +284,10 @@ class CustomListViewTileWithoutActivity extends StatelessWidget {
         group: group
       ),
       title: Text(title,
-        style: TextStyle(
+        style: dongleLight.copyWith(
           color: ColorResources.textBlackPrimary,
-          fontSize: Dimensions.fontSizeSmall,
-          fontWeight: FontWeight.bold
+          fontSize: Dimensions.fontSizeDefault,
+          height: 0.0
         )
       ),
       trailing: isRead
@@ -305,44 +304,41 @@ class CustomListViewTileWithoutActivity extends StatelessWidget {
           shape: BoxShape.circle
         ),
         child: Text((readCount).toString(),
-          style: TextStyle(
-            color: Colors.white,
+          style: dongleLight.copyWith(
+            color: ColorResources.white,
             fontSize: Dimensions.fontSizeExtraSmall
           ),
         ),
       ),
       subtitle: isActivity
         ? Row(
-          mainAxisSize: MainAxisSize.max,
-          mainAxisAlignment: MainAxisAlignment.start,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            // SpinKitThreeBounce(
-            //   color: ColorResources.loaderBluePrimary,
-            //   size: height * 0.10,
-            // )
+            mainAxisSize: MainAxisSize.max,
+            mainAxisAlignment: MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
             group 
             ? Text("$receiverName sedang menulis pesan...", 
-                softWrap: true,
-                style: TextStyle(
+                style: dongleLight.copyWith(
                   overflow: TextOverflow.ellipsis,
                   fontWeight: FontWeight.bold,
                   color: Colors.green[400],
-                  fontSize: Dimensions.fontSizeExtraSmall,
+                  height: 0.0,
+                  fontSize: Dimensions.fontSizeSmall,
                 )
               )
             : Text("Mengetik...", 
-                softWrap: true,
-                style: TextStyle(
+                style: dongleLight.copyWith(
                   overflow: TextOverflow.ellipsis,
                   fontWeight: FontWeight.bold,
                   color: Colors.green[400],
-                  fontSize: Dimensions.fontSizeExtraSmall,
+                  height: 0.0,
+                  fontSize: Dimensions.fontSizeSmall,
                 )
               ),
-          ],
-        ) 
+            ],
+          ) 
       : Row(
+        mainAxisSize: MainAxisSize.max,
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           if(group)
@@ -353,9 +349,7 @@ class CustomListViewTileWithoutActivity extends StatelessWidget {
                 children: [
                   if(subtitle.isNotEmpty)
                     Text(isOwnMessage ? "You" : subtitle, 
-                      softWrap: true,
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
+                      style: dongleLight.copyWith(
                         color: ColorResources.textBlackPrimary,
                         fontSize: Dimensions.fontSizeExtraSmall,
                       )
@@ -363,9 +357,9 @@ class CustomListViewTileWithoutActivity extends StatelessWidget {
                   const SizedBox(width: 5.0),
                   if(subtitle.isNotEmpty)
                     Text(":",
-                      style: TextStyle(
+                      style: dongleLight.copyWith(
                         color: ColorResources.textBlackPrimary,
-                        fontSize: Dimensions.fontSizeExtraSmall,
+                        fontSize: Dimensions.fontSizeSmall,
                       ),
                     ),
                   const SizedBox(width: 5.0),
@@ -373,13 +367,14 @@ class CustomListViewTileWithoutActivity extends StatelessWidget {
                     width: MediaQuery.of(context).size.width * 0.20,
                     child: messageType == "IMAGE" 
                     ? Row(
+                        mainAxisSize: MainAxisSize.max,
                         children: [
                           Text(contentGroup, 
-                            softWrap: true,
-                            style: TextStyle(
+                            style: dongleLight.copyWith(
                               overflow: TextOverflow.ellipsis,
                               color: ColorResources.textBlackPrimary,
                               fontSize: Dimensions.fontSizeExtraSmall,
+                              height: 0.0
                             )
                           ),
                           const SizedBox(width: 5.0),
@@ -390,8 +385,7 @@ class CustomListViewTileWithoutActivity extends StatelessWidget {
                         ],
                       )
                     : Text(contentGroup, 
-                        softWrap: true,
-                        style: TextStyle(
+                        style: dongleLight.copyWith(
                           overflow: TextOverflow.ellipsis,
                           color: ColorResources.textBlackPrimary,
                           fontSize: Dimensions.fontSizeExtraSmall,
@@ -401,63 +395,61 @@ class CustomListViewTileWithoutActivity extends StatelessWidget {
                 ],
               ) 
             ),
-          if(!group)
-            SizedBox(
-              width: MediaQuery.of(context).size.width * 0.50,
-              child: Row(
-                children: [
-                  subtitle.isNotEmpty ?
-                  isOwnMessage ?
-                    isRead
-                    ? const Icon(
-                        Ionicons.checkmark_done,
-                        size: 16.0,
-                        color: Colors.green,  
-                      )  
-                    : const Icon(
-                        Ionicons.checkmark_done,
-                        size: 16.0,
-                        color: Colors.black,  
-                      )
-                  : const SizedBox()
-                  : const SizedBox(),
-                  isOwnMessage 
-                  ? const SizedBox(width: 5.0)
-                  : const SizedBox(),
-                  ConstrainedBox(
-                    constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.40),
-                    child: messageType == "IMAGE" ?
-                      Row(
-                        children: [
-                          Text(subtitle, 
-                            softWrap: true,
-                            style: TextStyle(
-                              overflow: TextOverflow.ellipsis,
-                              color: ColorResources.textBlackPrimary,
-                              fontSize: Dimensions.fontSizeExtraSmall,
+            if(!group)
+              SizedBox(
+                width: MediaQuery.of(context).size.width * 0.50,
+                child: Row(
+                  children: [
+                    subtitle.isNotEmpty ?
+                    isOwnMessage ?
+                      isRead
+                      ? const Icon(
+                          Ionicons.checkmark_done,
+                          size: 16.0,
+                          color: Colors.green,  
+                        )  
+                      : const Icon(
+                          Ionicons.checkmark_done,
+                          size: 16.0,
+                          color: ColorResources.black,  
+                        )
+                    : const SizedBox()
+                    : const SizedBox(),
+                    isOwnMessage 
+                    ? const SizedBox(width: 5.0)
+                    : const SizedBox(),
+                    ConstrainedBox(
+                      constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.40),
+                      child: messageType == "IMAGE" 
+                      ? Row(
+                          children: [
+                            Text(subtitle, 
+                              style: dongleLight.copyWith(
+                                overflow: TextOverflow.ellipsis,
+                                color: ColorResources.textBlackPrimary,
+                                fontSize: Dimensions.fontSizeExtraSmall,
+                              )
+                            ),
+                            const SizedBox(width: 5.0),
+                            const Icon(
+                              Icons.image, 
+                              size: 12.0
                             )
-                          ),
-                          const SizedBox(width: 5.0),
-                          const Icon(
-                            Icons.image, 
-                            size: 12.0
-                          )
-                        ],
-                      )
-                    : Text(subtitle, 
-                      softWrap: true,
-                      style: TextStyle(
-                        overflow: TextOverflow.ellipsis,
-                        color: ColorResources.textBlackPrimary,
-                        fontSize: Dimensions.fontSizeExtraSmall,
-                      )
+                          ],
+                        )
+                      : Text(subtitle, 
+                        style: dongleLight.copyWith(
+                          overflow: TextOverflow.ellipsis,
+                          color: ColorResources.textBlackPrimary,
+                          fontSize: Dimensions.fontSizeExtraSmall,
+                        )
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-        ],
-      )    
+          ],
+        )    
     );
   }
 

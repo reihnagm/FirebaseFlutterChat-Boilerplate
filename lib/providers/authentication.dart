@@ -66,7 +66,7 @@ class AuthenticationProvider extends ChangeNotifier {
 
   Future<void> initAuthStateChanges() async {
     try {
-      DocumentSnapshot<Object?> snapshot = await databaseService.getUser(userId())!;
+      DocumentSnapshot<Object?> snapshot = await databaseService.getUser(userId: userId())!;
       Map<String, dynamic> userData = snapshot.data() as Map<String, dynamic>;
       chatUser = ChatUser.fromJson({
         "uid": userId(),
@@ -124,7 +124,7 @@ class AuthenticationProvider extends ChangeNotifier {
       setStateRegisterStatus(RegisterStatus.loading);
       await auth.createUserWithEmailAndPassword(email: email, password: password);
       String? imageUrl = await cloudStorageService.saveUserImageToStorage(auth.currentUser!.uid, image);
-      await databaseService.register(auth.currentUser!.uid, name, email, imageUrl!);
+      await databaseService.register(uid: auth.currentUser!.uid, name: name, email: email, imageUrl: imageUrl!);
       sharedPreferences.setBool("login", true);
       sharedPreferences.setString("userId", auth.currentUser!.uid);
       setStateRegisterStatus(RegisterStatus.loaded);

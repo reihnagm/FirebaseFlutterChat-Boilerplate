@@ -6,10 +6,9 @@ import 'package:keyboard_dismisser/keyboard_dismisser.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:chatv28/utils/custom_themes.dart';
 import 'package:chatv28/pages/chats_group_detail.dart';
 import 'package:chatv28/services/navigation.dart';
-import 'package:chatv28/models/chat_user.dart';
-import 'package:chatv28/models/chat.dart';
 import 'package:chatv28/basewidget/top_bar.dart';
 import 'package:chatv28/utils/color_resources.dart';
 import 'package:chatv28/utils/dimensions.dart';
@@ -29,8 +28,6 @@ class ChatPage extends StatefulWidget {
   final String receiverId;
   final String receiverName;
   final String receiverImage;
-  final List<Token> tokens;
-  final List<ChatUser> members;
   const ChatPage({ 
     required this.avatar,
     required this.title,
@@ -41,8 +38,6 @@ class ChatPage extends StatefulWidget {
     required this.receiverId,
     required this.receiverName,
     required this.receiverImage,
-    required this.tokens,
-    required this.members,
     Key? key 
   }) : super(key: key);
 
@@ -53,6 +48,7 @@ class ChatPage extends StatefulWidget {
 class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   late double deviceHeight;
   late double deviceWidth;
+  late ChatProvider chatProvider;
   
   @override 
   void didChangeAppLifecycleState(AppLifecycleState state) async {
@@ -89,17 +85,31 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   @override 
   void initState() {
     super.initState();
+    chatProvider = context.read<ChatProvider>();
+    chatProvider.clearMsgLimit();
     WidgetsBinding.instance!.addObserver(this);
     WidgetsBinding.instance!.addPostFrameCallback((_) {
-      context.read<ChatProvider>().listenToMessages();
-      context.read<ChatProvider>().joinScreen();
-      context.read<ChatProvider>().isUserTyping();
-      context.read<ChatProvider>().isScreenOn(receiverId: widget.receiverId);
-      context.read<ChatProvider>().isUserOnline(receiverId: widget.receiverId);
-      context.read<ChatProvider>().seeMsg(
-        receiverId: widget.receiverId, 
-        isGroup: widget.isGroup
-      );
+      if(mounted) {
+        chatProvider.listenToMessages();
+      }
+      if(mounted) {
+        chatProvider.joinScreen();
+      }
+      if(mounted) {
+        chatProvider.isUserTyping();
+      }
+      if(mounted) {
+        chatProvider.isScreenOn(receiverId: widget.receiverId);
+      }
+      if(mounted) {
+        chatProvider.isUserOnline(receiverId: widget.receiverId);
+      }
+      if(mounted) {
+        chatProvider.seeMsg(
+          receiverId: widget.receiverId, 
+          isGroup: widget.isGroup
+        );
+      }
     });
   }
 
@@ -146,7 +156,6 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                                     NavigationService().pushNav(context, ChatsGroupDetail(
                                       title: widget.groupName,
                                       imageUrl: widget.groupImage,
-                                      members: widget.members
                                     ));
                                   }
                                 },
@@ -169,28 +178,28 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                                       ),
                                       itemBuilder: (context) => [
                                         if(widget.isGroup)
-                                          const PopupMenuItem(
+                                          PopupMenuItem(
                                             child: Text("Info",
-                                              style: TextStyle(
-                                                fontSize: 14.0,
+                                              style: dongleLight.copyWith(
+                                                fontSize: Dimensions.fontSizeSmall,
                                                 color: ColorResources.textBlackPrimary
                                               ),
                                             ),
                                             value: "info-msg",
                                           ),
-                                        const PopupMenuItem(
+                                        PopupMenuItem(
                                           child: Text("Hapus Pesan Untuk Saya",
-                                            style: TextStyle(
-                                              fontSize: 14.0,
+                                            style: dongleLight.copyWith(
+                                              fontSize: Dimensions.fontSizeSmall,
                                               color: ColorResources.textBlackPrimary
                                             ),
                                           ),
                                           value: "delete-msg-bulk-soft",
                                         ),
-                                        const PopupMenuItem(
+                                        PopupMenuItem(
                                           child: Text("Hapus Untuk Semua Orang",
-                                            style: TextStyle(
-                                              fontSize: 14.0,
+                                            style: dongleLight.copyWith(
+                                              fontSize: Dimensions.fontSizeSmall,
                                               color: ColorResources.textBlackPrimary
                                             ),
                                           ),
@@ -217,8 +226,8 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                                                   height: 80.0,
                                                   child: Center(
                                                     child: Text("No Views",
-                                                      style: TextStyle(
-                                                        color: Colors.black,
+                                                      style: dongleLight.copyWith(
+                                                        color: ColorResources.black,
                                                         fontSize: Dimensions.fontSizeSmall
                                                       ),
                                                     ),
@@ -245,19 +254,19 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                                                               image: NetworkImage(readers[i].image),
                                                             ),
                                                             borderRadius: BorderRadius.circular(30.0),
-                                                            color: Colors.black,
+                                                            color: ColorResources.black,
                                                           ),
                                                         ),
                                                         title: Text(readers[i].name,
-                                                          style: TextStyle(
-                                                            fontSize: Dimensions.fontSizeDefault,
+                                                          style: dongleLight.copyWith(
+                                                            fontSize: Dimensions.fontSizeSmall,
                                                             color: ColorResources.textBlackPrimary
                                                           ),
                                                         ),
                                                         subtitle: Container(
                                                           margin: const EdgeInsets.only(top: 8.0),
                                                           child: Text(DateFormat.Hm().format(readers[i].seen),
-                                                            style: TextStyle(
+                                                            style: dongleLight.copyWith(
                                                               fontSize: Dimensions.fontSizeSmall,
                                                               color: ColorResources.grey
                                                             ),
@@ -330,82 +339,95 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   }
 
   Widget messageList() {
-    List<ChatMessage>? messages = context.watch<ChatProvider>().messages;
-    if(messages == null) {
-      return const Expanded(
-        child: Center(
-          child: SizedBox(
-            width: 16.0,
-            height: 16.0,
-            child: CircularProgressIndicator(
-              color: ColorResources.backgroundBlueSecondary,
+    return Consumer<ChatProvider>(
+      builder: (BuildContext context, ChatProvider chatProvider, Widget? child) {
+        if(chatProvider.messageStatus == MessageStatus.loading) {
+          return const Expanded(
+            child: Center(
+              child: SizedBox(
+                width: 16.0,
+                height: 16.0,
+                child: CircularProgressIndicator(
+                  color: ColorResources.backgroundBlueSecondary,
+                ),
+              ),
             ),
-          ),
-        ),
-      );
-    }  
-    if(messages.isNotEmpty) {
-      return Expanded(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 15.0, vertical: 15.0),
-          child: GroupedListView<ChatMessage, dynamic>(
-            physics: const ScrollPhysics(),
-            controller: context.read<ChatProvider>().scrollController,
-            elements: messages,
-            groupBy: (el) => DateFormat('dd MMM yyyy').format(el.sentTime),
-            groupSeparatorBuilder:(date) {
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  const Divider(),
-                  Container(
-                    padding: const EdgeInsets.all(8.0),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(10.0)
-                    ),
-                    child: Text(date,
-                      style: TextStyle(
-                        fontSize: Dimensions.fontSizeExtraSmall,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.grey
-                      )
-                    ),
+          );
+        }
+        if(chatProvider.messages!.isNotEmpty) {
+          return Expanded(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 15.0, vertical: 15.0),
+              child: NotificationListener(
+                onNotification: (ScrollNotification notification) {
+                  if (notification is ScrollEndNotification) {
+                    if (notification.metrics.pixels == notification.metrics.minScrollExtent) {
+                      chatProvider.listenToMessages(20);
+                    }
+                  } 
+                  return false;
+                },
+                child: GroupedListView<ChatMessage, dynamic>(
+                    physics: const ScrollPhysics(),
+                    controller: context.read<ChatProvider>().scrollController,
+                    elements: chatProvider.messages!,
+                    groupBy: (el) => DateFormat('dd MMM yyyy').format(el.sentTime),
+                    groupSeparatorBuilder:(date) {
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          const Divider(),
+                          Container(
+                            padding: const EdgeInsets.all(8.0),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(10.0)
+                            ),
+                            child: Text(date,
+                              style: dongleLight.copyWith(
+                                fontSize: Dimensions.fontSizeExtraSmall,
+                                fontWeight: FontWeight.bold,
+                                color: ColorResources.grey
+                              )
+                            ),
+                          ),
+                          const Divider(),
+                        ],
+                      );
+                    },
+                    order: GroupedListOrder.ASC,
+                    groupComparator: (value1, value2) => value2.compareTo(value1),
+                    shrinkWrap: true,
+                    reverse: true,
+                    indexedItemBuilder: (BuildContext context, ChatMessage items, int i) {
+                      ChatMessage chatMessage = chatProvider.messages![i];
+                      bool isOwnMessage = context.read<AuthenticationProvider>().userId() == chatMessage.senderId;
+                      return CustomChatListViewTile(
+                        deviceWidth: deviceWidth * 0.80, 
+                        deviceHeight: deviceHeight, 
+                        isGroup: widget.isGroup,
+                        isOwnMessage: isOwnMessage, 
+                        message: chatMessage, 
+                      );                
+                    },
                   ),
-                  const Divider(),
-                ],
-              );
-            },
-            order: GroupedListOrder.ASC,
-            groupComparator: (value1, value2) => value2.compareTo(value1),
-            shrinkWrap: true,
-            reverse: true,
-            indexedItemBuilder: (BuildContext context, ChatMessage items, int i) {
-              ChatMessage chatMessage = messages[i];
-              bool isOwnMessage = context.read<AuthenticationProvider>().userId() == chatMessage.senderId;
-              return CustomChatListViewTile(
-                deviceWidth: deviceWidth * 0.80, 
-                deviceHeight: deviceHeight, 
-                isGroup: widget.isGroup,
-                isOwnMessage: isOwnMessage, 
-                message: chatMessage, 
-              );                
-            },
-          ),
-        ),
-      );
-    } else {
-      return Expanded(
-        child: Align(
-          alignment: Alignment.center,
-          child: Text("Be the first to say Hi!",
-            style: TextStyle(
-              fontSize: Dimensions.fontSizeSmall,
-              color: ColorResources.textBlackPrimary
+              )
             ),
-          ),
-        ),
-      );
-    }
+          );
+        } else {
+          return Expanded(
+            child: Align(
+              alignment: Alignment.center,
+              child: Text("Be the first to say Hi!",
+                style: dongleLight.copyWith(
+                  fontSize: Dimensions.fontSizeSmall,
+                  color: ColorResources.textBlackPrimary
+                ),
+              ),
+            ),
+          );
+        }
+      },
+    );  
   }
 
   Widget sendMessageForm() {
@@ -430,7 +452,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     return SizedBox(
       width: deviceWidth * 0.60,
       child: CustomTextMessageFormField(
-        fillColor: Colors.transparent,
+        fillColor: ColorResources.transparent,
         label: Container(),
         controller: context.read<ChatProvider>().messageTextEditingController,
         focusNode: context.read<ChatProvider>().messageFocusNode,
@@ -458,8 +480,6 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
             receiverId: widget.receiverId,
             receiverName: widget.receiverName,
             receiverImage: widget.receiverImage,
-            tokens: widget.tokens,
-            members: widget.members,
             groupName: widget.groupName,
             groupImage: widget.groupImage,
             isGroup: widget.isGroup,
@@ -470,7 +490,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
       icon: const Icon(
         Icons.send,
         size: 20.0,
-        color: Colors.white,
+        color: ColorResources.white,
       )
     );
   }
@@ -489,8 +509,6 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
             receiverId: widget.receiverId,
             receiverName: widget.receiverName,
             receiverImage: widget.receiverImage,
-            members: widget.members,
-            tokens: widget.tokens,
             groupName: widget.groupName,
             groupImage: widget.groupImage,
             isGroup: widget.isGroup,

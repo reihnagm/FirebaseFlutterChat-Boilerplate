@@ -1,7 +1,8 @@
-import 'package:chatv28/pages/register.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import 'package:chatv28/pages/register.dart';
+import 'package:chatv28/utils/custom_themes.dart';
 import 'package:chatv28/utils/dimensions.dart';
 import 'package:chatv28/utils/color_resources.dart';
 import 'package:chatv28/providers/authentication.dart';
@@ -72,16 +73,16 @@ class _LoginPageState extends State<LoginPage> {
       height: deviceHeight * 0.10,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
-        children: const [
+        children: [
           Text("Chatify",
-            style: TextStyle(
+            style: dongleLight.copyWith(
               color: ColorResources.textBlackPrimary,
-              fontSize: 40.0,
+              fontSize: Dimensions.fontSizeOverLarge,
               fontWeight: FontWeight.bold
             ),
           ),
-          SizedBox(width: 3.0),
-          Icon(
+          const SizedBox(width: 3.0),
+          const Icon(
             Icons.chat_bubble_rounded,
             size: 20.0,  
           ),
@@ -117,8 +118,9 @@ class _LoginPageState extends State<LoginPage> {
               },
               regex: r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+", 
               hintText: "", 
-              label: const Text("E-mail Address",
-                style: TextStyle(
+              label: Text("E-mail Address",
+                style: dongleLight.copyWith(
+                  fontSize: Dimensions.fontSizeDefault,
                   color: ColorResources.textBlackPrimary
                 ),
               ),
@@ -133,8 +135,9 @@ class _LoginPageState extends State<LoginPage> {
               }, 
               regex: r".{8,}", 
               hintText: "", 
-              label: const Text("Password",
-                style: TextStyle(
+              label: Text("Password",
+                style: dongleLight.copyWith(
+                  fontSize: Dimensions.fontSizeDefault,
                   color: ColorResources.textBlackPrimary
                 ),
               ),
@@ -177,9 +180,9 @@ class _LoginPageState extends State<LoginPage> {
               child: Padding(
                 padding: const EdgeInsets.all(8.0),
                 child: Text("Register",
-                  style: TextStyle(
+                  style: dongleLight.copyWith(
                     color: ColorResources.textBlackPrimary,
-                    fontSize: Dimensions.fontSizeExtraSmall
+                    fontSize: Dimensions.fontSizeSmall,
                   ),
                 ),
               ),
