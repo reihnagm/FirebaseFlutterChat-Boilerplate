@@ -520,7 +520,6 @@ class ChatProvider extends ChangeNotifier {
   Future<void> deleteChat(BuildContext context, {required String receiverId}) async {
     try {
       await databaseService.deleteChat(chatId: chatId());
-      await databaseService.removeReaderCountIds(chatId: chatId());
     } catch(e) {
       debugPrint(e.toString());
     }

@@ -1,10 +1,10 @@
-import 'package:chatv28/utils/box_shadow.dart';
-import 'package:chatv28/utils/custom_themes.dart';
-import 'package:chatv28/utils/dimensions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 
-import 'package:chatv28/basewidget/button/bounce_button.dart';
+import 'package:chatv28/utils/box_shadow.dart';
+import 'package:chatv28/utils/custom_themes.dart';
+import 'package:chatv28/utils/dimensions.dart';
+import 'package:chatv28/basewidgets/button/bounce_button.dart';
 
 class CustomButton extends StatelessWidget {
   final Function() onTap;

@@ -8,7 +8,7 @@ import 'package:flutter/material.dart';
 class CloudStorageService {
   final FirebaseStorage storage = FirebaseStorage.instance;
 
-   Future<String?> saveGroupImageToStorage({
+  Future<String?> saveGroupImageToStorage({
      required String groupName, 
      required PlatformFile groupImage
     }) async {

@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:ionicons/ionicons.dart';
 
 import 'package:chatv28/utils/custom_themes.dart';
-import 'package:chatv28/basewidget/full_photo.dart';
+import 'package:chatv28/basewidgets/full_photo.dart';
 import 'package:chatv28/services/navigation.dart';
 import 'package:chatv28/utils/color_resources.dart';
 import 'package:chatv28/utils/dimensions.dart';

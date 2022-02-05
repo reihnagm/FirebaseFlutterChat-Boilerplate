@@ -1,6 +1,5 @@
 import 'dart:io';
 
-import 'package:chatv28/utils/utils.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -9,23 +8,24 @@ import 'package:image_cropper/image_cropper.dart';
 import 'package:provider/provider.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
+import 'package:chatv28/utils/utils.dart';
 import 'package:chatv28/utils/custom_themes.dart';
 import 'package:chatv28/services/media.dart';
 import 'package:chatv28/utils/dimensions.dart';
 import 'package:chatv28/utils/box_shadow.dart';
 import 'package:chatv28/utils/color_resources.dart';
-import 'package:chatv28/basewidget/animated_dialog/show_animate_dialog.dart';
-import 'package:chatv28/basewidget/signout_confirmation_dialog/signout_confirmation_dialog.dart';
+import 'package:chatv28/basewidgets/animated_dialog/show_animate_dialog.dart';
+import 'package:chatv28/basewidgets/signout_confirmation_dialog/signout_confirmation_dialog.dart';
 import 'package:chatv28/pages/chat.dart';
 import 'package:chatv28/services/database.dart';
 import 'package:chatv28/services/navigation.dart';
-import 'package:chatv28/basewidget/button/custom_button.dart';
+import 'package:chatv28/basewidgets/button/custom_button.dart';
 import 'package:chatv28/models/chat_user.dart';
 import 'package:chatv28/providers/authentication.dart';
 import 'package:chatv28/providers/user.dart';
-import 'package:chatv28/basewidget/custom_input_fields.dart';
-import 'package:chatv28/basewidget/custom_list_view_tiles.dart';
-import 'package:chatv28/basewidget/top_bar.dart';
+import 'package:chatv28/basewidgets/custom_input_fields.dart';
+import 'package:chatv28/basewidgets/custom_list_view_tiles.dart';
+import 'package:chatv28/basewidgets/top_bar.dart';
 
 class UsersPage extends StatefulWidget {
   const UsersPage({ Key? key }) : super(key: key);
@@ -415,6 +415,9 @@ class _UsersPageState extends State<UsersPage> {
                 onEditingComplete: (val) {
                   context.read<UserProvider>().getUsers(name: val);
                   FocusScope.of(context).unfocus();
+                },
+                onChange: (val) {
+                  context.read<UserProvider>().getUsers(name: val);
                 },
                 controller: searchFieldTextEditingController,
                 icon: Icons.search,

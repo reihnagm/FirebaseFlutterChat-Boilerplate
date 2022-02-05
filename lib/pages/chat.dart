@@ -9,13 +9,13 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:chatv28/utils/custom_themes.dart';
 import 'package:chatv28/pages/chats_group_detail.dart';
 import 'package:chatv28/services/navigation.dart';
-import 'package:chatv28/basewidget/top_bar.dart';
+import 'package:chatv28/basewidgets/top_bar.dart';
 import 'package:chatv28/utils/color_resources.dart';
 import 'package:chatv28/utils/dimensions.dart';
 import 'package:chatv28/models/chat_message.dart';
 import 'package:chatv28/providers/chat.dart';
-import 'package:chatv28/basewidget/custom_input_fields.dart';
-import 'package:chatv28/basewidget/custom_list_view_tiles.dart';
+import 'package:chatv28/basewidgets/custom_input_fields.dart';
+import 'package:chatv28/basewidgets/custom_list_view_tiles.dart';
 import 'package:chatv28/providers/authentication.dart';
 
 class ChatPage extends StatefulWidget {

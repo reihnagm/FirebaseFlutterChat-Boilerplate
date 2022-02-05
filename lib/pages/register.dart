@@ -1,12 +1,12 @@
 import 'dart:io';
 
-import 'package:chatv28/utils/custom_themes.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:provider/provider.dart';
 
-import 'package:chatv28/basewidget/snackbar/snackbar.dart';
+import 'package:chatv28/utils/custom_themes.dart';
+import 'package:chatv28/basewidgets/snackbar/snackbar.dart';
 import 'package:chatv28/services/cloud_storage.dart';
 import 'package:chatv28/services/media.dart';
 import 'package:chatv28/utils/box_shadow.dart';
@@ -15,8 +15,8 @@ import 'package:chatv28/utils/dimensions.dart';
 import 'package:chatv28/utils/color_resources.dart';
 import 'package:chatv28/providers/authentication.dart';
 import 'package:chatv28/services/navigation.dart';
-import 'package:chatv28/basewidget/button/custom_button.dart';
-import 'package:chatv28/basewidget/custom_input_fields.dart';
+import 'package:chatv28/basewidgets/button/custom_button.dart';
+import 'package:chatv28/basewidgets/custom_input_fields.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({ Key? key }) : super(key: key);

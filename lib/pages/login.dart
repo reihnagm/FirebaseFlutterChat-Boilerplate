@@ -7,8 +7,8 @@ import 'package:chatv28/utils/dimensions.dart';
 import 'package:chatv28/utils/color_resources.dart';
 import 'package:chatv28/providers/authentication.dart';
 import 'package:chatv28/services/navigation.dart';
-import 'package:chatv28/basewidget/button/custom_button.dart';
-import 'package:chatv28/basewidget/custom_input_fields.dart';
+import 'package:chatv28/basewidgets/button/custom_button.dart';
+import 'package:chatv28/basewidgets/custom_input_fields.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({ Key? key }) : super(key: key);

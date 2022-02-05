@@ -254,12 +254,14 @@ class CustomTextField extends StatelessWidget {
 
 class CustomTextSearchField extends StatelessWidget {
   final Function(String) onEditingComplete;
+  final Function(String) onChange;
   final String hintText; 
   final TextEditingController controller;
   final IconData? icon;
 
   const CustomTextSearchField({Key? key, 
     required this.onEditingComplete,
+    required this.onChange,
     required this.hintText,
     required this.controller,
     this.icon
@@ -270,6 +272,7 @@ class CustomTextSearchField extends StatelessWidget {
     return TextField(
       controller: controller,
       onEditingComplete: () => onEditingComplete(controller.value.text),
+      onChanged: onChange,
       cursorColor: ColorResources.textBlackPrimary,
       style: dongleLight.copyWith(
         fontSize: Dimensions.fontSizeSmall,
@@ -288,6 +291,7 @@ class CustomTextSearchField extends StatelessWidget {
         hintStyle: dongleLight.copyWith(
           fontSize: Dimensions.fontSizeSmall,
           color: ColorResources.textBlackPrimary,
+          height: 0.0
         ),
         prefixIcon: Icon(
           icon, 

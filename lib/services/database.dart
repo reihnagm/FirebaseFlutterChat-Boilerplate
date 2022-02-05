@@ -302,14 +302,16 @@ class DatabaseService {
   }
 
   Future<void> removeReaderCountIds({required String chatId}) async {
+    WriteBatch batch = FirebaseFirestore.instance.batch();
     try {
       QuerySnapshot<Map<String, dynamic>> qs =  await db
       .collection(readerCountIdsCollection)
       .where("chat_id", isEqualTo: chatId)
       .get();
       for (QueryDocumentSnapshot<Map<String, dynamic>> doc in qs.docs) {
-        doc.reference.delete();
+        batch.delete(doc.reference);
       }
+      batch.commit();
     } catch(e) {
       debugPrint(e.toString());
     }
@@ -432,6 +434,10 @@ class DatabaseService {
           "token": await FirebaseMessaging.instance.getToken()
         });
       });
+        DocumentSnapshot<Map<String, dynamic>> user = await db
+        .collection(userCollection)
+        .doc(userId)
+        .get();
         QuerySnapshot<Map<String, dynamic>> tokens = await db
         .collection(tokenCollection)
         .get();
@@ -441,6 +447,10 @@ class DatabaseService {
         QuerySnapshot<Map<String, dynamic>> members = await db
         .collection(membersCollection)
         .get();
+        
+        user.reference.update({
+         "last_active": DateTime.now().toUtc()
+        });
 
         if(tokens.docs.isNotEmpty) {
           for (QueryDocumentSnapshot<Map<String, dynamic>> tokenDoc in tokens.docs) {
@@ -544,14 +554,25 @@ class DatabaseService {
   Future<void> deleteChat({ required String chatId}) async {
     WriteBatch batch = FirebaseFirestore.instance.batch();
     try {
-      DocumentSnapshot<Map<String, dynamic>> chatData = await db.collection(chatCollection).doc(chatId).get();
+      QuerySnapshot<Map<String, dynamic>> messages = await db.collection(chatCollection).doc(chatId).collection(messageCollection).get();
+      DocumentSnapshot<Map<String, dynamic>> chats = await db.collection(chatCollection).doc(chatId).get();
       DocumentSnapshot<Map<String, dynamic>> onScreens = await db.collection(onScreenCollection).doc(chatId).get();
       DocumentSnapshot<Map<String, dynamic>> members = await db.collection(membersCollection).doc(chatId).get();
       DocumentSnapshot<Map<String, dynamic>> tokens = await db.collection(tokenCollection).doc(chatId).get();
+
+      QuerySnapshot<Map<String, dynamic>> readerCountIds = await db.collection(readerCountIdsCollection).where("chat_id", isEqualTo: chatId).get();
+
+      for (QueryDocumentSnapshot<Map<String, dynamic>> doc in readerCountIds.docs) {
+        batch.delete(doc.reference);
+      }
+      for (QueryDocumentSnapshot<Map<String, dynamic>> doc in messages.docs) {
+        batch.delete(doc.reference);
+      }
+
       batch.delete(onScreens.reference);
       batch.delete(members.reference);
       batch.delete(tokens.reference);
-      batch.delete(chatData.reference);
+      batch.delete(chats.reference);
       batch.commit();
     } catch(e) {
       debugPrint(e.toString());
