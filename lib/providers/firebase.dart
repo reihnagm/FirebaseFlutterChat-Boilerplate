@@ -90,9 +90,9 @@ class FirebaseProvider with ChangeNotifier {
   }
 
   Future<void> sendNotification({
-    required List<dynamic> registrationIds,
-    required List<dynamic> tokens,
-    required List<dynamic> members,
+    required List registrationIds,
+    required List tokens,
+    required List members,
     required String token, 
     required String title, 
     required String subtitle,

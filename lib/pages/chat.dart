@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:intl/intl.dart';
 
 import 'package:flutter/material.dart';
@@ -361,8 +363,8 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
               child: NotificationListener(
                 onNotification: (ScrollNotification notification) {
                   if (notification is ScrollEndNotification) {
-                    if (notification.metrics.pixels == notification.metrics.minScrollExtent) {
-                      chatProvider.listenToMessages(20);
+                    if (notification.metrics.pixels == notification.metrics.maxScrollExtent) {
+                      chatProvider.fetchMessages(20);
                     }
                   } 
                   return false;
@@ -398,15 +400,28 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                     groupComparator: (value1, value2) => value2.compareTo(value1),
                     shrinkWrap: true,
                     reverse: true,
-                    indexedItemBuilder: (BuildContext context, ChatMessage items, int i) {
-                      ChatMessage chatMessage = chatProvider.messages![i];
-                      bool isOwnMessage = context.read<AuthenticationProvider>().userId() == chatMessage.senderId;
+                    indexedItemBuilder: (BuildContext context, ChatMessage message, int i) {
+                      if(i == 0 && context.watch<ChatProvider>().fetchMessageStatus == FetchMessageStatus.loading) {
+                        return const Padding(
+                          padding: EdgeInsets.all(8.0),
+                          child: Center(
+                            child: SizedBox(
+                              width: 16.0,
+                              height: 16.0,
+                              child: CircularProgressIndicator(
+                                color: ColorResources.loaderBluePrimary,
+                              ),
+                            ),
+                          ),
+                        );
+                      }
+                      bool isOwnMessage = context.read<AuthenticationProvider>().userId() == message.senderId;
                       return CustomChatListViewTile(
                         deviceWidth: deviceWidth * 0.80, 
                         deviceHeight: deviceHeight, 
                         isGroup: widget.isGroup,
                         isOwnMessage: isOwnMessage, 
-                        message: chatMessage, 
+                        message: message, 
                       );                
                     },
                   ),

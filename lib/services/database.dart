@@ -27,7 +27,7 @@ class DatabaseService {
         "name": name,
         "email": email, 
         "image": imageUrl,
-        "last_active": DateTime.now().toUtc(),
+        "last_active": DateTime.now(),
         "isOnline": true,
         "token": await FirebaseMessaging.instance.getToken()
       });
@@ -110,7 +110,7 @@ class DatabaseService {
       .doc(chatId)
       .collection(messageCollection)
       .orderBy("sent_time", descending: true)
-      .limitToLast(limit)
+      .limit(limit)
       .snapshots();
     } catch(e) {
       debugPrint(e.toString());
@@ -196,10 +196,14 @@ class DatabaseService {
     required ChatMessage message, 
     required bool isGroup, 
     required String currentUserId,
-    required List<dynamic> readers,
-    required List<dynamic> userIdNotRead,
+    required List readers,
+    required List userIdNotRead,
   }) async {
     String messageType;
+    String msgId = const Uuid().v4();
+
+    WriteBatch batch = FirebaseFirestore.instance.batch();
+
     switch (message.type) {
       case MessageType.text: 
         messageType = "text";
@@ -210,51 +214,58 @@ class DatabaseService {
       default:
         messageType = "";
     }
-    try {
-      db
-      .collection(readerCountIdsCollection)
-      .doc(msgId)
-      .set({
-        "chat_id": chatId,
-        "readerCountIds": isGroup ? userIdNotRead : [],
-        "is_read": message.isRead,
-        "is_group": isGroup ? true : false,
-        "receiver_id": message.receiverId
-      }); 
-    } catch(e) {
-      debugPrint(e.toString());
-    }
+  
+    DocumentReference readerCountIdsDoc = db
+    .collection(readerCountIdsCollection)
+    .doc(msgId);
+    DocumentReference msgDoc = db.collection(chatCollection)
+    .doc(chatId)
+    .collection(messageCollection)
+    .doc(msgId);
+    DocumentSnapshot chatDoc = await db
+    .collection(chatCollection)
+    .doc(chatId)
+    .get();
+
+    batch.set(readerCountIdsDoc, {
+      "chat_id": chatId,
+      "readerCountIds": isGroup ? userIdNotRead : [],
+      "is_read": message.isRead,
+      "is_group": isGroup ? true : false,
+      "receiver_id": message.receiverId
+    });
+
+    batch.set(msgDoc, {
+      "uid": msgId,
+      "content": message.content,
+      "type": messageType,
+      "sender_id": message.senderId,
+      "sender_name": message.senderName,
+      "receiver_id": message.receiverId,
+      "is_read": isGroup ? false : message.isRead,
+      "is_group": isGroup ? true : false,
+      "soft_delete": message.softDelete,
+      "sent_time": message.sentTime,
+      "readers": readers,
+      "readerCountIds": isGroup ? userIdNotRead : []
+    });
     try { 
-      String msgId = const Uuid().v4();
-      db.collection(chatCollection)
-      .doc(chatId)
-      .collection(messageCollection)
-      .doc(msgId)
-      .set({
-        "uid": msgId,
-        "content": message.content,
-        "type": messageType,
-        "sender_id": message.senderId,
-        "sender_name": message.senderName,
-        "receiver_id": message.receiverId,
-        "is_read": isGroup ? false : message.isRead,
-        "soft_delete": message.softDelete,
-        "sent_time": message.sentTime,
-        "readers": readers,
-        "readerCountIds": isGroup ? userIdNotRead : []
-      }).then((_) async {
-        DocumentSnapshot doc = await db
-        .collection(chatCollection)
-        .doc(chatId)
-        .get();
-        Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
-        List<dynamic> isActivity = data["is_activity"];
-        int index = isActivity.indexWhere((el) => el["user_id"] == currentUserId && el["chat_id"] == chatId);
-        isActivity[index]["is_active"] = false;
-        doc.reference.update({
-          "is_activity": isActivity
+      Map<String, dynamic> data = chatDoc.data() as Map<String, dynamic>;
+      List members = data["members"];
+      List membersAssign = [];
+      for (var isActivity in members) {
+        membersAssign.add({
+          "chat_id": chatId,  
+          "is_active": false,
+          "is_group": isGroup,
+          "name": isActivity["name"],
+          "user_id": isActivity["uid"]
         });
-      });
+        batch.update(chatDoc.reference, {
+          "is_activity": membersAssign
+        });
+      }
+      batch.commit();
     } catch(e) {
       debugPrint(e.toString());
     }
@@ -264,7 +275,7 @@ class DatabaseService {
     try { 
       DocumentSnapshot doc = await db.collection(chatCollection).doc(chatId).get();
       Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
-      List<dynamic> isActivity = data["is_activity"];
+      List isActivity = data["is_activity"];
       int index = isActivity.indexWhere((el) => el["user_id"] == userId && el["chat_id"] == chatId);
       isActivity[index]["is_active"] = isActive;
       doc.reference.update({
@@ -281,7 +292,7 @@ class DatabaseService {
       .collection(userCollection)
       .doc(userId)
       .update({
-        "last_active": DateTime.now().toUtc()
+        "last_active": DateTime.now()
       });
     } catch(e) {
       debugPrint(e.toString());
@@ -353,7 +364,7 @@ class DatabaseService {
 
           for (QueryDocumentSnapshot<Map<String, dynamic>> msg in msg.docs) {
             Map<String, dynamic> msgObj = msg.data();
-            List<dynamic> readers = msgObj["readers"];
+            List readers = msgObj["readers"];
             int indexReader = readers.indexWhere((el) => el["uid"] == userId);
 
             if(msgObj["sender_id"] != userId) {         
@@ -382,13 +393,13 @@ class DatabaseService {
             }
           }      
         } else {
-          List<dynamic> data = msg.docs
+          List data = msg.docs
           .where((el) => el["receiver_id"] == userId)
           .where((el) => el["is_read"] == false).toList();
           if(data.isNotEmpty) {
             for (QueryDocumentSnapshot<Map<String, dynamic>> msgDoc in msg.docs) {
               Map<String, dynamic> msgObj = msgDoc.data();
-              List<dynamic> readers = msgObj["readers"];
+              List readers = msgObj["readers"];
               int readerIndex = readers.indexWhere((el) => el["uid"] == userId);
               if(readerIndex != -1) {
                 readers[readerIndex]["is_read"] = true;
@@ -449,12 +460,12 @@ class DatabaseService {
         .get();
         
         user.reference.update({
-         "last_active": DateTime.now().toUtc()
+         "last_active": DateTime.now()
         });
 
         if(tokens.docs.isNotEmpty) {
           for (QueryDocumentSnapshot<Map<String, dynamic>> tokenDoc in tokens.docs) {
-            List<dynamic> tokens = tokenDoc.data()["tokens"];
+            List tokens = tokenDoc.data()["tokens"];
             if(tokens.where((el) => el["user_id"] == userId).isNotEmpty) {
               int index = tokens.indexWhere((el) => el["user_id"] == userId);
               tokens[index]["token"] = await FirebaseMessaging.instance.getToken();
@@ -467,7 +478,7 @@ class DatabaseService {
 
         if(onscreens.docs.isNotEmpty) {
           for (QueryDocumentSnapshot<Map<String, dynamic>> screenDoc in onscreens.docs) {
-            List<dynamic> onscreens = screenDoc.data()["on_screens"];
+            List onscreens = screenDoc.data()["on_screens"];
             if(onscreens.where((el) => el["user_id"] == userId).isNotEmpty) {
               int index = onscreens.indexWhere((el) => el["user_id"] == userId);
               onscreens[index]["token"] = await FirebaseMessaging.instance.getToken();
@@ -480,11 +491,11 @@ class DatabaseService {
         
         if(members.docs.isNotEmpty) {
           for (QueryDocumentSnapshot<Map<String, dynamic>> memberDoc in members.docs) {
-            List<dynamic> members = memberDoc.data()["members"];
+            List members = memberDoc.data()["members"];
             if(members.where((el) => el["uid"] == userId).isNotEmpty) {
               int index = members.indexWhere((el) => el["uid"] == userId);
               members[index]["isOnline"] = isOnline;
-              members[index]["last_active"] = DateTime.now().toUtc();
+              members[index]["last_active"] = DateTime.now();
               memberDoc.reference.update({
                 "members": members
               });
@@ -608,7 +619,7 @@ class DatabaseService {
       DocumentSnapshot<Map<String, dynamic>> data = await db
       .collection(onScreenCollection)
       .doc(chatId).get();
-      List<dynamic> onScreens = data.data()!["on_screens"];
+      List onScreens = data.data()!["on_screens"];
       int index = onScreens.indexWhere((el) => el["user_id"] == userId);
       if(index != -1) {
         onScreens[index]["on"] = true;
@@ -635,7 +646,7 @@ class DatabaseService {
       .collection(onScreenCollection)
       .doc(chatId)
       .get();
-      List<dynamic> onScreens = data.data()!["on_screens"];
+      List onScreens = data.data()!["on_screens"];
       int index = onScreens.indexWhere((el) => el["user_id"] == userId);
       if(index != -1) {
         onScreens[index]["on"] = false;
@@ -657,5 +668,5 @@ class DatabaseService {
       debugPrint(e.toString());
     }
   }
-
+  
 }

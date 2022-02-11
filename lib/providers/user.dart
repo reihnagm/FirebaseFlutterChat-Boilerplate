@@ -83,10 +83,10 @@ class UserProvider extends ChangeNotifier {
     bool isGroup = selectedUsers.length > 1;
     if(isGroup) {
       String chatId = const Uuid().v4();
-      List<dynamic> tokens = [];
-      List<dynamic> isActivity = [];
-      List<dynamic> members = [];
-      List<dynamic> onScreens = [];
+      List tokens = [];
+      List isActivity = [];
+      List members = [];
+      List onScreens = [];
       setStateCreateGroupStatus(CreateGroupStatus.loading);
       for (String uid in relations) {
         try {

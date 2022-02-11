@@ -2,13 +2,13 @@ import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:chatv28/models/chat.dart';
 import 'package:chatv28/models/chat_message.dart';
 import 'package:chatv28/models/chat_user.dart';
 import 'package:chatv28/providers/authentication.dart';
 import 'package:chatv28/services/database.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 enum ChatsStatus { idle, loading, loaded, empty, error }
 enum MembersStatus { idle, loading, loaded, empty, error }
@@ -77,7 +77,7 @@ class ChatsProvider extends ChangeNotifier {
           List<ChatUser> members = [];
           List<IsActivity> isActivity = [];
           List<ChatMessage> messagesPersonalCount = [];
-          List<dynamic> messagesGroupCount = [];
+          List messagesGroupCount = [];
           List<ChatMessage> messages = [];
           GroupData groupData;
 
@@ -99,7 +99,7 @@ class ChatsProvider extends ChangeNotifier {
           if(readerCountIds!.docs.isNotEmpty) {
             for (QueryDocumentSnapshot<Object?> item in readerCountIds.docs) {
               Map<String, dynamic> readerDataCount = item.data() as Map<String, dynamic>;
-              List<dynamic> readerCountIds = readerDataCount["readerCountIds"];
+              List readerCountIds = readerDataCount["readerCountIds"];
               for (var readerCountId in readerCountIds) {
                 messagesGroupCount.add(readerCountId);
               }
@@ -148,7 +148,7 @@ class ChatsProvider extends ChangeNotifier {
         if(snapshot.exists) {
           Map<String, dynamic> item = snapshot.data() as Map<String, dynamic>; 
           List<ChatUser> membersAssign = [];
-          List<dynamic> membersList = item["members"];
+          List membersList = item["members"];
           for (var memberList in membersList) {
             membersAssign.add(ChatUser.fromJson(memberList));
           }
@@ -168,7 +168,7 @@ class ChatsProvider extends ChangeNotifier {
         if(snapshot.exists) {
           Map<String, dynamic> item = snapshot.data() as Map<String, dynamic>; 
           List<Token> tokensAssign = [];
-          List<dynamic> tokensList = item["tokens"];
+          List tokensList = item["tokens"];
           for (var tokenList in tokensList) {
             tokensAssign.add(Token.fromJson(tokenList));
           }

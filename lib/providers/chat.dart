@@ -1,5 +1,3 @@
-
-
 import 'dart:async';
 
 import 'package:uuid/uuid.dart';
@@ -10,6 +8,7 @@ import 'package:soundpool/soundpool.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
+import 'package:chatv28/services/debounce.dart';
 import 'package:chatv28/providers/chats.dart';
 import 'package:chatv28/providers/firebase.dart';
 import 'package:chatv28/models/chat.dart';
@@ -22,6 +21,7 @@ import 'package:chatv28/services/media.dart';
 import 'package:chatv28/services/navigation.dart';
 
 enum MessageStatus { idle, loading, loaded, empty, error }
+enum FetchMessageStatus { idle, loading, loaded, empty, error }
 
 class ChatProvider extends ChangeNotifier {
   final SharedPreferences sharedPreferences;
@@ -30,13 +30,15 @@ class ChatProvider extends ChangeNotifier {
   final CloudStorageService cloudStorageService;
   final MediaService mediaService;
   final NavigationService navigationService;
-
-  Timer? debounce;
-
-  List<dynamic> userIdNotRead = [];
+  final Debounce debounce = Debounce(const Duration(milliseconds: 100));
+ 
+  List userIdNotRead = [];
 
   MessageStatus _messageStatus = MessageStatus.idle;
   MessageStatus get messageStatus => _messageStatus;
+
+  FetchMessageStatus _fetchMessageStatus = FetchMessageStatus.idle;
+  FetchMessageStatus get fetchMessageStatus => _fetchMessageStatus;
 
   void clearMsgLimit() {
     limit = 0;
@@ -45,6 +47,11 @@ class ChatProvider extends ChangeNotifier {
 
   void setStateMessageStatus(MessageStatus messageStatus) { 
     _messageStatus = messageStatus;
+    Future.delayed(Duration.zero, () => notifyListeners());
+  }
+
+  void setStateFetchMessageStatus(FetchMessageStatus fetchMessageStatus) {
+    _fetchMessageStatus = fetchMessageStatus;
     Future.delayed(Duration.zero, () => notifyListeners());
   }
 
@@ -96,6 +103,10 @@ class ChatProvider extends ChangeNotifier {
     messageTextEditingController = TextEditingController();
   }
 
+  void addStreamMsg(String val) {
+    Future.delayed(Duration.zero, () => notifyListeners());
+  }
+
   void clearSelectedMessages() {
     selectedMessages = [];
     Future.delayed(Duration.zero, () => notifyListeners());
@@ -117,18 +128,38 @@ class ChatProvider extends ChangeNotifier {
     Future.delayed(Duration.zero, () => notifyListeners());
   }
 
-  void listenToMessages([int limitParam = 20]) {
-    limit += limitParam;
-    Future.delayed(Duration.zero, () => notifyListeners());
+  void listenToMessages() {
+
     try { 
-      messageStream = databaseService.streamMessagesForChat(chatId: chatId(), limit: limit)!.listen((snapshot) {
+      messageStream = databaseService.streamMessagesForChat(chatId: chatId(), limit: 10)!.listen((snapshot) {
         _messages = [];
         List<ChatMessage> messages = snapshot.docs.map((m) {
           Map<String, dynamic> messageData = m.data() as Map<String, dynamic>;
           return ChatMessage.fromJSON(messageData);
         }).toList();
+        _messages!.addAll(messages);
         setStateMessageStatus(MessageStatus.loaded);
-        _messages = messages;
+      });
+    } catch(e) {
+      debugPrint(e.toString());
+    }
+  }
+
+  void fetchMessages(int limitParam) {
+    limit += limitParam;
+    Future.delayed(Duration.zero, () => notifyListeners());
+    try { 
+      setStateFetchMessageStatus(FetchMessageStatus.loading);
+      messageStream = databaseService.streamMessagesForChat(chatId: chatId(), limit: limit)!.listen((snapshot) {
+        List<ChatMessage> messages = snapshot.docs.map((m) {
+          Map<String, dynamic> messageData = m.data() as Map<String, dynamic>;
+          return ChatMessage.fromJSON(messageData);
+        }).toList();
+        Future.delayed(const Duration(seconds: 1), () {
+          _messages = messages; 
+          setStateFetchMessageStatus(FetchMessageStatus.loaded);
+        });
+        setStateMessageStatus(MessageStatus.loaded);
       });
     } catch(e) {
       debugPrint(e.toString());
@@ -136,12 +167,11 @@ class ChatProvider extends ChangeNotifier {
   }
 
   void onChangeMsg(BuildContext context, String val) {
-    if (debounce?.isActive ?? false) debounce!.cancel();
-    debounce = Timer(const Duration(milliseconds: 1), () {
+    debounce(() {
       toggleIsActivity(
         isActive: val.isNotEmpty ? true : false,
       );
-    });
+    });   
     Future.delayed(Duration.zero, () => notifyListeners());
   }
 
@@ -161,8 +191,8 @@ class ChatProvider extends ChangeNotifier {
     List<Token> tokens = context.read<ChatsProvider>().tokens;
     String msgId = const Uuid().v4();
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    List<dynamic> readers = [];
-    List<dynamic> registrationIds = [];
+    List readers = [];
+    List registrationIds = [];
     for (Token token in tokens) {
       if(token.userId != authenticationProvider.userId()) {
         registrationIds.add(token.token);
@@ -297,8 +327,8 @@ class ChatProvider extends ChangeNotifier {
       String msgId = const Uuid().v4();
       PlatformFile? file = await mediaService.pickImageFromLibrary();
       if(file != null) { 
-        List<dynamic> readers = [];
-        List<dynamic> registrationIds = [];
+        List readers = [];
+        List registrationIds = [];
         for (Token token in tokens) {
           registrationIds.add(token.token);
         }
@@ -560,23 +590,19 @@ class ChatProvider extends ChangeNotifier {
     }
   }
 
-  void isUserTyping() async {
+  Future<void> isUserTyping() async {
     try {
       isUserTypingStream = databaseService.isUserTyping(chatId: chatId())!.listen((snapshot) {
         if(snapshot.exists) {
           Map<String, dynamic> data = snapshot.data() as Map<String, dynamic>;
-          if(data.isNotEmpty) {
-            List<dynamic> isActivities = data["is_activity"];
-            int index = isActivities.indexWhere((el) => el["is_active"] == true);
-            if(index != -1) {
-              if(isActivities[index]["is_active"] == true && isActivities[index]["user_id"] != userId()) {
-                isTyping = isActivities[index]["is_group"] == true
-                ? "${isActivities[index]["name"]} sedang menulis pesan..."
-                : "Mengetik...";
-              } 
-            } else {
-              isTyping = "";
-            }
+          List isActivities = data["is_activity"];
+          int index = isActivities.indexWhere((el) => el["is_active"] == true && el["user_id"] != userId());
+          if(index != -1) {
+            isTyping = isActivities[index]["is_group"] == true
+            ? "${isActivities[index]["name"]} sedang menulis pesan..."
+            : "Mengetik...";
+          } else {
+            isTyping = "";
           }
           Future.delayed(Duration.zero, () => notifyListeners());
         }

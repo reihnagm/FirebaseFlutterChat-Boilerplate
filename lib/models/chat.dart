@@ -65,7 +65,7 @@ class Chat {
   final GroupData groupData;
   final List<ChatUser> members;
   final List<ChatMessage> messages; 
-  final List<dynamic> messagesGroupCount;
+  final List messagesGroupCount;
   final List<ChatMessage> messagesPersonalCount; 
   late final List<ChatUser> peopleJoinedGroup;
   late final List<ChatUser> recepients;

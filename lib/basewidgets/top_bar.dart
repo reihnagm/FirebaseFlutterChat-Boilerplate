@@ -153,14 +153,14 @@ class _TopBarChatState extends State<TopBarChat> {
       },
       placeholder: (BuildContext context, String url) {
         return const CircleAvatar(
-          backgroundImage: AssetImage('assets/images/default-image.png'),
+          backgroundImage: AssetImage('assets/images/default_image.png'),
           backgroundColor: ColorResources.white,
           radius: 20,
         );
       },
       errorWidget: (BuildContext context, String url, dynamic error) {
         return const CircleAvatar(
-          backgroundImage: AssetImage('assets/images/default-image.png'),
+          backgroundImage: AssetImage('assets/images/default_image.png'),
           backgroundColor: ColorResources.white,
           radius: 20,
         );

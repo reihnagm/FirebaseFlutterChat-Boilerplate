@@ -272,7 +272,7 @@ class ImageMessageBubble extends StatelessWidget {
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(15.0),
                     image: const DecorationImage(
-                      image: AssetImage('assets/images/default-image.png'),
+                      image: AssetImage('assets/images/default_image.png'),
                       fit: BoxFit.cover
                     )
                   ),
@@ -285,7 +285,7 @@ class ImageMessageBubble extends StatelessWidget {
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(15.0),
                     image: const DecorationImage(
-                      image: AssetImage('assets/images/default-image.png'),
+                      image: AssetImage('assets/images/default_image.png'),
                       fit: BoxFit.cover
                     )
                   ),
