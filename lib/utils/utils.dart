@@ -5,7 +5,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
-class Utils {  
+class Helper {  
   static Future<String> downloadFile(String url, String filename) async {
     final directory = await getApplicationDocumentsDirectory();
     final filePath = '${directory.path}/$filename';

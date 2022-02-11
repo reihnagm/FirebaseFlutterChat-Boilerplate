@@ -67,19 +67,23 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
         receiverId: widget.receiverId,
         isGroup: widget.isGroup,
       );
+      context.read<ChatProvider>().leaveScreen();
       context.read<ChatProvider>().isUserOnline(receiverId: widget.receiverId);
     }
     if(state == AppLifecycleState.inactive) {
       debugPrint("=== APP INACTIVE ===");
       context.read<ChatProvider>().leaveScreen();
+      context.read<ChatProvider>().isUserOnline(receiverId: widget.receiverId);
       context.read<ChatProvider>().toggleIsActivity(isActive: false);
     }
     if(state == AppLifecycleState.paused) {
       debugPrint("=== APP PAUSED ===");
+      context.read<ChatProvider>().isUserOnline(receiverId: widget.receiverId);
       context.read<ChatProvider>().leaveScreen();
     }
     if(state == AppLifecycleState.detached) {
       debugPrint("=== APP CLOSED ===");
+      context.read<ChatProvider>().isUserOnline(receiverId: widget.receiverId);
       context.read<ChatProvider>().leaveScreen();
     }
   }
@@ -397,7 +401,8 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                       );
                     },
                     order: GroupedListOrder.ASC,
-                    groupComparator: (value1, value2) => value2.compareTo(value1),
+                    groupComparator: (el1, el2) => el2.compareTo(el1),
+                    itemComparator: (el1, el2) => el2.sentTime.compareTo(el1.sentTime),
                     shrinkWrap: true,
                     reverse: true,
                     indexedItemBuilder: (BuildContext context, ChatMessage message, int i) {

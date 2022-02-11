@@ -64,7 +64,7 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Utils.initSharedPreferences();
+  await Helper.initSharedPreferences();
   await Firebase.initializeApp();
   await core.init();
   // AwesomeNotifications().initialize(
@@ -220,9 +220,9 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
   void listenOnClickNotifications() => NotificationService.onNotifications.stream.listen(onClickedNotification);
 
   void onClickedNotification(String? payload) async {
-    Map<String, dynamic> notifications = json.decode(Utils.prefs!.getString("notifications")!);
+    Map<String, dynamic> notifications = json.decode(Helper.prefs!.getString("notifications")!);
     if(payload == "chat.detail") {
-      Utils.prefs!.setString("chatId", notifications["chatId"]);
+      Helper.prefs!.setString("chatId", notifications["chatId"]);
       GlobalVariable.navState.currentState!.pushAndRemoveUntil(
         PageRouteBuilder(pageBuilder: (BuildContext context, Animation<double> animation, Animation<double> secondaryAnimation) {
           return ChatPage(

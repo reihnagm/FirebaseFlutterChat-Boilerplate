@@ -253,13 +253,13 @@ class DatabaseService {
       Map<String, dynamic> data = chatDoc.data() as Map<String, dynamic>;
       List members = data["members"];
       List membersAssign = [];
-      for (var isActivity in members) {
+      for (var member in members) {
         membersAssign.add({
           "chat_id": chatId,  
           "is_active": false,
           "is_group": isGroup,
-          "name": isActivity["name"],
-          "user_id": isActivity["uid"]
+          "name": member["name"],
+          "user_id": member["uid"]
         });
         batch.update(chatDoc.reference, {
           "is_activity": membersAssign

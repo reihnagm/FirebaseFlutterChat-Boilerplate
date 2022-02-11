@@ -474,7 +474,7 @@ class _UsersPageState extends State<UsersPage> {
                   }
                   DocumentSnapshot? createChatDoc = await databaseService.checkChat(chatId: groupChatId);
                   if(createChatDoc!.exists) {  
-                    Utils.prefs!.setString("chatId", createChatDoc.id);
+                    Helper.prefs!.setString("chatId", createChatDoc.id);
                     NavigationService().pushNav(context, ChatPage(
                       avatar: users[i].image!,
                       title: users[i].name!,
@@ -487,7 +487,7 @@ class _UsersPageState extends State<UsersPage> {
                       isGroup: false,
                     ));
                   } else {
-                    Utils.prefs!.setString("chatId", groupChatId);
+                    Helper.prefs!.setString("chatId", groupChatId);
                     NavigationService().pushNav(context, ChatPage(
                       avatar: users[i].image!,
                       title: users[i].name!,

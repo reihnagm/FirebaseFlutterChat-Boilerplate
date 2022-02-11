@@ -30,7 +30,9 @@ class NotificationService {
       //   contentTitle: '2 messages',
       //   summaryText: 'janedoe@example.com'
       // ),
-      largeIcon: payload["isGroup"] == "true" ? null : FilePathAndroidBitmap(await Utils.downloadFile(payload["avatar"], 'largeIcon')),
+      largeIcon: payload["isGroup"] == "true" 
+      ? null 
+      : FilePathAndroidBitmap(await Helper.downloadFile(payload["avatar"], 'largeIcon')),
     );
     AndroidNotificationDetails androidNotificationDetailsWithImage = AndroidNotificationDetails(
       'chat',
@@ -44,11 +46,13 @@ class NotificationService {
       styleInformation: payload["type"] == "image" 
       ? BigPictureStyleInformation(
           FilePathAndroidBitmap(
-            await Utils.downloadFile(payload["bodyImg"], 'bigPicture')
+            await Helper.downloadFile(payload["bodyImg"], 'bigPicture')
           ),
         ) 
       : null,
-      largeIcon: payload["isGroup"] == "true" ? null : FilePathAndroidBitmap(await Utils.downloadFile(payload["avatar"], 'largeIcon')),
+      largeIcon: payload["isGroup"] == "true" 
+      ? null 
+      : FilePathAndroidBitmap(await Helper.downloadFile(payload["avatar"], 'largeIcon')),
     );
     return NotificationDetails(
       android: payload["type"] == "image" 

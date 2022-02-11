@@ -129,7 +129,6 @@ class ChatProvider extends ChangeNotifier {
   }
 
   void listenToMessages() {
-
     try { 
       messageStream = databaseService.streamMessagesForChat(chatId: chatId(), limit: 10)!.listen((snapshot) {
         _messages = [];
