@@ -337,6 +337,8 @@ class DatabaseService {
     required bool isGroup
   }) async {
     try {
+      WriteBatch batch = FirebaseFirestore.instance.batch();
+      
       QuerySnapshot<Map<String, dynamic>> msg = await db
       .collection(chatCollection)
       .doc(chatId)
@@ -346,82 +348,68 @@ class DatabaseService {
       .collection(readerCountIdsCollection)
       .where("chat_id", isEqualTo: chatId)
       .get();
+      
       try {
         if(isGroup) {
           for (QueryDocumentSnapshot<Map<String, dynamic>> readerCountId in readerCountIds.docs) {
             Map<String, dynamic> readerCountIdsObj = readerCountId.data(); 
             bool isGroup = readerCountIdsObj["is_group"];
             if(isGroup) {
-              readerCountId.reference.update({ 
+              batch.update(readerCountId.reference, {
                 "readerCountIds": FieldValue.arrayRemove([userId]),
               });
             } else {
-              readerCountId.reference.update({
+              batch.update(readerCountId.reference, {
                 "is_read": true
               });
             }
           }
-
-          for (QueryDocumentSnapshot<Map<String, dynamic>> msg in msg.docs) {
-            Map<String, dynamic> msgObj = msg.data();
+          for (QueryDocumentSnapshot<Map<String, dynamic>> msgList in msg.docs) {
+            Map<String, dynamic> msgObj = msgList.data();
             List readers = msgObj["readers"];
             int indexReader = readers.indexWhere((el) => el["uid"] == userId);
-
             if(msgObj["sender_id"] != userId) {         
               if(indexReader != -1) { 
                 readers[indexReader]["seen"] = DateTime.now();
                 readers[indexReader]["is_read"] = true;
-                msg.reference.update({
+                batch.update(msgList.reference, {
                   "readerCountIds": FieldValue.arrayRemove([userId]),
-                  "readers": readers               
-                }); // Update existing data
-              } else {
-                msg.reference.update({
-                  "readerCountIds": FieldValue.arrayRemove([userId]),
-                  "readers": [{
-                    "uid": readers[indexReader]["uid"],
-                    "name": readers[indexReader]["name"],
-                    "image": readers[indexReader]["image"],
-                    "is_read": readers[indexReader]["is_read"],
-                    "seen": readers[indexReader]["seen"]
-                  }]
+                  "readers": readers          
                 });
-              }
+              } 
             } 
+          }
+          for (QueryDocumentSnapshot<Map<String, dynamic>> msgDoc in msg.docs) {
+            Map<String, dynamic> msgObj = msgDoc.data();
+            List readers = msgObj["readers"];
             if(readers.every((el) => el["is_read"] == true)) {
-              msg.reference.update({"is_read": true});
+              batch.update(msgDoc.reference, {"is_read": true});
             }
-          }      
+          }    
         } else {
-          List data = msg.docs
-          .where((el) => el["receiver_id"] == userId)
-          .where((el) => el["is_read"] == false).toList();
-          if(data.isNotEmpty) {
-            for (QueryDocumentSnapshot<Map<String, dynamic>> msgDoc in msg.docs) {
-              Map<String, dynamic> msgObj = msgDoc.data();
-              List readers = msgObj["readers"];
-              int readerIndex = readers.indexWhere((el) => el["uid"] == userId);
-              if(readerIndex != -1) {
-                readers[readerIndex]["is_read"] = true;
-                msgDoc.reference.update({
-                  "is_read": true,
-                  "readers": readers                      
-                }); // Update existing data
-              } else {
-                msgDoc.reference.update({
-                  "is_read": true,
-                  "readers": [{
-                    "uid": readers[readerIndex]["uid"],
-                    "name": readers[readerIndex]["name"],
-                    "image": readers[readerIndex]["image"],
-                    "is_read": readers[readerIndex]["is_read"],
-                    "seen": readers[readerIndex]["seen"],
-                  }]
-                });
-              }
+          for (QueryDocumentSnapshot<Map<String, dynamic>> readerCountId in readerCountIds.docs) {
+            Map<String, dynamic> readerCountIdsObj = readerCountId.data(); 
+            String receiverIdObj = readerCountIdsObj["receiver_id"];
+            if(receiverIdObj == userId) {
+              batch.update(readerCountId.reference, {
+                "is_read": true
+              });
             }
           }
+          for (QueryDocumentSnapshot<Map<String, dynamic>> msgDoc in msg.docs) {
+            Map<String, dynamic> msgObj = msgDoc.data();
+            List readers = msgObj["readers"];
+            int readerIndex = readers.indexWhere((el) => el["uid"] == userId && el["is_read"] == false);
+            if(readerIndex != -1) {
+              readers[readerIndex]["is_read"] = true;
+              batch.update(msgDoc.reference, {
+                "is_read": true,
+                "readers": readers     
+              });
+            }
+          } 
         }
+        batch.commit();
       } catch(e) {
         debugPrint(e.toString());
       }
@@ -431,6 +419,7 @@ class DatabaseService {
   }
 
   Future<void> updateUserOnlineToken(String userId, bool isOnline) async {
+    WriteBatch batch = FirebaseFirestore.instance.batch();
     try {
       db
       .collection(userCollection)
@@ -445,63 +434,66 @@ class DatabaseService {
           "token": await FirebaseMessaging.instance.getToken()
         });
       });
-        DocumentSnapshot<Map<String, dynamic>> user = await db
-        .collection(userCollection)
-        .doc(userId)
-        .get();
-        QuerySnapshot<Map<String, dynamic>> tokens = await db
-        .collection(tokenCollection)
-        .get();
-        QuerySnapshot<Map<String, dynamic>> onscreens = await db
-        .collection(onScreenCollection)
-        .get();
-        QuerySnapshot<Map<String, dynamic>> members = await db
-        .collection(membersCollection)
-        .get();
-        
-        user.reference.update({
-         "last_active": DateTime.now()
-        });
+     
+      DocumentSnapshot<Map<String, dynamic>> user = await db
+      .collection(userCollection)
+      .doc(userId)
+      .get();
+      QuerySnapshot<Map<String, dynamic>> tokens = await db
+      .collection(tokenCollection)
+      .get();
+      QuerySnapshot<Map<String, dynamic>> onscreens = await db
+      .collection(onScreenCollection)
+      .get();
+      QuerySnapshot<Map<String, dynamic>> members = await db
+      .collection(membersCollection)
+      .get();
 
-        if(tokens.docs.isNotEmpty) {
-          for (QueryDocumentSnapshot<Map<String, dynamic>> tokenDoc in tokens.docs) {
-            List tokens = tokenDoc.data()["tokens"];
-            if(tokens.where((el) => el["user_id"] == userId).isNotEmpty) {
-              int index = tokens.indexWhere((el) => el["user_id"] == userId);
-              tokens[index]["token"] = await FirebaseMessaging.instance.getToken();
-              tokenDoc.reference.update({
-                "tokens": tokens
-              }); 
-            }
+      batch.update(user.reference, {
+        "last_active": DateTime.now()
+      });
+      
+      if(tokens.docs.isNotEmpty) {
+        for (QueryDocumentSnapshot<Map<String, dynamic>> tokenDoc in tokens.docs) {
+          List tokens = tokenDoc.data()["tokens"];
+          int index = tokens.indexWhere((el) => el["user_id"] == userId);
+          if(index != -1) {
+            tokens[index]["token"] = await FirebaseMessaging.instance.getToken();
+            batch.update(tokenDoc.reference, {
+              "tokens": tokens
+            });
           }
         }
+      }
 
-        if(onscreens.docs.isNotEmpty) {
-          for (QueryDocumentSnapshot<Map<String, dynamic>> screenDoc in onscreens.docs) {
-            List onscreens = screenDoc.data()["on_screens"];
-            if(onscreens.where((el) => el["user_id"] == userId).isNotEmpty) {
-              int index = onscreens.indexWhere((el) => el["user_id"] == userId);
-              onscreens[index]["token"] = await FirebaseMessaging.instance.getToken();
-              screenDoc.reference.update({
-                "on_screens": onscreens
-              });
-            }
+      if(onscreens.docs.isNotEmpty) {
+        for (QueryDocumentSnapshot<Map<String, dynamic>> screenDoc in onscreens.docs) {
+          List onscreens = screenDoc.data()["on_screens"];
+          int index = onscreens.indexWhere((el) => el["user_id"] == userId);
+          if(index != -1) {
+            onscreens[index]["token"] = await FirebaseMessaging.instance.getToken();
+            batch.update(screenDoc.reference, {
+              "on_screens": onscreens
+            });
           }
         }
+      }
         
-        if(members.docs.isNotEmpty) {
-          for (QueryDocumentSnapshot<Map<String, dynamic>> memberDoc in members.docs) {
-            List members = memberDoc.data()["members"];
-            if(members.where((el) => el["uid"] == userId).isNotEmpty) {
-              int index = members.indexWhere((el) => el["uid"] == userId);
-              members[index]["isOnline"] = isOnline;
-              members[index]["last_active"] = DateTime.now();
-              memberDoc.reference.update({
-                "members": members
-              });
-            }
+      if(members.docs.isNotEmpty) {
+        for (QueryDocumentSnapshot<Map<String, dynamic>> memberDoc in members.docs) {
+          List members = memberDoc.data()["members"];
+          int index = members.indexWhere((el) => el["uid"] == userId);
+          if(index != -1) {
+            members[index]["isOnline"] = isOnline;
+            members[index]["last_active"] = DateTime.now();
+            batch.update(memberDoc.reference, {
+              "members": members
+            });
           }
         }
+      }
+
+      batch.commit();
     } catch(e) {
       debugPrint(e.toString());
     }
@@ -615,6 +607,7 @@ class DatabaseService {
   }
 
   Future<void> joinScreen({required String chatId, required String userId}) async {
+    WriteBatch batch = FirebaseFirestore.instance.batch();
     try {
       DocumentSnapshot<Map<String, dynamic>> data = await db
       .collection(onScreenCollection)
@@ -624,23 +617,26 @@ class DatabaseService {
       if(index != -1) {
         onScreens[index]["on"] = true;
         onScreens[index]["token"] = await FirebaseMessaging.instance.getToken();
-        data.reference.update({
+        batch.update(data.reference, {
           "on_screens": onScreens
-        }); // Update existing data
+        });
       } else {
-        data.reference.update({
-          "on_screens": [{
-            "user_id": userId,
+        batch.update(data.reference, {
+          "on_screens": FieldValue.arrayUnion([{
             "on": true,
-          }]
+            "token": await FirebaseMessaging.instance.getToken(),
+            "user_id": userId 
+          }])
         });
       }
+      batch.commit();
     } catch(e) {
       debugPrint(e.toString());
     }
   }
 
   Future<void> leaveScreen({required String chatId, required String userId}) async {
+    WriteBatch batch = FirebaseFirestore.instance.batch();
     try {
       DocumentSnapshot<Map<String, dynamic>> data = await db
       .collection(onScreenCollection)
@@ -650,20 +646,12 @@ class DatabaseService {
       int index = onScreens.indexWhere((el) => el["user_id"] == userId);
       if(index != -1) {
         onScreens[index]["on"] = false;
-        data.reference.update({
+        batch.update(data.reference, {
           "id": chatId,
           "on_screens": onScreens
-        }); // Update existing data
-      } else {
-        data.reference.update({
-          "id": chatId,
-          "on_screens": {
-            "on": onScreens[index]["on"],
-            "token": onScreens[index]["token"],
-            "user_id": onScreens[index]["user_id"] 
-          }
-        }); 
+        });
       }
+      batch.commit();
     } catch(e) {
       debugPrint(e.toString());
     }
