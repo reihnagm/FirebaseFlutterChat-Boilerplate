@@ -6,12 +6,12 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 
-import 'package:chatv28/providers/authentication.dart';
-import 'package:chatv28/utils/custom_themes.dart';
-import 'package:chatv28/providers/chats.dart';
-import 'package:chatv28/basewidgets/rounded_image.dart';
-import 'package:chatv28/utils/dimensions.dart';
-import 'package:chatv28/utils/color_resources.dart';
+import 'package:chat/providers/authentication.dart';
+import 'package:chat/utils/custom_themes.dart';
+import 'package:chat/providers/chats.dart';
+import 'package:chat/basewidgets/rounded_image.dart';
+import 'package:chat/utils/dimensions.dart';
+import 'package:chat/utils/color_resources.dart';
 
 class ChatsGroupDetail extends StatefulWidget {
   final String title;

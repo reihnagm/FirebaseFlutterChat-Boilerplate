@@ -5,19 +5,19 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 
-import 'package:chatv28/services/cloud_storage.dart';
-import 'package:chatv28/models/chat_user.dart';
-import 'package:chatv28/providers/authentication.dart';
-import 'package:chatv28/services/database.dart';
-import 'package:chatv28/services/navigation.dart';
+import 'package:chat/services/cloud_storage.dart';
+import 'package:chat/models/chat_user.dart';
+import 'package:chat/providers/authentication.dart';
+import 'package:chat/services/database.dart';
+import 'package:chat/services/navigation.dart';
 
 enum CreateGroupStatus { idle, loading, loaded, empty, error }
 
 class UserProvider extends ChangeNotifier {
-  final AuthenticationProvider authenticationProvider;
-  final DatabaseService databaseService;
-  final NavigationService navigationService;
-  final CloudStorageService cloudStorageService;
+  final AuthenticationProvider ap;
+  final DatabaseService ds;
+  final NavigationService ns;
+  final CloudStorageService css;
 
   CreateGroupStatus _createGroupStatus = CreateGroupStatus.idle;
   CreateGroupStatus get createGroupStatus => _createGroupStatus;
@@ -25,7 +25,7 @@ class UserProvider extends ChangeNotifier {
   List<ChatUser>? _users;
   List<ChatUser>? get users {
     if(_users != null) {
-      return _users!.where((el) => el.uid != authenticationProvider.userId()).toList();
+      return _users!.where((el) => el.uid != ap.userId()).toList();
     }
     return null;
   }
@@ -33,10 +33,10 @@ class UserProvider extends ChangeNotifier {
   List<ChatUser> selectedUsers = [];
 
   UserProvider({
-    required this.authenticationProvider, 
-    required this.databaseService, 
-    required this.navigationService,
-    required this.cloudStorageService  
+    required this.ap, 
+    required this.ds, 
+    required this.ns,
+    required this.css  
   });
 
   void setStateCreateGroupStatus(CreateGroupStatus createGroupStatus) {
@@ -50,9 +50,9 @@ class UserProvider extends ChangeNotifier {
     super.dispose();
   }
   
-  void getUsers({String? name}) async {
+  Future<void> getUsers({String? name}) async {
     try {
-      usersStream = databaseService.getUsers(name: name).listen((event) async {
+      usersStream = ds.getUsers(name: name).listen((event) async {
         _users = event.docs.map((d) {
           Map<String, dynamic> data = d.data() as Map<String, dynamic>;
           data["uid"] = d.id;
@@ -79,7 +79,7 @@ class UserProvider extends ChangeNotifier {
     PlatformFile? groupImage,
   }) async {
     List<String> relations = selectedUsers.map((user) => user.uid!).toSet().toList();
-    relations.add(authenticationProvider.userId());
+    relations.add(ap.userId());
     bool isGroup = selectedUsers.length > 1;
     if(isGroup) {
       String chatId = const Uuid().v4();
@@ -90,7 +90,7 @@ class UserProvider extends ChangeNotifier {
       setStateCreateGroupStatus(CreateGroupStatus.loading);
       for (String uid in relations) {
         try {
-          DocumentSnapshot<Object?> snapshot = await databaseService.getUser(userId: uid)!;
+          DocumentSnapshot<Object?> snapshot = await ds.getUser(userId: uid);
           Map<String, dynamic> userData = snapshot.data() as Map<String, dynamic>;
           members.add({
             "uid": snapshot.id,
@@ -117,49 +117,49 @@ class UserProvider extends ChangeNotifier {
             "token": userData["token"],
             "on": false 
           });
-        } catch(e) {
+        } catch(e, stacktrace) {
           setStateCreateGroupStatus(CreateGroupStatus.error);
-          debugPrint(e.toString());
+          debugPrint(stacktrace.toString());
         }
       }
       try {
-        await databaseService.createOnScreens(chatId, {
+        await ds.createOnScreens(chatId, {
           "id": chatId,
           "on_screens": onScreens,
         });
-      } catch(e) {
-        debugPrint(e.toString());
+      } catch(e, stacktrace) {
+        debugPrint(stacktrace.toString());
       }
       try {
-        await databaseService.insertTokens(
+        await ds.insertTokens(
           chatId: chatId, 
           data: {
             "tokens": tokens,
           }
         );
-      } catch(e) {
-        debugPrint(e.toString());
+      } catch(e, stacktrace) {
+        debugPrint(stacktrace.toString());
       }
       try {
-        await databaseService.insertMembers(
+        await ds.insertMembers(
           chatId: chatId, 
           data: {
             "members": members
           }
         );
-      } catch(e) {
-        debugPrint(e.toString());
+      } catch(e, stacktrace) {
+        debugPrint(stacktrace.toString());
       }
       try {
         String? groupImageUrl = "";
         if(groupImage != null) {
-          groupImageUrl = await cloudStorageService.saveGroupImageToStorage(
+          groupImageUrl = await css.saveGroupImageToStorage(
             groupName: groupName, 
             groupImage: groupImage
           );
         }
         try {
-          await databaseService.createChatGroup(chatId, {
+          await ds.createChatGroup(chatId, {
             "is_group": isGroup,
             "is_activity": isActivity,
             "group": {
@@ -173,13 +173,13 @@ class UserProvider extends ChangeNotifier {
           });
           Navigator.of(context).pop();
           setStateCreateGroupStatus(CreateGroupStatus.loaded);
-        } catch(e) {
+        } catch(e, stacktrace) {
           setStateCreateGroupStatus(CreateGroupStatus.error);
-          debugPrint(e.toString());
+          debugPrint(stacktrace.toString());
         }
-      } catch(e) {
+      } catch(e, stacktrace) {
         setStateCreateGroupStatus(CreateGroupStatus.error);
-        debugPrint(e.toString());
+        debugPrint(stacktrace.toString());
       }
     }
   }

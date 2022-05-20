@@ -4,20 +4,20 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'package:chatv28/models/chat.dart';
-import 'package:chatv28/models/chat_message.dart';
-import 'package:chatv28/models/chat_user.dart';
-import 'package:chatv28/providers/authentication.dart';
-import 'package:chatv28/services/database.dart';
+import 'package:chat/models/chat.dart';
+import 'package:chat/models/chat_message.dart';
+import 'package:chat/models/chat_user.dart';
+import 'package:chat/providers/authentication.dart';
+import 'package:chat/services/database.dart';
 
 enum ChatsStatus { idle, loading, loaded, empty, error }
 enum MembersStatus { idle, loading, loaded, empty, error }
 enum TokensStatus { idle, loading, loaded, empty, error }
 
 class ChatsProvider extends ChangeNotifier {
-  final SharedPreferences sharedPreferences;
-  final AuthenticationProvider authenticationProvider;
-  final DatabaseService databaseService;
+  final SharedPreferences sp;
+  final AuthenticationProvider ap;
+  final DatabaseService ds;
 
   ChatsStatus _chatsStatus = ChatsStatus.loading;
   ChatsStatus get chatStatus => _chatsStatus;
@@ -53,9 +53,9 @@ class ChatsProvider extends ChangeNotifier {
   }
 
   ChatsProvider({
-    required this.sharedPreferences,
-    required this.authenticationProvider,
-    required this.databaseService
+    required this.sp,
+    required this.ap,
+    required this.ds
   });
 
   List<Chat>? chats;
@@ -71,9 +71,9 @@ class ChatsProvider extends ChangeNotifier {
 
   void getChats() {
     try {      
-      chatsStream = databaseService.getChatsForUser(userId: authenticationProvider.userId())!.listen((snapshot) async {
+      chatsStream = ds.getChatsForUser(userId: ap.userId()).listen((snapshot) async {
         chats = await Future.wait(snapshot.docs.map((doc) async {
-          Map<String, dynamic> chatData = doc.data() as Map<String, dynamic>;
+          Map<String, dynamic> chatData = doc.data();
           List<ChatUser> members = [];
           List<IsActivity> isActivity = [];
           List<ChatMessage> messagesPersonalCount = [];
@@ -91,12 +91,12 @@ class ChatsProvider extends ChangeNotifier {
             members.add(ChatUser.fromJson(member));
           }
         
-          QuerySnapshot<Object?>? readerCountIds = await databaseService.readerCountIds(
+          QuerySnapshot<Object?>? readerCountIds = await ds.readerCountIds(
             chatId: doc.id, 
-            userId: authenticationProvider.userId()
+            userId: ap.userId()
           );
 
-          if(readerCountIds!.docs.isNotEmpty) {
+          if(readerCountIds.docs.isNotEmpty) {
             for (QueryDocumentSnapshot<Object?> item in readerCountIds.docs) {
               Map<String, dynamic> readerDataCount = item.data() as Map<String, dynamic>;
               List readerCountIds = readerDataCount["readerCountIds"];
@@ -106,23 +106,23 @@ class ChatsProvider extends ChangeNotifier {
             }
           }
           
-          QuerySnapshot<Object?>? messageCount = await databaseService.getMessageCountForChat(chatId: doc.id);
-          if(messageCount!.docs.isNotEmpty) {
+          QuerySnapshot<Object?>? messageCount = await ds.getMessageCountForChat(chatId: doc.id);
+          if(messageCount.docs.isNotEmpty) {
             for (QueryDocumentSnapshot<Object?> item in messageCount.docs) {
               Map<String, dynamic> messageDataCount = item.data() as Map<String, dynamic>;
               ChatMessage message = ChatMessage.fromJSON(messageDataCount);
               messagesPersonalCount.add(message);
             }
           }
-          QuerySnapshot<Object?>? lastMessage = await databaseService.getLastMessageForChat(chatId: doc.id);
-          if(lastMessage!.docs.isNotEmpty) {
+          QuerySnapshot<Object?>? lastMessage = await ds.getLastMessageForChat(chatId: doc.id);
+          if(lastMessage.docs.isNotEmpty) {
             Map<String, dynamic> messageData = lastMessage.docs.first.data() as Map<String, dynamic>;
             ChatMessage message = ChatMessage.fromJSON(messageData);
             messages.add(message);
           } 
           return Chat(
             uid: doc.id, 
-            currentUserId: authenticationProvider.userId(), 
+            currentUserId: ap.userId(), 
             activity: isActivity, 
             group: chatData["is_group"], 
             groupData: GroupData(
@@ -142,9 +142,9 @@ class ChatsProvider extends ChangeNotifier {
     }
   }
 
-  void getMembersByChat() async {
+  void getMembersByChat() {
     try {
-      membersStream = databaseService.getMembersChat(chatId: chatId())!.listen((snapshot) {
+      membersStream = ds.getMembersChat(chatId: chatId()).listen((snapshot) {
         if(snapshot.exists) {
           Map<String, dynamic> item = snapshot.data() as Map<String, dynamic>; 
           List<ChatUser> membersAssign = [];
@@ -157,39 +157,35 @@ class ChatsProvider extends ChangeNotifier {
           setStateMembersStatus(MembersStatus.loaded);
         }
       });
-    } catch(e) {
-      debugPrint(e.toString());
+    } catch(e, stacktrace) {
+      debugPrint(stacktrace.toString());
     }
   }
 
-  void getTokensByChat() {
+  Future<void> getTokensByChat() async {
     try {
-      tokensStream = databaseService.getTokensChat(chatId: chatId())!.listen((snapshot) {
-        if(snapshot.exists) {
-          Map<String, dynamic> item = snapshot.data() as Map<String, dynamic>; 
-          List<Token> tokensAssign = [];
-          List tokensList = item["tokens"];
-          for (var tokenList in tokensList) {
-            tokensAssign.add(Token.fromJson(tokenList));
-          }
-          _tokens = tokensAssign;
-          setStateTokensStatus(TokensStatus.loaded);
-        }
-      });
-    } catch(e) {
-      debugPrint(e.toString());
+      DocumentSnapshot? doc = await ds.getTokensChat(chatId: chatId());    
+      Map<String, dynamic> item = doc.data() as Map<String, dynamic>;
+      List<Token> tokensAssign = [];
+      List tokens = item["tokens"];
+      for (dynamic token in tokens) {
+        tokensAssign.add(Token.fromJson(token));
+      }
+      _tokens = tokensAssign;
+      setStateTokensStatus(TokensStatus.loaded);
+    } catch(e, stacktrace) {
+      debugPrint(stacktrace.toString());
     }
   }
-
 
   Future<void> deleteChat({required String chatId}) async {
     try {
-      await databaseService.deleteChat(chatId: chatId);
-    } catch(e) {
-      debugPrint(e.toString());
+      await ds.deleteChat(chatId: chatId);
+    } catch(e, stacktrace) {
+      debugPrint(stacktrace.toString());
     }
   }
 
-  String chatId() => sharedPreferences.getString("chatId") ?? "";
+  String chatId() => sp.getString("chatId") ?? "";
 
 }

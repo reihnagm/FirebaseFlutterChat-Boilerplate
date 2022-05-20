@@ -6,18 +6,22 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
 
-import 'package:chatv28/utils/utils.dart';
-import 'package:chatv28/pages/chat.dart';
-import 'package:chatv28/services/notification.dart';
-import 'package:chatv28/utils/global.dart';
-import 'package:chatv28/utils/color_resources.dart';
-import 'package:chatv28/providers/authentication.dart';
-import 'package:chatv28/providers/firebase.dart';
-import 'package:chatv28/services/database.dart';
-import 'package:chatv28/providers.dart';
-import 'package:chatv28/pages/splash.dart';
-import 'package:chatv28/pages/home.dart';
-import 'package:chatv28/pages/login.dart';
+import 'package:chat/utils/utils.dart';
+import 'package:chat/utils/global.dart';
+import 'package:chat/utils/color_resources.dart';
+
+import 'package:chat/views/screens/chat/chat.dart';
+
+import 'package:chat/services/database.dart';
+import 'package:chat/services/notification.dart';
+
+import 'package:chat/providers/authentication.dart';
+import 'package:chat/providers/firebase.dart';
+import 'package:chat/providers.dart';
+
+import 'package:chat/views/screens/splash.dart';
+import 'package:chat/views/screens/home.dart';
+import 'package:chat/views/screens/auth/login.dart';
 
 import 'container.dart' as core;
 
@@ -134,7 +138,7 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance!.addObserver(this);
+    WidgetsBinding.instance?.addObserver(this);
     // AwesomeNotifications().isNotificationAllowed().then((isAllowed) {
     //   if(!isAllowed) {
     //     showDialog(
@@ -171,7 +175,7 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
     //     );
     //   }
     // }); 
-    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+    // FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
     context.read<FirebaseProvider>().setupInteractedMessage();
     context.read<FirebaseProvider>().listenNotification(context);
     NotificationService.init();
@@ -217,6 +221,16 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
     //   });
   }
 
+  @override
+  void dispose() {
+    // AwesomeNotifications().actionSink.close();
+    // AwesomeNotifications().createdSink.close();
+    // AwesomeNotifications().displayedSink.close();
+    // AwesomeNotifications().dispose();
+    super.dispose();
+    WidgetsBinding.instance?.removeObserver(this);
+  }
+
   void listenOnClickNotifications() => NotificationService.onNotifications.stream.listen(onClickedNotification);
 
   void onClickedNotification(String? payload) async {
@@ -246,51 +260,44 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
             position: animation.drive(tween),
             child: child,
           );
-        }),
-        (Route<dynamic> route) => route.isFirst
+        }), (Route<dynamic> route) => route.isFirst
       );
     }
   }
 
-  @override
-  void dispose() {
-    // AwesomeNotifications().actionSink.close();
-    // AwesomeNotifications().createdSink.close();
-    // AwesomeNotifications().displayedSink.close();
-    // AwesomeNotifications().dispose();
-    WidgetsBinding.instance!.removeObserver(this);
-    super.dispose();
-  }
-
   @override 
   Widget build(BuildContext context) {
-    return ScreenUtilInit(
-      designSize: const Size(360.0, 640.0),
-      builder: () {
-        return MaterialApp(
-          title: "Chatify",
-          debugShowCheckedModeBanner: false,
-          theme: ThemeData(
-            backgroundColor: ColorResources.backgroundColor,
-            scaffoldBackgroundColor: ColorResources.backgroundColor,
-            bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-              backgroundColor: ColorResources.backgroundBlueSecondary,
-            )
-          ),
-          navigatorKey: GlobalVariable.navState,
-          home: Builder(
-            builder: (BuildContext context) {
-              return Consumer<AuthenticationProvider>(
-                builder: (BuildContext context, AuthenticationProvider authenticationProvider, Widget? child) {
-                  if(authenticationProvider.isLogin()) {
-                    return const HomePage(currentPage: 0);
-                  } else {
-                    return const LoginPage();
-                  }
+    return Builder(
+      builder: (context) {
+        return ScreenUtilInit(
+          designSize: const Size(360.0, 640.0),
+          builder: (BuildContext context, Widget? child) {
+            return MaterialApp(
+              title: "Chatify",
+              debugShowCheckedModeBanner: false,
+              theme: ThemeData(
+                backgroundColor: ColorResources.backgroundColor,
+                scaffoldBackgroundColor: ColorResources.backgroundColor,
+                bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+                  backgroundColor: ColorResources.backgroundBlueSecondary,
+                )
+              ),
+              navigatorKey: GlobalVariable.navState,
+              home: Builder(
+                builder: (BuildContext context) {
+                  return Consumer<AuthenticationProvider>(
+                    builder: (BuildContext context, AuthenticationProvider authenticationProvider, Widget? child) {
+                      if(authenticationProvider.isLogin()) {
+                        return const HomePage(currentPage: 0);
+                      } else {
+                        return const LoginPage();
+                      }
+                    },
+                  );
                 },
-              );
-            },
-          )
+              )
+            );
+          },
         );
       },
     );

@@ -1,5 +1,5 @@
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:chatv28/utils/color_resources.dart';
+import 'package:chat/utils/color_resources.dart';
 import 'package:flutter/material.dart';
 
 class RoundedImageNetwork extends StatelessWidget {

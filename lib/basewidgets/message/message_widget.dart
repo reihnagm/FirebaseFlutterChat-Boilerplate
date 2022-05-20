@@ -1,6 +1,6 @@
 // import 'package:flutter/material.dart';
 
-// import 'package:chatv28/widgets/message/chat_bubble.dart';
+// import 'package:chat/widgets/message/chat_bubble.dart';
 
 // class MessageText extends StatelessWidget {
 //   const MessageText({

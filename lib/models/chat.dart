@@ -1,5 +1,5 @@
-import 'package:chatv28/models/chat_message.dart';
-import 'package:chatv28/models/chat_user.dart';
+import 'package:chat/models/chat_message.dart';
+import 'package:chat/models/chat_user.dart';
 
 class GroupData {
   final String name;

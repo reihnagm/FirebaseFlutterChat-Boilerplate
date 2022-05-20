@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'package:chatv28/utils/color_resources.dart';
+import 'package:chat/utils/color_resources.dart';
 
 class ShowSnackbar {
   ShowSnackbar._();

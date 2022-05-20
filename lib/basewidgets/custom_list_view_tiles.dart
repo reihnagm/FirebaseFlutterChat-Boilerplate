@@ -1,18 +1,18 @@
-// import 'package:chatv28/widgets/message_bubble.dart';
+// import 'package:chat/widgets/message_bubble.dart';
 
 import 'package:provider/provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:ionicons/ionicons.dart';
 
-import 'package:chatv28/utils/custom_themes.dart';
-import 'package:chatv28/utils/box_shadow.dart';
-import 'package:chatv28/utils/color_resources.dart';
-import 'package:chatv28/utils/dimensions.dart';
-import 'package:chatv28/basewidgets/message_bubble.dart';
-import 'package:chatv28/models/chat_message.dart';
-import 'package:chatv28/basewidgets/rounded_image.dart';
-import 'package:chatv28/providers/chat.dart';
+import 'package:chat/utils/custom_themes.dart';
+import 'package:chat/utils/box_shadow.dart';
+import 'package:chat/utils/color_resources.dart';
+import 'package:chat/utils/dimensions.dart';
+import 'package:chat/basewidgets/message_bubble.dart';
+import 'package:chat/models/chat_message.dart';
+import 'package:chat/basewidgets/rounded_image.dart';
+import 'package:chat/providers/chat.dart';
 
 class CustomListViewTile extends StatelessWidget {
   final double height;

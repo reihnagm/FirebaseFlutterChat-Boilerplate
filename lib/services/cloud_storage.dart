@@ -1,11 +1,18 @@
 import 'dart:io';
 
+import 'package:chat/services/database.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 
 class CloudStorageService {
+  final DatabaseService ds;
+
+  CloudStorageService({
+    required this.ds
+  });
+
   final FirebaseStorage storage = FirebaseStorage.instance;
 
   Future<String?> saveGroupImageToStorage({
@@ -18,21 +25,34 @@ class CloudStorageService {
       return await task.then((result) async {
         return await result.ref.getDownloadURL();
       });
-    } catch(e) {
-      debugPrint(e.toString());
+    } catch(e, stacktrace) {
+      debugPrint(stacktrace.toString());
     }
+    return "";
   }
  
-  Future<String?> saveUserImageToStorage(String uid, PlatformFile file) async {
+  Future<String?> saveUserImageToStorage({ 
+    required String uid, 
+    required String name,
+    required String email,
+    required PlatformFile file
+  }) async {
     try {
       Reference ref = storage.ref().child("images/users/$uid/profile.${file.extension}");
       UploadTask task = ref.putFile(File(file.path!));
-      return await task.then((result) async {
+      String? imageUrl = await task.then((result) async {
         return await result.ref.getDownloadURL();
       });
-    } catch(e) {
-      debugPrint(e.toString());
+      await ds.register(
+        uid: uid, 
+        name: name, 
+        email: email, 
+        imageUrl: imageUrl!
+      );
+    } catch(e, stacktrace) {
+      debugPrint(stacktrace.toString());
     }
+    return "";
   }
 
   Future<String?> saveChatImageToStorage(String chatId, String userId, PlatformFile platformFile) async {
@@ -42,8 +62,9 @@ class CloudStorageService {
       return await task.then((result) async {
         return await result.ref.getDownloadURL();
       });
-    } catch(e) {
-      debugPrint(e.toString());
+    } catch(e, stacktrace) {
+      debugPrint(stacktrace.toString());
     }
+    return "";
   }
 }

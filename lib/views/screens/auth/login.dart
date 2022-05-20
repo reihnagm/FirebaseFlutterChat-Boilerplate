@@ -1,14 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import 'package:chatv28/pages/register.dart';
-import 'package:chatv28/utils/custom_themes.dart';
-import 'package:chatv28/utils/dimensions.dart';
-import 'package:chatv28/utils/color_resources.dart';
-import 'package:chatv28/providers/authentication.dart';
-import 'package:chatv28/services/navigation.dart';
-import 'package:chatv28/basewidgets/button/custom_button.dart';
-import 'package:chatv28/basewidgets/custom_input_fields.dart';
+import 'package:chat/views/screens/auth/register.dart';
+
+import 'package:chat/utils/custom_themes.dart';
+import 'package:chat/utils/dimensions.dart';
+import 'package:chat/utils/color_resources.dart';
+
+import 'package:chat/providers/authentication.dart';
+
+import 'package:chat/services/navigation.dart';
+
+import 'package:chat/basewidgets/button/custom_button.dart';
+import 'package:chat/basewidgets/custom_input_fields.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({ Key? key }) : super(key: key);
@@ -18,13 +22,13 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
+  GlobalKey<ScaffoldState> globalKey = GlobalKey<ScaffoldState>();
+  GlobalKey<FormState> loginFormKey = GlobalKey<FormState>();
+
   late double deviceHeight;
   late double deviceWidth;
 
   late NavigationService navigation;
-
-  GlobalKey<ScaffoldState> globalKey = GlobalKey<ScaffoldState>();
-  GlobalKey<FormState> loginFormKey = GlobalKey<FormState>();
 
   String? email;
   String? password;

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import 'package:chatv28/utils/custom_themes.dart';
-import 'package:chatv28/utils/color_resources.dart';
+import 'package:chat/utils/custom_themes.dart';
+import 'package:chat/utils/color_resources.dart';
 
 class SplashPage extends StatefulWidget {
   final VoidCallback onInitializationComplete;

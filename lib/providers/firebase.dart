@@ -1,26 +1,27 @@
 import 'dart:async';
 import 'dart:convert';
 
-// import 'package:awesome_notifications/awesome_notifications.dart';
-// import 'package:chatv28/utils/utils.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:dio/dio.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 
-import 'package:chatv28/pages/chat.dart';
-import 'package:chatv28/utils/global.dart';
-import 'package:chatv28/services/notification.dart';
-import 'package:chatv28/providers/authentication.dart';
-import 'package:chatv28/utils/constant.dart';
+import 'package:chat/views/screens/chat/chat.dart';
+
+import 'package:chat/utils/global.dart';
+import 'package:chat/utils/constant.dart';
+
+import 'package:chat/services/notification.dart';
+
+import 'package:chat/providers/authentication.dart';
 
 class FirebaseProvider with ChangeNotifier {
-  final AuthenticationProvider authenticationProvider; 
-  final SharedPreferences sharedPreferences;
+  final AuthenticationProvider ap; 
+  final SharedPreferences sp;
 
   FirebaseProvider({
-    required this.sharedPreferences,
-    required this.authenticationProvider
+    required this.sp,
+    required this.ap
   });
 
   Future<void> setupInteractedMessage() async {
@@ -29,7 +30,7 @@ class FirebaseProvider with ChangeNotifier {
       Map<String, dynamic> data = message.data;
       Map<String, dynamic> payload = json.decode(data["payload"]);
       if(payload["screen"] == "chat.detail") {
-        sharedPreferences.setString("chatId", payload["chatId"]);
+        sp.setString("chatId", payload["chatId"]);
         GlobalVariable.navState.currentState!.pushAndRemoveUntil(
           PageRouteBuilder(pageBuilder: (BuildContext context, Animation<double> animation, Animation<double> secondaryAnimation) {
             return ChatPage(
@@ -65,9 +66,9 @@ class FirebaseProvider with ChangeNotifier {
       // RemoteNotification notification = message.notification!;
       Map<String, dynamic> data = message.data;
       Map<String, dynamic> payload = json.decode(data["payload"]);
-      sharedPreferences.setString("notifications", json.encode({
+      sp.setString("chatId", payload["chatId"]);
+      sp.setString("notifications", json.encode({
         "chatId": payload["chatId"],
-        "avatar": payload["avatar"],
         "title": payload["title"],
         "subtitle": payload["subtitle"],
         "body": payload["body"],
@@ -92,7 +93,6 @@ class FirebaseProvider with ChangeNotifier {
   Future<void> sendNotification({
     required List registrationIds,
     required List tokens,
-    required List members,
     required String token, 
     required String title, 
     required String subtitle,
@@ -115,8 +115,8 @@ class FirebaseProvider with ChangeNotifier {
         "notification": {
           "title": title,
           "body": type == "image" 
-          ? "${authenticationProvider.userName()} Media Attachment" 
-          : "${authenticationProvider.userName()} $body",
+          ? "${ap.userName()} Media Attachment" 
+          : "${ap.userName()} $body",
           "sound":"default"
         },
         "android": {
@@ -127,22 +127,14 @@ class FirebaseProvider with ChangeNotifier {
         "data": {
           "payload": {
             "chatId": chatId,
-            "avatar": groupImage, 
             "title": title,
             "subtitle": subtitle,
             "body": type == "image" 
-            ? "${authenticationProvider.userName()} Media Attachement"  
-            : "${authenticationProvider.userName()} $body",
+            ? "${ap.userName()} Media Attachement"  
+            : "${ap.userName()} $body",
             "bodyImg": body,
-            "receiverId": receiverId,
-            "receiverName": receiverName,
-            "receiverImage": receiverImage,
-            "groupName": groupName,
-            "groupImage": groupImage,
             "isGroup": "true",
             "type": type,
-            "tokens": tokens,
-            "members": members,
             "screen": "chat.detail"
           },
         },
@@ -151,10 +143,10 @@ class FirebaseProvider with ChangeNotifier {
     } else {
       data = {
         "to": token,
-        "collapse_key" : "New Message",
+        "collapse_key": "New Message",
         "priority":"high",
         "notification": {
-          "title": authenticationProvider.userName(),
+          "title": ap.userName(),
           "body": type == "image" 
           ? "Media Attachment" 
           : body,
@@ -168,8 +160,7 @@ class FirebaseProvider with ChangeNotifier {
         "data": {
           "payload": {
             "chatId": chatId,
-            "avatar": authenticationProvider.userImage(),
-            "title": authenticationProvider.userName(),
+            "title": ap.userName(),
             "subtitle": subtitle,
             "body": type == "image" 
             ? "Media Attachment" 
@@ -182,8 +173,6 @@ class FirebaseProvider with ChangeNotifier {
             "groupImage": "-",
             "isGroup": "false",
             "type": type,
-            "tokens": "-",
-            "members": "-",
             "screen": "chat.detail",
           },
           "click_action": "FLUTTER_NOTIFICATION_CLICK",

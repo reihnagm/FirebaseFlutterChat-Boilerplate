@@ -8,17 +8,22 @@ import 'package:keyboard_dismisser/keyboard_dismisser.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'package:chatv28/utils/custom_themes.dart';
-import 'package:chatv28/pages/chats_group_detail.dart';
-import 'package:chatv28/services/navigation.dart';
-import 'package:chatv28/basewidgets/top_bar.dart';
-import 'package:chatv28/utils/color_resources.dart';
-import 'package:chatv28/utils/dimensions.dart';
-import 'package:chatv28/models/chat_message.dart';
-import 'package:chatv28/providers/chat.dart';
-import 'package:chatv28/basewidgets/custom_input_fields.dart';
-import 'package:chatv28/basewidgets/custom_list_view_tiles.dart';
-import 'package:chatv28/providers/authentication.dart';
+import 'package:chat/models/chat_message.dart';
+
+import 'package:chat/views/screens/chat/chats_group_detail.dart';
+
+import 'package:chat/services/navigation.dart';
+
+import 'package:chat/basewidgets/custom_input_fields.dart';
+import 'package:chat/basewidgets/custom_list_view_tiles.dart';
+import 'package:chat/basewidgets/top_bar.dart';
+
+import 'package:chat/utils/custom_themes.dart';
+import 'package:chat/utils/color_resources.dart';
+import 'package:chat/utils/dimensions.dart';
+
+import 'package:chat/providers/chat.dart';
+import 'package:chat/providers/authentication.dart';
 
 class ChatPage extends StatefulWidget {
   final String avatar;
@@ -368,7 +373,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                 onNotification: (ScrollNotification notification) {
                   if (notification is ScrollEndNotification) {
                     if (notification.metrics.pixels == notification.metrics.maxScrollExtent) {
-                      chatProvider.fetchMessages(20);
+                      chatProvider.fetchMessages(10);
                     }
                   } 
                   return false;
@@ -381,6 +386,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                     groupSeparatorBuilder:(date) {
                       return Column(
                         crossAxisAlignment: CrossAxisAlignment.center,
+                        mainAxisSize: MainAxisSize.min,
                         children: [
                           const Divider(),
                           Container(

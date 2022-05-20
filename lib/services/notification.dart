@@ -1,21 +1,15 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
-import 'package:timezone/data/latest.dart' as tz;
-import 'package:timezone/timezone.dart' as tz;
-import 'package:flutter_native_timezone/flutter_native_timezone.dart';
+// import 'package:timezone/timezone.dart' as tz;
 import 'package:rxdart/rxdart.dart';
 
-import 'package:chatv28/utils/utils.dart';
+import 'package:chat/utils/utils.dart';
 
 class NotificationService {
   static final notifications = FlutterLocalNotificationsPlugin();
   static final onNotifications = BehaviorSubject<String>();
 
   static Future notificationDetails({required Map<String, dynamic> payload}) async {
-    // const List<String> lines = <String>[
-    //   'Alex Faarborg Check this out',
-    //   'Jeff Chang Launch Party'
-    // ];
     AndroidNotificationDetails androidNotificationDetailsWithoutImage = AndroidNotificationDetails(
       'chat',
       'chat_channel',
@@ -66,7 +60,7 @@ class NotificationService {
     );
   } 
 
-  static Future init({bool initScheduled = true}) async {
+  static Future init({bool initScheduled = false}) async {
     InitializationSettings settings =  const InitializationSettings(
       android: AndroidInitializationSettings('@drawable/ic_notification'),
       iOS: IOSInitializationSettings(
@@ -80,10 +74,10 @@ class NotificationService {
     );
 
     // * When app is closed 
-    final details = await notifications.getNotificationAppLaunchDetails();
-    if(details != null && details.didNotificationLaunchApp) {
-      onNotifications.add(details.payload ?? "");
-    }
+    // final details = await notifications.getNotificationAppLaunchDetails();
+    // if(details != null && details.didNotificationLaunchApp) {
+    //   onNotifications.add(details.payload ?? "");
+    // }
 
     await notifications.initialize(
       settings,
@@ -92,11 +86,11 @@ class NotificationService {
       }
     );
 
-    if(initScheduled) {
-      tz.initializeTimeZones();
-      final locationName = await FlutterNativeTimezone.getLocalTimezone();
-      tz.setLocalLocation(tz.getLocation(locationName));
-    }
+    // if(initScheduled) {
+    //   tz.initializeTimeZones();
+    //   final locationName = await FlutterNativeTimezone.getLocalTimezone();
+    //   tz.setLocalLocation(tz.getLocation(locationName));
+    // }
   }
 
   static Future showNotification({
@@ -114,47 +108,47 @@ class NotificationService {
     );
   }
 
-  static void showScheduleNotification({
-    int id = 0,
-    String? title, 
-    String? body,
-    Map<String, dynamic>? payload,
-  }) async {
-    notifications.zonedSchedule(
-      id, 
-      title, 
-      body,
-      tz.TZDateTime.now(tz.local).add(const Duration(seconds: 5)), 
-      await notificationDetails(payload: payload!),
-      payload: payload["screen"],
-      androidAllowWhileIdle: true, 
-      uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
-      // matchDateTimeComponents: DateTimeComponents.time
-    );
-  }
+  // static void showScheduleNotification({
+  //   int id = 0,
+  //   String? title, 
+  //   String? body,
+  //   Map<String, dynamic>? payload,
+  // }) async {
+  //   notifications.zonedSchedule(
+  //     id, 
+  //     title, 
+  //     body,
+  //     tz.TZDateTime.now(tz.local).add(const Duration(seconds: 5)), 
+  //     await notificationDetails(payload: payload!),
+  //     payload: payload["screen"],
+  //     androidAllowWhileIdle: true, 
+  //     uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
+  //     // matchDateTimeComponents: DateTimeComponents.time
+  //   );
+  // }
 
-  static tz.TZDateTime scheduleDaily(Time time) {
-    final now = tz.TZDateTime.now(tz.local);
-    final scheduledDate = tz.TZDateTime(
-      tz.local,
-      now.year,
-      now.month,
-      now.day,
-      time.hour,
-      time.minute,
-      time.second  
-    );
-    return scheduledDate.isBefore(now) 
-    ? scheduledDate.add(const Duration(days: 1)) 
-    : scheduledDate;
-  }
+  // static tz.TZDateTime scheduleDaily(Time time) {
+  //   final now = tz.TZDateTime.now(tz.local);
+  //   final scheduledDate = tz.TZDateTime(
+  //     tz.local,
+  //     now.year,
+  //     now.month,
+  //     now.day,
+  //     time.hour,
+  //     time.minute,
+  //     time.second  
+  //   );
+  //   return scheduledDate.isBefore(now) 
+  //   ? scheduledDate.add(const Duration(days: 1)) 
+  //   : scheduledDate;
+  // }
 
-  static tz.TZDateTime scheduleWeekly(Time time, { required List<int> days }) {
-    tz.TZDateTime scheduleDate = scheduleDaily(time); 
-    while (!days.contains(scheduleDate.weekday)) {
-      scheduleDate = scheduleDate.add(const Duration(days: 1));
-    }
-    return scheduleDate;
-  }
+  // static tz.TZDateTime scheduleWeekly(Time time, { required List<int> days }) {
+  //   tz.TZDateTime scheduleDate = scheduleDaily(time); 
+  //   while (!days.contains(scheduleDate.weekday)) {
+  //     scheduleDate = scheduleDate.add(const Duration(days: 1));
+  //   }
+  //   return scheduleDate;
+  // }
 
 }

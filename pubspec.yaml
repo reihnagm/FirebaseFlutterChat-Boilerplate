@@ -1,5 +1,5 @@
-name: chatv28
-description: ChatV28.
+name: chat
+description: Chatting App.
 
 publish_to: 'none'
 
@@ -12,11 +12,6 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-
-  ext_storage:
-    git:
-      url: git://github.com/GitJournal/ext_storage.git
-      ref: master
 
   flutter_absolute_path: 
     git:

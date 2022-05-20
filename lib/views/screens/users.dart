@@ -8,24 +8,29 @@ import 'package:image_cropper/image_cropper.dart';
 import 'package:provider/provider.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
-import 'package:chatv28/utils/utils.dart';
-import 'package:chatv28/utils/custom_themes.dart';
-import 'package:chatv28/services/media.dart';
-import 'package:chatv28/utils/dimensions.dart';
-import 'package:chatv28/utils/box_shadow.dart';
-import 'package:chatv28/utils/color_resources.dart';
-import 'package:chatv28/basewidgets/animated_dialog/show_animate_dialog.dart';
-import 'package:chatv28/basewidgets/signout_confirmation_dialog/signout_confirmation_dialog.dart';
-import 'package:chatv28/pages/chat.dart';
-import 'package:chatv28/services/database.dart';
-import 'package:chatv28/services/navigation.dart';
-import 'package:chatv28/basewidgets/button/custom_button.dart';
-import 'package:chatv28/models/chat_user.dart';
-import 'package:chatv28/providers/authentication.dart';
-import 'package:chatv28/providers/user.dart';
-import 'package:chatv28/basewidgets/custom_input_fields.dart';
-import 'package:chatv28/basewidgets/custom_list_view_tiles.dart';
-import 'package:chatv28/basewidgets/top_bar.dart';
+import 'package:chat/providers/authentication.dart';
+import 'package:chat/providers/user.dart';
+
+import 'package:chat/utils/utils.dart';
+import 'package:chat/utils/custom_themes.dart';
+import 'package:chat/utils/dimensions.dart';
+import 'package:chat/utils/box_shadow.dart';
+import 'package:chat/utils/color_resources.dart';
+
+import 'package:chat/services/media.dart';
+import 'package:chat/services/database.dart';
+import 'package:chat/services/navigation.dart';
+
+import 'package:chat/basewidgets/custom_input_fields.dart';
+import 'package:chat/basewidgets/custom_list_view_tiles.dart';
+import 'package:chat/basewidgets/top_bar.dart';
+import 'package:chat/basewidgets/button/custom_button.dart';
+import 'package:chat/basewidgets/animated_dialog/show_animate_dialog.dart';
+import 'package:chat/basewidgets/signout_confirmation_dialog/signout_confirmation_dialog.dart';
+
+import 'package:chat/views/screens/chat/chat.dart';
+
+import 'package:chat/models/chat_user.dart';
 
 class UsersPage extends StatefulWidget {
   const UsersPage({ Key? key }) : super(key: key);
@@ -54,7 +59,7 @@ class _UsersPageState extends State<UsersPage> {
     PlatformFile? f = await mediaService.pickImageFromLibrary();
     if(f != null) { 
       groupImage = f;
-      File? cropped = await ImageCropper.cropImage(
+      File? cropped = await ImageCropper().cropImage(
         sourcePath: f.path!,
         androidUiSettings: AndroidUiSettings(
           toolbarTitle: "Crop It"

@@ -1,11 +1,11 @@
 import 'package:provider/provider.dart';
 import 'package:provider/single_child_widget.dart';
 
-import 'package:chatv28/providers/firebase.dart';
-import 'package:chatv28/providers/user.dart';
-import 'package:chatv28/providers/chats.dart';
-import 'package:chatv28/providers/chat.dart';
-import 'package:chatv28/providers/authentication.dart';
+import 'package:chat/providers/firebase.dart';
+import 'package:chat/providers/user.dart';
+import 'package:chat/providers/chats.dart';
+import 'package:chat/providers/chat.dart';
+import 'package:chat/providers/authentication.dart';
 
 import 'container.dart' as c;
 

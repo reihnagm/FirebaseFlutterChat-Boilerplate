@@ -6,12 +6,14 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'package:chatv28/services/cloud_storage.dart';
-import 'package:chatv28/pages/login.dart';
-import 'package:chatv28/pages/home.dart';
-import 'package:chatv28/services/navigation.dart';
-import 'package:chatv28/models/chat_user.dart';
-import 'package:chatv28/services/database.dart';
+import 'package:chat/services/cloud_storage.dart';
+import 'package:chat/services/database.dart';
+import 'package:chat/services/navigation.dart';
+
+import 'package:chat/views/screens/auth/login.dart';
+import 'package:chat/views/screens/home.dart';
+
+import 'package:chat/models/chat_user.dart';
 
 enum AuthStatus { idle, loading, loaded, empty, error }
 enum LoginStatus { idle, loading, loaded, empty, error }
@@ -19,9 +21,10 @@ enum RegisterStatus { idle, loading, loaded, empty, error }
 enum LogoutStatus { idle, loading, loaded, empty, error }
 
 class AuthenticationProvider extends ChangeNotifier {
-  final SharedPreferences sharedPreferences;
-  final DatabaseService databaseService;
-  final CloudStorageService cloudStorageService;
+  final SharedPreferences sp;
+  final DatabaseService ds;
+  final CloudStorageService css;
+  final NavigationService ns;
 
   AuthStatus _authStatus = AuthStatus.loading;
   AuthStatus get authStatus => _authStatus;
@@ -59,14 +62,15 @@ class AuthenticationProvider extends ChangeNotifier {
   ChatUser? chatUser;
   
   AuthenticationProvider({
-    required this.sharedPreferences, 
-    required this.databaseService,
-    required this.cloudStorageService
+    required this.sp, 
+    required this.ds,
+    required this.css,
+    required this.ns
   });
 
   Future<void> initAuthStateChanges() async {
     try {
-      DocumentSnapshot<Object?> snapshot = await databaseService.getUser(userId: userId())!;
+      DocumentSnapshot<Object?> snapshot = await ds.getUser(userId: userId());
       Map<String, dynamic> userData = snapshot.data() as Map<String, dynamic>;
       chatUser = ChatUser.fromJson({
         "uid": userId(),
@@ -77,9 +81,9 @@ class AuthenticationProvider extends ChangeNotifier {
         "image": userData["image"],
         "token": userData["token"]
       });  
-      await databaseService.updateUserOnlineToken(userId(), true);
-      sharedPreferences.setString("userName", userData["name"]);
-      sharedPreferences.setString("userImage", userData["image"]);
+      await ds.updateUserOnlineToken(userId(), true);
+      sp.setString("userName", userData["name"]);
+      sp.setString("userImage", userData["image"]);
       setStateAuthStatus(AuthStatus.loaded);
     } catch(e) {
       setStateAuthStatus(AuthStatus.error);
@@ -90,55 +94,64 @@ class AuthenticationProvider extends ChangeNotifier {
   Future<void> logout(BuildContext context) async {
     setStateLogoutStatus(LogoutStatus.loading);
     try {
-      databaseService.updateUserOnlineToken(userId(), false).then((_) async{
-        await auth.signOut();
-        sharedPreferences.clear();
-        setStateLogoutStatus(LogoutStatus.loaded);
-        NavigationService().pushBackNavReplacement(context, const LoginPage());
-      });
-    } catch(e) {
+      await Future.wait([
+        ds.updateUserOnlineToken(userId(), false), 
+        auth.signOut()
+      ]);
+      setStateLogoutStatus(LogoutStatus.loaded);
+      sp.clear();
+      ns.pushBackNavReplacement(context, const LoginPage());
+    } catch(e, stacktrace) {
+      debugPrint(stacktrace.toString());
       setStateLogoutStatus(LogoutStatus.error);
-      debugPrint(e.toString());
     }
   }
 
   Future<void> loginUsingEmailAndPassword(BuildContext context, String email, String password) async {
     setStateLoginStatus(LoginStatus.loading);
     try {
-      await auth.signInWithEmailAndPassword(email: email, password: password);
-      sharedPreferences.setBool("login", true);
-      sharedPreferences.setString("userId", auth.currentUser!.uid);
-      await databaseService.updateUserOnlineToken(userId(), true);
+      await Future.wait([
+        auth.signInWithEmailAndPassword(email: email, password: password), 
+        ds.updateUserOnlineToken(userId(), true)
+      ]);
       setStateLoginStatus(LoginStatus.loaded);
-      NavigationService().pushNavReplacement(context, const HomePage(currentPage: 0));   
+      sp.setBool("login", true);
+      sp.setString("userId", auth.currentUser!.uid);
+      ns.pushNavReplacement(context, const HomePage(currentPage: 0));   
     } on FirebaseAuthException {
       setStateLoginStatus(LoginStatus.error);
-    } catch(e) {
+    } catch(e, stacktrace) {
+      debugPrint(stacktrace.toString());
       setStateLoginStatus(LoginStatus.error);
-      debugPrint(e.toString());
     }
   } 
 
   Future<void> registerUsingEmailAndPassword(BuildContext context, String name, String email, String password, PlatformFile image) async {
+    setStateRegisterStatus(RegisterStatus.loading);
     try {
-      setStateRegisterStatus(RegisterStatus.loading);
-      await auth.createUserWithEmailAndPassword(email: email, password: password);
-      String? imageUrl = await cloudStorageService.saveUserImageToStorage(auth.currentUser!.uid, image);
-      await databaseService.register(uid: auth.currentUser!.uid, name: name, email: email, imageUrl: imageUrl!);
-      sharedPreferences.setBool("login", true);
-      sharedPreferences.setString("userId", auth.currentUser!.uid);
+      await Future.wait([
+        auth.createUserWithEmailAndPassword(email: email, password: password),
+        css.saveUserImageToStorage(
+          uid: auth.currentUser!.uid,
+          name: name,
+          file: image,
+          email: email
+        )
+      ]); 
       setStateRegisterStatus(RegisterStatus.loaded);
-      NavigationService().pushNavReplacement(context, const HomePage(currentPage: 0)); 
+      sp.setBool("login", true);
+      sp.setString("userId", auth.currentUser!.uid);
+      ns.pushNavReplacement(context, const HomePage(currentPage: 0)); 
     } on FirebaseException {
       setStateRegisterStatus(RegisterStatus.error);
-    } catch(e) {
+    } catch(e, stacktrace) {
+      debugPrint(stacktrace.toString());
       setStateRegisterStatus(RegisterStatus.error);
-      debugPrint(e.toString());
     }
   }
 
-  bool isLogin() => sharedPreferences.getBool("login") ?? false;
-  String userId() => sharedPreferences.getString("userId") ?? "";
-  String userName() => sharedPreferences.getString("userName") ?? "";
-  String userImage() => sharedPreferences.getString("userImage") ?? "";
+  bool isLogin() => sp.getBool("login") ?? false;
+  String userId() => sp.getString("userId") ?? "";
+  String userName() => sp.getString("userName") ?? "";
+  String userImage() => sp.getString("userImage") ?? "";
 }

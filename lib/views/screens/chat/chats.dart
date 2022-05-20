@@ -3,19 +3,25 @@ import 'package:provider/provider.dart';
 
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'package:chatv28/utils/custom_themes.dart';
-import 'package:chatv28/utils/dimensions.dart';
-import 'package:chatv28/providers/authentication.dart';
-import 'package:chatv28/basewidgets/animated_dialog/show_animate_dialog.dart';
-import 'package:chatv28/basewidgets/signout_confirmation_dialog/signout_confirmation_dialog.dart';
-import 'package:chatv28/utils/color_resources.dart';
-import 'package:chatv28/models/chat_message.dart';
-import 'package:chatv28/pages/chat.dart';
-import 'package:chatv28/services/navigation.dart';
-import 'package:chatv28/models/chat.dart';
-import 'package:chatv28/providers/chats.dart';
-import 'package:chatv28/basewidgets/custom_list_view_tiles.dart';
-import 'package:chatv28/basewidgets/top_bar.dart';
+import 'package:chat/utils/custom_themes.dart';
+import 'package:chat/utils/dimensions.dart';
+import 'package:chat/utils/color_resources.dart';
+
+import 'package:chat/providers/authentication.dart';
+import 'package:chat/providers/chats.dart';
+
+import 'package:chat/basewidgets/custom_list_view_tiles.dart';
+import 'package:chat/basewidgets/top_bar.dart';
+
+import 'package:chat/basewidgets/animated_dialog/show_animate_dialog.dart';
+import 'package:chat/basewidgets/signout_confirmation_dialog/signout_confirmation_dialog.dart';
+
+import 'package:chat/models/chat_message.dart';
+import 'package:chat/models/chat.dart';
+
+import 'package:chat/services/navigation.dart';
+
+import 'package:chat/views/screens/chat/chat.dart';
 
 class ChatsPage extends StatefulWidget {
   const ChatsPage({ Key? key }) : super(key: key);
@@ -36,10 +42,13 @@ class _ChatsPageState extends State<ChatsPage> {
     super.initState();
     authenticationProvider = context.read<AuthenticationProvider>();
     chatsProvider = context.read<ChatsProvider>();
-    WidgetsBinding.instance!.addPostFrameCallback((_) {
+    Future.delayed(Duration.zero, () {
       context.read<AuthenticationProvider>().initAuthStateChanges();
       if(mounted) {
         chatsProvider.getChats();
+      }
+      if(mounted) {
+        chatsProvider.getTokensByChat();
       }
     });
   }

@@ -1,10 +1,11 @@
-import 'package:chatv28/utils/custom_themes.dart';
-import 'package:chatv28/utils/dimensions.dart';
 import 'package:flutter/material.dart';
 
-import 'package:chatv28/utils/color_resources.dart';
-import 'package:chatv28/pages/users.dart';
-import 'package:chatv28/pages/chats.dart';
+import 'package:chat/utils/custom_themes.dart';
+import 'package:chat/utils/dimensions.dart';
+import 'package:chat/utils/color_resources.dart';
+
+import 'package:chat/views/screens/users.dart';
+import 'package:chat/views/screens/chat/chats.dart';
 
 class HomePage extends StatefulWidget {
   final int currentPage;

@@ -5,18 +5,22 @@ import 'package:flutter/material.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:provider/provider.dart';
 
-import 'package:chatv28/utils/custom_themes.dart';
-import 'package:chatv28/basewidgets/snackbar/snackbar.dart';
-import 'package:chatv28/services/cloud_storage.dart';
-import 'package:chatv28/services/media.dart';
-import 'package:chatv28/utils/box_shadow.dart';
-import 'package:chatv28/pages/login.dart';
-import 'package:chatv28/utils/dimensions.dart';
-import 'package:chatv28/utils/color_resources.dart';
-import 'package:chatv28/providers/authentication.dart';
-import 'package:chatv28/services/navigation.dart';
-import 'package:chatv28/basewidgets/button/custom_button.dart';
-import 'package:chatv28/basewidgets/custom_input_fields.dart';
+import 'package:chat/utils/custom_themes.dart';
+import 'package:chat/utils/dimensions.dart';
+import 'package:chat/utils/color_resources.dart';
+import 'package:chat/utils/box_shadow.dart';
+
+import 'package:chat/basewidgets/snackbar/snackbar.dart';
+import 'package:chat/basewidgets/button/custom_button.dart';
+import 'package:chat/basewidgets/custom_input_fields.dart';
+
+import 'package:chat/services/cloud_storage.dart';
+import 'package:chat/services/media.dart';
+import 'package:chat/services/navigation.dart';
+
+import 'package:chat/views/screens/auth/login.dart';
+
+import 'package:chat/providers/authentication.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({ Key? key }) : super(key: key);
@@ -26,18 +30,17 @@ class RegisterPage extends StatefulWidget {
 }
 
 class _RegisterPageState extends State<RegisterPage> {
+  GlobalKey<ScaffoldState> globalKey = GlobalKey<ScaffoldState>();
+  GlobalKey<FormState> registerFormKey = GlobalKey<FormState>();
+
   late double deviceHeight;
   late double deviceWidth;
 
   late NavigationService navigation;
   late MediaService mediaService;
-  late CloudStorageService cloudStorageService;
 
   File? file;
   PlatformFile? image;
-
-  GlobalKey<ScaffoldState> globalKey = GlobalKey<ScaffoldState>();
-  GlobalKey<FormState> registerFormKey = GlobalKey<FormState>();
 
   String? imageUrl;
   String? name;
@@ -48,7 +51,7 @@ class _RegisterPageState extends State<RegisterPage> {
     PlatformFile? f = await mediaService.pickImageFromLibrary();
     if(f != null) { 
       image = f;
-      File? cropped = await ImageCropper.cropImage(
+      File? cropped = await ImageCropper().cropImage(
         sourcePath: f.path!,
         androidUiSettings: AndroidUiSettings(
           toolbarTitle: "Crop It"
@@ -75,7 +78,6 @@ class _RegisterPageState extends State<RegisterPage> {
     deviceWidth = MediaQuery.of(context).size.width;
     navigation = NavigationService();
     mediaService = MediaService();
-    cloudStorageService = CloudStorageService();
     return buildUI();
   }
 

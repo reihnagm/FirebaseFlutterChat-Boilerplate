@@ -8,28 +8,33 @@ import 'package:soundpool/soundpool.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
-import 'package:chatv28/services/debounce.dart';
-import 'package:chatv28/providers/chats.dart';
-import 'package:chatv28/providers/firebase.dart';
-import 'package:chatv28/models/chat.dart';
-import 'package:chatv28/models/chat_user.dart';
-import 'package:chatv28/models/chat_message.dart';
-import 'package:chatv28/providers/authentication.dart';
-import 'package:chatv28/services/cloud_storage.dart';
-import 'package:chatv28/services/database.dart';
-import 'package:chatv28/services/media.dart';
-import 'package:chatv28/services/navigation.dart';
+import 'package:chat/providers/chats.dart';
+import 'package:chat/providers/firebase.dart';
+
+import 'package:chat/models/chat.dart';
+import 'package:chat/models/chat_user.dart';
+import 'package:chat/models/chat_message.dart';
+
+import 'package:chat/providers/authentication.dart';
+
+import 'package:chat/services/debounce.dart';
+import 'package:chat/services/cloud_storage.dart';
+import 'package:chat/services/database.dart';
+import 'package:chat/services/media.dart';
+import 'package:chat/services/navigation.dart';
 
 enum MessageStatus { idle, loading, loaded, empty, error }
 enum FetchMessageStatus { idle, loading, loaded, empty, error }
 
 class ChatProvider extends ChangeNotifier {
-  final SharedPreferences sharedPreferences;
-  final AuthenticationProvider authenticationProvider;
-  final DatabaseService databaseService;
-  final CloudStorageService cloudStorageService;
-  final MediaService mediaService;
-  final NavigationService navigationService;
+
+  final SharedPreferences sp;
+  final AuthenticationProvider ap;
+  final DatabaseService ds;
+  final CloudStorageService css;
+  final MediaService ms;
+  final NavigationService ns;
+
   final Debounce debounce = Debounce(const Duration(milliseconds: 100));
  
   List userIdNotRead = [];
@@ -75,8 +80,8 @@ class ChatProvider extends ChangeNotifier {
 
   late ScrollController scrollController;
   late TextEditingController messageTextEditingController;
+  
   FocusNode messageFocusNode = FocusNode();
-  StreamSubscription? readersStream;
   StreamSubscription? isScreenOnStream;
   StreamSubscription? isUserOnlineStream;
   StreamSubscription? isUserTypingStream;
@@ -84,20 +89,20 @@ class ChatProvider extends ChangeNotifier {
 
   @override
   void dispose() {
-    messageStream!.cancel();
-    isUserTypingStream!.cancel();
-    isScreenOnStream!.cancel();
-    isUserOnlineStream!.cancel();
+    messageStream?.cancel();
+    isUserTypingStream?.cancel();
+    isScreenOnStream?.cancel();
+    isUserOnlineStream?.cancel();
     super.dispose();
   }
 
   ChatProvider({
-    required this.sharedPreferences,
-    required this.authenticationProvider, 
-    required this.databaseService,
-    required this.mediaService,
-    required this.cloudStorageService,
-    required this.navigationService
+    required this.sp,
+    required this.ap, 
+    required this.ds,
+    required this.ms,
+    required this.css,
+    required this.ns
   }) {
     scrollController = ScrollController();
     messageTextEditingController = TextEditingController();
@@ -130,17 +135,17 @@ class ChatProvider extends ChangeNotifier {
 
   void listenToMessages() {
     try { 
-      messageStream = databaseService.streamMessagesForChat(chatId: chatId(), limit: 10)!.listen((snapshot) {
+      messageStream = ds.streamMessagesForChat(chatId: chatId(), limit: 30).listen((snapshot) {
         _messages = [];
         List<ChatMessage> messages = snapshot.docs.map((m) {
-          Map<String, dynamic> messageData = m.data() as Map<String, dynamic>;
+          Map<String, dynamic> messageData = m.data();
           return ChatMessage.fromJSON(messageData);
         }).toList();
         _messages!.addAll(messages);
         setStateMessageStatus(MessageStatus.loaded);
       });
-    } catch(e) {
-      debugPrint(e.toString());
+    } catch(e, stacktrace) {
+      debugPrint(stacktrace.toString());
     }
   }
 
@@ -149,15 +154,13 @@ class ChatProvider extends ChangeNotifier {
     Future.delayed(Duration.zero, () => notifyListeners());
     try { 
       setStateFetchMessageStatus(FetchMessageStatus.loading);
-      messageStream = databaseService.streamMessagesForChat(chatId: chatId(), limit: limit)!.listen((snapshot) {
+      messageStream = ds.streamMessagesForChat(chatId: chatId(), limit: limit).listen((snapshot) {
         List<ChatMessage> messages = snapshot.docs.map((m) {
-          Map<String, dynamic> messageData = m.data() as Map<String, dynamic>;
+          Map<String, dynamic> messageData = m.data();
           return ChatMessage.fromJSON(messageData);
         }).toList();
-        Future.delayed(const Duration(seconds: 1), () {
-          _messages = messages; 
-          setStateFetchMessageStatus(FetchMessageStatus.loaded);
-        });
+        _messages = messages; 
+        setStateFetchMessageStatus(FetchMessageStatus.loaded);
         setStateMessageStatus(MessageStatus.loaded);
       });
     } catch(e) {
@@ -186,20 +189,22 @@ class ChatProvider extends ChangeNotifier {
     required String groupImage,
     required bool isGroup
   }) async {
+    
+    await context.read<ChatsProvider>().getTokensByChat();
+    
     List<ChatUser> members = context.read<ChatsProvider>().members;
-    List<Token> tokens = context.read<ChatsProvider>().tokens;
     String msgId = const Uuid().v4();
     SharedPreferences prefs = await SharedPreferences.getInstance();
     List readers = [];
     List registrationIds = [];
-    for (Token token in tokens) {
-      if(token.userId != authenticationProvider.userId()) {
-        registrationIds.add(token.token);
+    for (Token token in context.read<ChatsProvider>().tokens) {
+      if(token.userId != ap.userId()) {
+        registrationIds.add(token.token.toString().trim());
       }
     }
     if(isGroup) {
       for (ChatUser member in members) {
-        if(member.uid != authenticationProvider.userId()) {
+        if(member.uid != ap.userId()) {
           if(member.uid == currentUserIsRead) {
             readers.add({
               "uid": member.uid,
@@ -224,9 +229,9 @@ class ChatProvider extends ChangeNotifier {
     } else {
       readers = [
         {
-          "uid": authenticationProvider.userId(),
-          "name": authenticationProvider.userName(),
-          "image": authenticationProvider.userImage(),
+          "uid": ap.userId(),
+          "name": ap.userName(),
+          "image": ap.userImage(),
           "is_read": true,
           "seen": DateTime.now(),
           "created_at": DateTime.now()
@@ -244,8 +249,8 @@ class ChatProvider extends ChangeNotifier {
     ChatMessage messageToSend = ChatMessage(
       uid: msgId,
       content: prefs.getString("msg")!, 
-      senderId: authenticationProvider.userId(),
-      senderName: authenticationProvider.userName(),
+      senderId: ap.userId(),
+      senderName: ap.userName(),
       receiverId: receiverId, 
       isRead: isRead ? true : false,
       softDelete: false,
@@ -256,13 +261,13 @@ class ChatProvider extends ChangeNotifier {
     );
     messageTextEditingController.text = "";
     try {
-      databaseService.addMessageToChat(
+      ds.addMessageToChat(
         context,
         msgId: msgId,
         chatId: chatId(), 
         isGroup: isGroup,
         message: messageToSend,
-        currentUserId: authenticationProvider.userId(),
+        currentUserId: ap.userId(),
         userIdNotRead: userIdNotRead,
         readers: readers,
       );
@@ -282,8 +287,7 @@ class ChatProvider extends ChangeNotifier {
         await context.read<FirebaseProvider>().sendNotification(
           chatId: chatId(),
           registrationIds: registrationIds,
-          members: members,
-          tokens: tokens,
+          tokens: context.read<ChatsProvider>().tokens,
           token: token, 
           title: title,
           subtitle: subtitle,
@@ -324,7 +328,7 @@ class ChatProvider extends ChangeNotifier {
       List<ChatUser> members = context.read<ChatsProvider>().members;
       List<Token> tokens = context.read<ChatsProvider>().tokens;
       String msgId = const Uuid().v4();
-      PlatformFile? file = await mediaService.pickImageFromLibrary();
+      PlatformFile? file = await ms.pickImageFromLibrary();
       if(file != null) { 
         List readers = [];
         List registrationIds = [];
@@ -333,7 +337,7 @@ class ChatProvider extends ChangeNotifier {
         }
         if(isGroup) {
           for (ChatUser member in members) {
-            if(member.uid != authenticationProvider.userId()) {
+            if(member.uid != ap.userId()) {
               if(member.uid == currentUserIsRead) {
                 readers.add({
                   "uid": member.uid,
@@ -358,9 +362,9 @@ class ChatProvider extends ChangeNotifier {
         } else {
           readers = [
             {
-              "uid": authenticationProvider.userId(),
-              "name": authenticationProvider.userName(),
-              "image": authenticationProvider.userImage(),
+              "uid": ap.userId(),
+              "name": ap.userName(),
+              "image": ap.userImage(),
               "is_read": true,
               "seen": DateTime.now(),
               "created_at": DateTime.now()
@@ -379,8 +383,8 @@ class ChatProvider extends ChangeNotifier {
           ChatMessage(
             uid: msgId,
             content: "loading-img", 
-            senderId: authenticationProvider.userId(),
-            senderName: authenticationProvider.userName(),
+            senderId: ap.userId(),
+            senderName: ap.userName(),
             receiverId: receiverId, 
             isRead: isRead ? true : false,
             softDelete: false,
@@ -390,7 +394,7 @@ class ChatProvider extends ChangeNotifier {
             sentTime: DateTime.now()
           )
         );
-        String? downloadUrl = await cloudStorageService.saveChatImageToStorage(chatId(), authenticationProvider.userId(), file);
+        String? downloadUrl = await css.saveChatImageToStorage(chatId(), ap.userId(), file);
         if(scrollController.hasClients) {
           scrollController.animateTo(0, 
             duration: const Duration(
@@ -402,8 +406,8 @@ class ChatProvider extends ChangeNotifier {
         ChatMessage messageToSend = ChatMessage(
           uid: msgId,
           content: downloadUrl!, 
-          senderId: authenticationProvider.userId(),
-          senderName: authenticationProvider.userName(),
+          senderId: ap.userId(),
+          senderName: ap.userName(),
           receiverId: receiverId,
           isRead: isRead ? true : false,
           softDelete: false,
@@ -413,27 +417,26 @@ class ChatProvider extends ChangeNotifier {
           sentTime: DateTime.now()
         );
         try {      
-          databaseService.addMessageToChat(
+          ds.addMessageToChat(
             context,
             msgId: msgId,
             chatId: chatId(),  
             isGroup: isGroup,
             message: messageToSend,
-            currentUserId: authenticationProvider.userId(),
+            currentUserId: ap.userId(),
             userIdNotRead: userIdNotRead,
             readers: readers,
           ).then((_) async {
-            await databaseService.updateMicroTask(chatId: chatId());
+            await ds.updateMicroTask(chatId: chatId());
           });
-        } catch(e) {
-          debugPrint(e.toString());
+        } catch(e, stacktrace) {
+          debugPrint(stacktrace.toString());
         } 
         if(!isRead) {
           try {
             await Provider.of<FirebaseProvider>(context, listen: false).sendNotification(
               chatId: chatId(),
               registrationIds: registrationIds,
-              members: members,
               tokens: tokens,
               token: token, 
               title: title,
@@ -447,24 +450,24 @@ class ChatProvider extends ChangeNotifier {
               isGroup: isGroup,
               type: "image"
             );
-          } catch(e) {
-            debugPrint(e.toString());
+          } catch(e, stacktrace) {
+            debugPrint(stacktrace.toString());
           } 
         }
         try {
           await loadSoundSent();
-        } catch(e) {
-          debugPrint(e.toString());
+        } catch(e, stacktrace) {
+          debugPrint(stacktrace.toString());
         }
       }
-    } catch (e) {
-      debugPrint(e.toString());
+    } catch (e, stacktrace) {
+      debugPrint(stacktrace.toString());
     }
   }
 
   void isScreenOn({required String receiverId}) async {
     try {
-      isScreenOnStream = databaseService.isScreenOn(chatId: chatId())!.listen((snapshot) {
+      isScreenOnStream = ds.isScreenOn(chatId: chatId())!.listen((snapshot) {
         if(snapshot.exists) {
           Map<String, dynamic> data = snapshot.data() as Map<String, dynamic>;
           if(data["on_screens"].where((el) => el["user_id"] == receiverId).isNotEmpty) {
@@ -492,9 +495,9 @@ class ChatProvider extends ChangeNotifier {
 
   Future<void> joinScreen() async {
     try {
-      await databaseService.joinScreen(
+      await ds.joinScreen(
         chatId: chatId(),
-        userId: authenticationProvider.userId()
+        userId: ap.userId()
       );
     } catch(e) {
       debugPrint(e.toString());
@@ -503,9 +506,9 @@ class ChatProvider extends ChangeNotifier {
 
   Future<void> leaveScreen() async {
     try {
-      await databaseService.leaveScreen(
+      await ds.leaveScreen(
         chatId: chatId(),
-        userId: authenticationProvider.userId()
+        userId: ap.userId()
       );
     } catch(e) {
       debugPrint(e.toString());
@@ -519,52 +522,57 @@ class ChatProvider extends ChangeNotifier {
     } catch(e) {
       debugPrint(e.toString());
     }
+    return 0;
   }
 
   Future<void> seeMsg({required String receiverId, required bool isGroup}) async {
     try {
-      databaseService.seeMsg(
+      ds.seeMsg(
         chatId: chatId(),
         isGroup: isGroup,
         receiverId: receiverId,
-        userId: authenticationProvider.userId(),
-        userName: authenticationProvider.userName(),
-        userImage: authenticationProvider.userImage(),
+        userId: ap.userId(),
+        userName: ap.userName(),
+        userImage: ap.userImage(),
       ).then((_) async {
-        await databaseService.updateMicroTask(chatId: chatId());
+        await ds.updateMicroTask(chatId: chatId());
       });
-    } catch(e) {
-      debugPrint(e.toString());
+    } catch(e, stacktrace) {
+      debugPrint(stacktrace.toString());
     }
   }
 
   Future<void> toggleIsActivity({required bool isActive}) async {
     try {
-      await databaseService.updateChatIsActivity(userId(), chatId(), isActive);
-    } catch(e) {
-      debugPrint(e.toString());
+      await ds.updateChatIsActivity(
+        userId: userId(), 
+        chatId: chatId(),
+        isActive: isActive
+      );
+    } catch(e, stacktrace) {
+      debugPrint(stacktrace.toString());
     }
   }
 
   Future<void> deleteChat(BuildContext context, {required String receiverId}) async {
     try {
-      await databaseService.deleteChat(chatId: chatId());
-    } catch(e) {
-      debugPrint(e.toString());
+      await ds.deleteChat(chatId: chatId());
+    } catch(e, stacktrace) {
+      debugPrint(stacktrace.toString());
     }
   }
 
   Future<void> deleteMsgBulk({required bool softDelete}) async {
     try {
       for (ChatMessage item in selectedMessages) {
-        databaseService.deleteMsgBulk(
+        ds.deleteMsgBulk(
           chatId: chatId(), 
           msgId: item.uid,
           softDelete: softDelete
         ).then((_) async {
-          await databaseService.updateMicroTask(chatId: chatId());
+          await ds.updateMicroTask(chatId: chatId());
         });
-        await databaseService.removeReaderCountIds(chatId: chatId());
+        await ds.removeReaderCountIds(chatId: chatId());
       }
       selectedMessages = [];
       Future.delayed(Duration.zero, () => notifyListeners());
@@ -575,7 +583,7 @@ class ChatProvider extends ChangeNotifier {
 
   void isUserOnline({required String receiverId}) {
     try {
-      isUserOnlineStream = databaseService.getChatUserOnline(userId: receiverId)!.listen((snapshot) {
+      isUserOnlineStream = ds.getChatUserOnline(userId: receiverId).listen((snapshot) {
         isOnline = "";
         Map<String, dynamic> data = snapshot.data() as Map<String, dynamic>;
         ChatUser chatUser = ChatUser.fromJson(data);
@@ -591,7 +599,7 @@ class ChatProvider extends ChangeNotifier {
 
   Future<void> isUserTyping() async {
     try {
-      isUserTypingStream = databaseService.isUserTyping(chatId: chatId())!.listen((snapshot) {
+      isUserTypingStream = ds.isUserTyping(chatId: chatId()).listen((snapshot) {
         if(snapshot.exists) {
           Map<String, dynamic> data = snapshot.data() as Map<String, dynamic>;
           List isActivities = data["is_activity"];
@@ -611,7 +619,7 @@ class ChatProvider extends ChangeNotifier {
     }
   }
 
-  String userId() => sharedPreferences.getString("userId") ?? "";
-  String userName() => sharedPreferences.getString("userName") ?? "";
-  String chatId() => sharedPreferences.getString("chatId") ?? "";
+  String userId() => sp.getString("userId") ?? "";
+  String userName() => sp.getString("userName") ?? "";
+  String chatId() => sp.getString("chatId") ?? "";
 }

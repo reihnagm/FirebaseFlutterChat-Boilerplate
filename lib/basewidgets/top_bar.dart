@@ -2,8 +2,8 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
-import 'package:chatv28/utils/custom_themes.dart';
-import 'package:chatv28/utils/color_resources.dart';
+import 'package:chat/utils/custom_themes.dart';
+import 'package:chat/utils/color_resources.dart';
 
 class TopBar extends StatefulWidget {
   final String? barTitle;
