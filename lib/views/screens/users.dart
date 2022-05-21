@@ -26,7 +26,7 @@ import 'package:chat/basewidgets/custom_list_view_tiles.dart';
 import 'package:chat/basewidgets/top_bar.dart';
 import 'package:chat/basewidgets/button/custom_button.dart';
 import 'package:chat/basewidgets/animated_dialog/show_animate_dialog.dart';
-import 'package:chat/basewidgets/signout_confirmation_dialog/signout_confirmation_dialog.dart';
+import 'package:chat/basewidgets/dialog/signout.dart';
 
 import 'package:chat/views/screens/chat/chat.dart';
 
@@ -41,13 +41,14 @@ class UsersPage extends StatefulWidget {
 
 class _UsersPageState extends State<UsersPage> {
   GlobalKey<FormState> formKey = GlobalKey<FormState>();
+
   late double deviceHeight; 
   late double deviceWidth;
 
-  late DatabaseService databaseService; 
-  late UserProvider userProvider;
-  late MediaService mediaService;
-  late TextEditingController searchFieldTextEditingController;
+  late DatabaseService ds; 
+  late UserProvider up;
+  late MediaService ms;
+  late TextEditingController searchFieldC;
 
   File? file;
   PlatformFile? groupImage;
@@ -56,7 +57,7 @@ class _UsersPageState extends State<UsersPage> {
   FocusNode focusNodeGroupName = FocusNode();
 
   void chooseGroupAvatar() async {
-    PlatformFile? f = await mediaService.pickImageFromLibrary();
+    PlatformFile? f = await ms.pickImageFromLibrary();
     if(f != null) { 
       groupImage = f;
       File? cropped = await ImageCropper().cropImage(
@@ -83,24 +84,24 @@ class _UsersPageState extends State<UsersPage> {
   @override 
   void initState() {
     super.initState();
-    userProvider = context.read<UserProvider>();
-    searchFieldTextEditingController = TextEditingController();
-    WidgetsBinding.instance!.addPostFrameCallback((_) {
-      context.read<AuthenticationProvider>().initAuthStateChanges();
-      userProvider.getUsers();
+    searchFieldC = TextEditingController();
+    Future.delayed(Duration.zero, () {
+      if(mounted) {
+        up.getUsers();
+      }
     });
   }
 
   @override 
   void dispose() {
-    searchFieldTextEditingController.dispose();
+    searchFieldC.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    databaseService = DatabaseService();
-    mediaService = MediaService();
+    ds = DatabaseService();
+    ms = MediaService();
     deviceHeight = MediaQuery.of(context).size.height;
     deviceWidth = MediaQuery.of(context).size.width;
     return buildUI();
@@ -109,6 +110,9 @@ class _UsersPageState extends State<UsersPage> {
   Widget buildUI() {
     return Builder(
       builder: (BuildContext context) {
+
+        up = context.read<UserProvider>();
+
         return Container(
           padding: EdgeInsets.symmetric(
             horizontal: deviceWidth * 0.03,
@@ -424,7 +428,7 @@ class _UsersPageState extends State<UsersPage> {
                 onChange: (val) {
                   context.read<UserProvider>().getUsers(name: val);
                 },
-                controller: searchFieldTextEditingController,
+                controller: searchFieldC,
                 icon: Icons.search,
                 hintText: "Search", 
               ),
@@ -477,7 +481,7 @@ class _UsersPageState extends State<UsersPage> {
                   } else {
                     groupChatId = '$peerId-$currentUserId';
                   }
-                  DocumentSnapshot? createChatDoc = await databaseService.checkChat(chatId: groupChatId);
+                  DocumentSnapshot? createChatDoc = await ds.checkChat(chatId: groupChatId);
                   if(createChatDoc!.exists) {  
                     Helper.prefs!.setString("chatId", createChatDoc.id);
                     NavigationService().pushNav(context, ChatPage(
@@ -504,7 +508,7 @@ class _UsersPageState extends State<UsersPage> {
                       groupImage: "",
                       isGroup: false,
                     ));
-                    await databaseService.createChat(
+                    await ds.createChat(
                       groupChatId,
                       {
                         "is_group": false,
@@ -554,7 +558,7 @@ class _UsersPageState extends State<UsersPage> {
                         ],
                       }
                     );
-                    await databaseService.createOnScreens(groupChatId, {
+                    await ds.createOnScreens(groupChatId, {
                       "id": groupChatId,
                       "on_screens": FieldValue.arrayUnion([ 
                         {

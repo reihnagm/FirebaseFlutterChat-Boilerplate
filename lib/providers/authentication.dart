@@ -70,24 +70,27 @@ class AuthenticationProvider extends ChangeNotifier {
 
   Future<void> initAuthStateChanges() async {
     try {
-      DocumentSnapshot<Object?> snapshot = await ds.getUser(userId: userId());
-      Map<String, dynamic> userData = snapshot.data() as Map<String, dynamic>;
-      chatUser = ChatUser.fromJson({
-        "uid": userId(),
-        "name": userData["name"],
-        "email": userData["email"],
-        "last_active": userData["last_active"],
-        "isOnline": userData["isOnline"],
-        "image": userData["image"],
-        "token": userData["token"]
-      });  
-      await ds.updateUserOnlineToken(userId(), true);
-      sp.setString("userName", userData["name"]);
-      sp.setString("userImage", userData["image"]);
+      await Future.wait([
+        ds.getUser(userId: userId()).then(( DocumentSnapshot<Object?> snapshot) async {
+          Map<String, dynamic> userData = snapshot.data() as Map<String, dynamic>;
+          chatUser = ChatUser.fromJson({
+            "uid": userId(),
+            "name": userData["name"],
+            "email": userData["email"],
+            "last_active": userData["last_active"],
+            "isOnline": userData["isOnline"],
+            "image": userData["image"],
+            "token": userData["token"]
+          });  
+          await ds.updateUserOnlineToken(userId(), true);
+          sp.setString("userName", userData["name"]);
+          sp.setString("userImage", userData["image"]);
+        })
+      ]);
       setStateAuthStatus(AuthStatus.loaded);
-    } catch(e) {
+    } catch(e, stacktrace) {
+      debugPrint(stacktrace.toString());
       setStateAuthStatus(AuthStatus.error);
-      debugPrint(e.toString());
     }
   }
 
@@ -130,13 +133,14 @@ class AuthenticationProvider extends ChangeNotifier {
     setStateRegisterStatus(RegisterStatus.loading);
     try {
       await Future.wait([
-        auth.createUserWithEmailAndPassword(email: email, password: password),
-        css.saveUserImageToStorage(
-          uid: auth.currentUser!.uid,
-          name: name,
-          file: image,
-          email: email
-        )
+        auth.createUserWithEmailAndPassword(email: email, password: password).then((UserCredential uc) async {
+          await css.saveUserImageToStorage(
+            uid: uc.user!.uid,
+            name: name,
+            file: image,
+            email: email
+          );
+        }),
       ]); 
       setStateRegisterStatus(RegisterStatus.loaded);
       sp.setBool("login", true);

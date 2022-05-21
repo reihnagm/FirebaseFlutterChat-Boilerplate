@@ -35,7 +35,29 @@ class SignOutConfirmationDialog extends StatelessWidget {
             color: ColorResources.hintColor
           ),
           Row(
+            mainAxisSize: MainAxisSize.max,
             children: [
+              Expanded(
+                child: InkWell(
+                  onTap: () => Navigator.pop(context),
+                  child: Container(
+                    padding: EdgeInsets.all(Dimensions.paddingSizeSmall),
+                    alignment: Alignment.center,
+                    decoration: const BoxDecoration(
+                      color: ColorResources.white, 
+                      borderRadius: BorderRadius.only(
+                        bottomRight: Radius.circular(10.0)
+                      )
+                    ),
+                    child: Text("No", 
+                      style: dongleLight.copyWith(
+                        color: ColorResources.black,
+                        fontSize: Dimensions.fontSizeSmall,
+                      )
+                    ),
+                  ),
+                )
+              ),
               Expanded(
                 child: InkWell(
                 onTap: () async {
@@ -59,7 +81,7 @@ class SignOutConfirmationDialog extends StatelessWidget {
                             fontSize: Dimensions.fontSizeSmall
                           )
                         )
-                      : Text("Ya", 
+                      : Text("Yes", 
                           style: dongleLight.copyWith(
                             color: ColorResources.white,
                             fontSize: Dimensions.fontSizeSmall
@@ -68,27 +90,7 @@ class SignOutConfirmationDialog extends StatelessWidget {
                     );   
                   },
                 )
-              )),
-              Expanded(
-                child: InkWell(
-                onTap: () => Navigator.pop(context),
-                child: Container(
-                  padding: EdgeInsets.all(Dimensions.paddingSizeSmall),
-                  alignment: Alignment.center,
-                  decoration: const BoxDecoration(
-                    color: ColorResources.white, 
-                    borderRadius: BorderRadius.only(
-                      bottomRight: Radius.circular(10.0)
-                    )
-                  ),
-                  child: Text("Tidak", 
-                    style: dongleLight.copyWith(
-                      color: ColorResources.black,
-                      fontSize: Dimensions.fontSizeSmall,
-                    )
-                  ),
-                ),
-              )),
+              ))
             ]
           ),
         ]

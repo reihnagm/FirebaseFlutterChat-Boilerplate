@@ -7,9 +7,9 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:189063184113:android:ffc6d8b4293589257e3350",
+        "mobilesdk_app_id": "1:189063184113:android:b948735d46678c4c7e3350",
         "android_client_info": {
-          "package_name": "com.example.chatv28"
+          "package_name": "com.reihanagam.chat"
         }
       },
       "oauth_client": [
@@ -29,6 +29,49 @@
             {
               "client_id": "189063184113-cl33c1j0akc6oovpejc6vocaohvcmc8d.apps.googleusercontent.com",
               "client_type": 3
+            },
+            {
+              "client_id": "189063184113-8q88k6focpjbri28sifaiutfkqa2nct3.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.chatv28"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:189063184113:android:9fb2a10eb68949387e3350",
+        "android_client_info": {
+          "package_name": "com.reihanagam.stream_video"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "189063184113-cl33c1j0akc6oovpejc6vocaohvcmc8d.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDwhHKaKRBvg4IWK7Tc2j4sEavnLoW724M"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "189063184113-cl33c1j0akc6oovpejc6vocaohvcmc8d.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "189063184113-8q88k6focpjbri28sifaiutfkqa2nct3.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.chatv28"
+              }
             }
           ]
         }

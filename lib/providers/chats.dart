@@ -168,7 +168,7 @@ class ChatsProvider extends ChangeNotifier {
       Map<String, dynamic> item = doc.data() as Map<String, dynamic>;
       List<Token> tokensAssign = [];
       List tokens = item["tokens"];
-      for (dynamic token in tokens) {
+      for (var token in tokens) {
         tokensAssign.add(Token.fromJson(token));
       }
       _tokens = tokensAssign;

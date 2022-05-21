@@ -70,6 +70,14 @@ class DatabaseService {
     }
     return query.snapshots();
   }
+
+  Stream<DocumentSnapshot<Map<String, dynamic>>> isScreenOn({required String chatId}) {
+    return db
+    .collection(onScreenCollection)
+    .doc(chatId)
+    .snapshots();
+  }
+
   
   /*------------*/
   /*-- STREAM --*/
@@ -244,7 +252,7 @@ class DatabaseService {
         "is_activity": membersAssign
       });
     }
-    Future.delayed(const Duration(milliseconds: 1000), () async {
+    Future.delayed(const Duration(milliseconds: 500), () async {
       await batch.commit();
     });
   }
@@ -411,93 +419,76 @@ class DatabaseService {
     WriteBatch batch = FirebaseFirestore.instance.batch();
     if(userId != null) {
       try {
-        db
-        .collection(userCollection)
-        .doc(userId)
-        .update({
-          "isOnline": isOnline
-        }).then((_) async {
-          await db
-          .collection(userCollection)
-          .doc(userId)
-          .update({
-            "token": await FirebaseMessaging.instance.getToken()
-          });
-        });
       
+        // db
+        // .collection(userCollection)
+        // .doc(userId)
+        // .update({});
+  
         DocumentSnapshot<Map<String, dynamic>> user = await db
         .collection(userCollection)
         .doc(userId)
         .get();
-        QuerySnapshot<Map<String, dynamic>> tokens = await db
-        .collection(tokenCollection)
-        .get();
-        QuerySnapshot<Map<String, dynamic>> onscreens = await db
-        .collection(onScreenCollection)
-        .get();
-        QuerySnapshot<Map<String, dynamic>> members = await db
-        .collection(membersCollection)
-        .get();
+        // QuerySnapshot<Map<String, dynamic>> tokens = await db
+        // .collection(tokenCollection)
+        // .get();
+        // QuerySnapshot<Map<String, dynamic>> onscreens = await db
+        // .collection(onScreenCollection)
+        // .get();
+        // QuerySnapshot<Map<String, dynamic>> members = await db
+        // .collection(membersCollection)
+        // .get();
 
         batch.update(user.reference, {
+          "isOnline": isOnline,
+          "token": await FirebaseMessaging.instance.getToken(),
           "last_active": DateTime.now()
         });
         
-        if(tokens.docs.isNotEmpty) {
-          for (QueryDocumentSnapshot<Map<String, dynamic>> tokenDoc in tokens.docs) {
-            List tokens = tokenDoc.data()["tokens"];
-            int index = tokens.indexWhere((el) => el["user_id"] == userId);
-            if(index != -1) {
-              tokens[index]["token"] = await FirebaseMessaging.instance.getToken();
-              batch.update(tokenDoc.reference, {
-                "tokens": tokens
-              });
-            }
-          }
-        }
+        // if(tokens.docs.isNotEmpty) {
+        //   for (QueryDocumentSnapshot<Map<String, dynamic>> tokenDoc in tokens.docs) {
+        //     List tokens = tokenDoc.data()["tokens"];
+        //     int index = tokens.indexWhere((el) => el["user_id"] == userId);
+        //     if(index != -1) {
+        //       tokens[index]["token"] = await FirebaseMessaging.instance.getToken();
+        //       batch.update(tokenDoc.reference, {
+        //         "tokens": tokens
+        //       });
+        //     }
+        //   }
+        // }
 
-        if(onscreens.docs.isNotEmpty) {
-          for (QueryDocumentSnapshot<Map<String, dynamic>> screenDoc in onscreens.docs) {
-            List onscreens = screenDoc.data()["on_screens"];
-            int index = onscreens.indexWhere((el) => el["user_id"] == userId);
-            if(index != -1) {
-              onscreens[index]["token"] = await FirebaseMessaging.instance.getToken();
-              batch.update(screenDoc.reference, {
-                "on_screens": onscreens
-              });
-            }
-          }
-        }
+        // if(onscreens.docs.isNotEmpty) {
+        //   for (QueryDocumentSnapshot<Map<String, dynamic>> screenDoc in onscreens.docs) {
+        //     List onscreens = screenDoc.data()["on_screens"];
+        //     int index = onscreens.indexWhere((el) => el["user_id"] == userId);
+        //     if(index != -1) {
+        //       onscreens[index]["token"] = await FirebaseMessaging.instance.getToken();
+        //       batch.update(screenDoc.reference, {
+        //         "on_screens": onscreens
+        //       });
+        //     }
+        //   }
+        // }
           
-        if(members.docs.isNotEmpty) {
-          for (QueryDocumentSnapshot<Map<String, dynamic>> memberDoc in members.docs) {
-            List members = memberDoc.data()["members"];
-            int index = members.indexWhere((el) => el["uid"] == userId);
-            if(index != -1) {
-              members[index]["isOnline"] = isOnline;
-              members[index]["last_active"] = DateTime.now();
-              batch.update(memberDoc.reference, {
-                "members": members
-              });
-            }
-          }
-        }
+        // if(members.docs.isNotEmpty) {
+        //   for (QueryDocumentSnapshot<Map<String, dynamic>> memberDoc in members.docs) {
+        //     List members = memberDoc.data()["members"];
+        //     int index = members.indexWhere((el) => el["uid"] == userId);
+        //     if(index != -1) {
+        //       members[index]["isOnline"] = isOnline;
+        //       members[index]["last_active"] = DateTime.now();
+        //       batch.update(memberDoc.reference, {
+        //         "members": members
+        //       });
+        //     }
+        //   }
+        // }
 
-        batch.commit();
-      } catch(e) {
-        debugPrint(e.toString());
+        await batch.commit();
+      } catch(e, stacktrace) {
+        debugPrint(stacktrace.toString());
       }
-    }
-  }
-
-  Stream<DocumentSnapshot>? isScreenOn({required String chatId}) {
-    try {
-      return db
-      .collection(onScreenCollection)
-      .doc(chatId)
-      .snapshots();
-    } catch(e) {
-      debugPrint(e.toString());
     }
   }
 

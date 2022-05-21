@@ -298,11 +298,7 @@ class _RegisterPageState extends State<RegisterPage> {
         if(registerFormKey.currentState!.validate()) {
           registerFormKey.currentState!.save();
           if(file != null) {
-            try {
-              await context.read<AuthenticationProvider>().registerUsingEmailAndPassword(context, name!, email!, password!, image!);  
-            } catch(e) {
-              debugPrint(e.toString());
-            }
+            await context.read<AuthenticationProvider>().registerUsingEmailAndPassword(context, name!, email!, password!, image!);  
           } else {
             ShowSnackbar.snackbar(context, "Avatar is required", "", ColorResources.error);
           }

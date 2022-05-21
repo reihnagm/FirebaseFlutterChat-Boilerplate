@@ -139,6 +139,12 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance?.addObserver(this);
+
+
+
+        context.read<AuthenticationProvider>().initAuthStateChanges();
+ 
+  
     // AwesomeNotifications().isNotificationAllowed().then((isAllowed) {
     //   if(!isAllowed) {
     //     showDialog(

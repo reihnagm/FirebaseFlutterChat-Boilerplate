@@ -43,7 +43,7 @@ android {
     }
 
     defaultConfig {
-        applicationId "com.example.chatv28"
+        applicationId "com.reihanagam.chat"
         minSdkVersion 21
         targetSdkVersion 32
         multiDexEnabled true

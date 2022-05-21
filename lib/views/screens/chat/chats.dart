@@ -14,7 +14,7 @@ import 'package:chat/basewidgets/custom_list_view_tiles.dart';
 import 'package:chat/basewidgets/top_bar.dart';
 
 import 'package:chat/basewidgets/animated_dialog/show_animate_dialog.dart';
-import 'package:chat/basewidgets/signout_confirmation_dialog/signout_confirmation_dialog.dart';
+import 'package:chat/basewidgets/dialog/signout.dart';
 
 import 'package:chat/models/chat_message.dart';
 import 'package:chat/models/chat.dart';
@@ -34,23 +34,26 @@ class _ChatsPageState extends State<ChatsPage> {
   late double deviceHeight;
   late double deviceWidth;
 
-  late AuthenticationProvider authenticationProvider;
-  late ChatsProvider chatsProvider;
+  late AuthenticationProvider ap;
+  late ChatsProvider cp;
 
   @override 
   void initState() {
     super.initState();
-    authenticationProvider = context.read<AuthenticationProvider>();
-    chatsProvider = context.read<ChatsProvider>();
+ 
     Future.delayed(Duration.zero, () {
-      context.read<AuthenticationProvider>().initAuthStateChanges();
       if(mounted) {
-        chatsProvider.getChats();
+        cp.getChats();
       }
-      if(mounted) {
-        chatsProvider.getTokensByChat();
-      }
+      // if(mounted) {
+      //   cp.getTokensByChat();
+      // }
     });
+  }
+
+  @override 
+  void dispose() {
+    super.dispose();
   }
  
   @override
@@ -63,6 +66,10 @@ class _ChatsPageState extends State<ChatsPage> {
   Widget buildUI() {
     return Builder(
       builder: (BuildContext context) {
+           
+        ap = context.read<AuthenticationProvider>();
+        cp = context.read<ChatsProvider>();
+
         return Container(
           decoration: const BoxDecoration(
             color: ColorResources.backgroundColor
@@ -109,8 +116,8 @@ class _ChatsPageState extends State<ChatsPage> {
         if(chats == null) {
           return const Center(
             child: SizedBox(
-              width: 16.0,
-              height: 16.0,
+              width: 8.0,
+              height: 8.0,
               child: CircularProgressIndicator(
                 color: ColorResources.loaderBluePrimary,
               ),
@@ -134,9 +141,9 @@ class _ChatsPageState extends State<ChatsPage> {
             ),
           );
         } 
-      }
-    )()
-  );}
+      })()
+    );
+  }
 
   Widget chatTile(BuildContext context, Chat chat) {
     String subtitle = "";

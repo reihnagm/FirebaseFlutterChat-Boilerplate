@@ -134,38 +134,30 @@ class ChatProvider extends ChangeNotifier {
   }
 
   void listenToMessages() {
-    try { 
-      messageStream = ds.streamMessagesForChat(chatId: chatId(), limit: 30).listen((snapshot) {
-        _messages = [];
-        List<ChatMessage> messages = snapshot.docs.map((m) {
-          Map<String, dynamic> messageData = m.data();
-          return ChatMessage.fromJSON(messageData);
-        }).toList();
-        _messages!.addAll(messages);
-        setStateMessageStatus(MessageStatus.loaded);
-      });
-    } catch(e, stacktrace) {
-      debugPrint(stacktrace.toString());
-    }
+    messageStream = ds.streamMessagesForChat(chatId: chatId(), limit: 30).listen((snapshot) {
+      _messages = [];
+      List<ChatMessage> messages = snapshot.docs.map((m) {
+        Map<String, dynamic> messageData = m.data();
+        return ChatMessage.fromJSON(messageData);
+      }).toList();
+      _messages!.addAll(messages);
+      setStateMessageStatus(MessageStatus.loaded);
+    });
   }
 
   void fetchMessages(int limitParam) {
     limit += limitParam;
     Future.delayed(Duration.zero, () => notifyListeners());
-    try { 
-      setStateFetchMessageStatus(FetchMessageStatus.loading);
-      messageStream = ds.streamMessagesForChat(chatId: chatId(), limit: limit).listen((snapshot) {
-        List<ChatMessage> messages = snapshot.docs.map((m) {
-          Map<String, dynamic> messageData = m.data();
-          return ChatMessage.fromJSON(messageData);
-        }).toList();
-        _messages = messages; 
-        setStateFetchMessageStatus(FetchMessageStatus.loaded);
-        setStateMessageStatus(MessageStatus.loaded);
-      });
-    } catch(e) {
-      debugPrint(e.toString());
-    }
+    setStateFetchMessageStatus(FetchMessageStatus.loading);
+    messageStream = ds.streamMessagesForChat(chatId: chatId(), limit: limit).listen((snapshot) {
+      List<ChatMessage> messages = snapshot.docs.map((m) {
+        Map<String, dynamic> messageData = m.data();
+        return ChatMessage.fromJSON(messageData);
+      }).toList();
+      _messages = messages; 
+      setStateFetchMessageStatus(FetchMessageStatus.loaded);
+      setStateMessageStatus(MessageStatus.loaded);
+    });
   }
 
   void onChangeMsg(BuildContext context, String val) {
@@ -189,125 +181,118 @@ class ChatProvider extends ChangeNotifier {
     required String groupImage,
     required bool isGroup
   }) async {
-    
-    await context.read<ChatsProvider>().getTokensByChat();
-    
-    List<ChatUser> members = context.read<ChatsProvider>().members;
-    String msgId = const Uuid().v4();
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    List readers = [];
-    List registrationIds = [];
-    for (Token token in context.read<ChatsProvider>().tokens) {
-      if(token.userId != ap.userId()) {
-        registrationIds.add(token.token.toString().trim());
-      }
-    }
-    if(isGroup) {
-      for (ChatUser member in members) {
-        if(member.uid != ap.userId()) {
-          if(member.uid == currentUserIsRead) {
-            readers.add({
-              "uid": member.uid,
-              "name": member.name,
-              "image": member.image,
-              "is_read": true,
-              "seen": DateTime.now(),
-              "created_at": DateTime.now()
-            });
-          } else {
-            readers.add({
-              "uid": member.uid,
-              "name": member.name,
-              "image": member.image,
-              "is_read": false,
-              "seen": DateTime.now(),
-              "created_at": DateTime.now()
-            });
+    try {
+      await Future.wait([
+        context.read<ChatsProvider>().getTokensByChat().then((_) async {             
+          List<ChatUser> members = context.read<ChatsProvider>().members;
+          String msgId = const Uuid().v4();
+          List readers = [];
+          List registrationIds = [];
+          for (Token token in context.read<ChatsProvider>().tokens) {
+            if(token.userId != ap.userId()) {
+              registrationIds.add(token.token.toString().trim());
+            }
           }
-        }
-      }
-    } else {
-      readers = [
-        {
-          "uid": ap.userId(),
-          "name": ap.userName(),
-          "image": ap.userImage(),
-          "is_read": true,
-          "seen": DateTime.now(),
-          "created_at": DateTime.now()
-        },
-        {
-          "uid": receiverId,
-          "name": receiverName,
-          "image": receiverImage,
-          "is_read": isRead,
-          "seen": DateTime.now(),
-          "created_at": DateTime.now()
-        }
-      ];
-    }
-    ChatMessage messageToSend = ChatMessage(
-      uid: msgId,
-      content: prefs.getString("msg")!, 
-      senderId: ap.userId(),
-      senderName: ap.userName(),
-      receiverId: receiverId, 
-      isRead: isRead ? true : false,
-      softDelete: false,
-      readers: [],
-      readerCountIds: [],
-      type: MessageType.text, 
-      sentTime: DateTime.now()
-    );
-    messageTextEditingController.text = "";
-    try {
-      ds.addMessageToChat(
-        context,
-        msgId: msgId,
-        chatId: chatId(), 
-        isGroup: isGroup,
-        message: messageToSend,
-        currentUserId: ap.userId(),
-        userIdNotRead: userIdNotRead,
-        readers: readers,
-      );
-      if(scrollController.hasClients) {
-        scrollController.animateTo(0, 
-          duration: const Duration(
-            milliseconds: 300
-          ), 
-          curve: Curves.easeInOut
-        );
-      }
-    } catch(e) {
-      debugPrint(e.toString());
-    }      
-    if(!isRead) {
-      try {
-        await context.read<FirebaseProvider>().sendNotification(
-          chatId: chatId(),
-          registrationIds: registrationIds,
-          tokens: context.read<ChatsProvider>().tokens,
-          token: token, 
-          title: title,
-          subtitle: subtitle,
-          body: messageToSend.content, 
-          receiverId: receiverId,
-          receiverName: receiverName,
-          receiverImage: receiverImage,
-          groupName: groupName,
-          groupImage: groupImage,
-          isGroup: isGroup,
-          type: "text"
-        );
-      } catch(e) {
-        debugPrint(e.toString());
-      }
-    }
-    try {
-      await loadSoundSent();
-    } catch(e) {
-      debugPrint(e.toString());
+          if(isGroup) {
+            for (ChatUser member in members) {
+              if(member.uid != ap.userId()) {
+                if(member.uid == currentUserIsRead) {
+                  readers.add({
+                    "uid": member.uid,
+                    "name": member.name,
+                    "image": member.image,
+                    "is_read": true,
+                    "seen": DateTime.now(),
+                    "created_at": DateTime.now()
+                  });
+                } else {
+                  readers.add({
+                    "uid": member.uid,
+                    "name": member.name,
+                    "image": member.image,
+                    "is_read": false,
+                    "seen": DateTime.now(),
+                    "created_at": DateTime.now()
+                  });
+                }
+              }
+            }
+          } else {
+            readers = [
+              {
+                "uid": ap.userId(),
+                "name": ap.userName(),
+                "image": ap.userImage(),
+                "is_read": true,
+                "seen": DateTime.now(),
+                "created_at": DateTime.now()
+              },
+              {
+                "uid": receiverId,
+                "name": receiverName,
+                "image": receiverImage,
+                "is_read": isRead,
+                "seen": DateTime.now(),
+                "created_at": DateTime.now()
+              }
+            ];
+          }
+          ChatMessage messageToSend = ChatMessage(
+            uid: msgId,
+            content: sp.getString("msg")!, 
+            senderId: ap.userId(),
+            senderName: ap.userName(),
+            receiverId: receiverId, 
+            isRead: isRead ? true : false,
+            softDelete: false,
+            readers: [],
+            readerCountIds: [],
+            type: MessageType.text, 
+            sentTime: DateTime.now()
+          );
+          messageTextEditingController.text = "";
+
+          await ds.addMessageToChat(
+            context,
+            msgId: msgId,
+            chatId: chatId(), 
+            isGroup: isGroup,
+            message: messageToSend,
+            currentUserId: ap.userId(),
+            userIdNotRead: userIdNotRead,
+            readers: readers,
+          );
+          if(scrollController.hasClients) {
+            scrollController.animateTo(0, 
+              duration: const Duration(
+                milliseconds: 300
+              ), 
+              curve: Curves.easeInOut
+            );
+          }             
+          if(!isRead) {
+            await context.read<FirebaseProvider>().sendNotification(
+              chatId: chatId(),
+              registrationIds: registrationIds,
+              tokens: context.read<ChatsProvider>().tokens,
+              token: token, 
+              title: title,
+              subtitle: subtitle,
+              body: messageToSend.content, 
+              receiverId: receiverId,
+              receiverName: receiverName,
+              receiverImage: receiverImage,
+              groupName: groupName,
+              groupImage: groupImage,
+              isGroup: isGroup,
+              type: "text"
+            );
+          }
+        }),
+        loadSoundSent()
+      ]);
+    } catch(e, stacktrace) {
+      debugPrint(stacktrace.toString());
     }
     Future.delayed(Duration.zero, () => notifyListeners());
   }
@@ -328,169 +313,156 @@ class ChatProvider extends ChangeNotifier {
       List<ChatUser> members = context.read<ChatsProvider>().members;
       List<Token> tokens = context.read<ChatsProvider>().tokens;
       String msgId = const Uuid().v4();
-      PlatformFile? file = await ms.pickImageFromLibrary();
-      if(file != null) { 
-        List readers = [];
-        List registrationIds = [];
-        for (Token token in tokens) {
-          registrationIds.add(token.token);
-        }
-        if(isGroup) {
-          for (ChatUser member in members) {
-            if(member.uid != ap.userId()) {
-              if(member.uid == currentUserIsRead) {
-                readers.add({
-                  "uid": member.uid,
-                  "name": member.name,
-                  "image": member.image,
+
+      await Future.wait([
+        ms.pickImageFromLibrary().then((PlatformFile? file) async {
+          if(file != null) { 
+            List readers = [];
+            List registrationIds = [];
+            for (Token token in tokens) {
+              registrationIds.add(token.token);
+            }
+            if(isGroup) {
+              for (ChatUser member in members) {
+                if(member.uid != ap.userId()) {
+                  if(member.uid == currentUserIsRead) {
+                    readers.add({
+                      "uid": member.uid,
+                      "name": member.name,
+                      "image": member.image,
+                      "is_read": true,
+                      "seen": DateTime.now(),
+                      "created_at": DateTime.now()
+                    });
+                  } else {
+                    readers.add({
+                      "uid": member.uid,
+                      "name": member.name,
+                      "image": member.image,
+                      "is_read": false,
+                      "seen": DateTime.now(),
+                      "created_at": DateTime.now()
+                    });
+                  }
+                }
+              }
+            } else {
+              readers = [
+                {
+                  "uid": ap.userId(),
+                  "name": ap.userName(),
+                  "image": ap.userImage(),
                   "is_read": true,
                   "seen": DateTime.now(),
                   "created_at": DateTime.now()
-                });
-              } else {
-                readers.add({
-                  "uid": member.uid,
-                  "name": member.name,
-                  "image": member.image,
-                  "is_read": false,
+                },
+                {
+                  "uid": receiverId,
+                  "name": receiverName,
+                  "image": receiverImage,
+                  "is_read": isRead,
                   "seen": DateTime.now(),
                   "created_at": DateTime.now()
-                });
-              }
+                }
+              ];
+            }
+            _messages!.insert(0,
+              ChatMessage(
+                uid: msgId,
+                content: "loading-img", 
+                senderId: ap.userId(),
+                senderName: ap.userName(),
+                receiverId: receiverId, 
+                isRead: isRead ? true : false,
+                softDelete: false,
+                readers: [],
+                readerCountIds: [],
+                type: MessageType.image, 
+                sentTime: DateTime.now()
+              )
+            );
+            String? downloadUrl = await css.saveChatImageToStorage(chatId(), ap.userId(), file);
+            if(scrollController.hasClients) {
+              scrollController.animateTo(0, 
+                duration: const Duration(
+                  milliseconds: 300
+                ), 
+                curve: Curves.easeInOut
+              );
+            }
+            ChatMessage messageToSend = ChatMessage(
+              uid: msgId,
+              content: downloadUrl!, 
+              senderId: ap.userId(),
+              senderName: ap.userName(),
+              receiverId: receiverId,
+              isRead: isRead ? true : false,
+              softDelete: false,
+              readers: [],
+              readerCountIds: [],
+              type: MessageType.image, 
+              sentTime: DateTime.now()
+            );
+            await ds.addMessageToChat(
+              context,
+              msgId: msgId,
+              chatId: chatId(),  
+              isGroup: isGroup,
+              message: messageToSend,
+              currentUserId: ap.userId(),
+              userIdNotRead: userIdNotRead,
+              readers: readers,
+            );
+            await ds.updateMicroTask(chatId: chatId());
+            if(!isRead) {
+              await Provider.of<FirebaseProvider>(context, listen: false).sendNotification(
+                chatId: chatId(),
+                registrationIds: registrationIds,
+                tokens: tokens,
+                token: token, 
+                title: title,
+                subtitle: subtitle,
+                body: messageToSend.content, 
+                receiverId: receiverId,
+                receiverName: receiverName,
+                receiverImage: receiverImage,
+                groupImage: groupImage,
+                groupName: groupName,
+                isGroup: isGroup,
+                type: "image"
+              );
             }
           }
-        } else {
-          readers = [
-            {
-              "uid": ap.userId(),
-              "name": ap.userName(),
-              "image": ap.userImage(),
-              "is_read": true,
-              "seen": DateTime.now(),
-              "created_at": DateTime.now()
-            },
-            {
-              "uid": receiverId,
-              "name": receiverName,
-              "image": receiverImage,
-              "is_read": isRead,
-              "seen": DateTime.now(),
-              "created_at": DateTime.now()
-            }
-          ];
-        }
-        _messages!.insert(0,
-          ChatMessage(
-            uid: msgId,
-            content: "loading-img", 
-            senderId: ap.userId(),
-            senderName: ap.userName(),
-            receiverId: receiverId, 
-            isRead: isRead ? true : false,
-            softDelete: false,
-            readers: [],
-            readerCountIds: [],
-            type: MessageType.image, 
-            sentTime: DateTime.now()
-          )
-        );
-        String? downloadUrl = await css.saveChatImageToStorage(chatId(), ap.userId(), file);
-        if(scrollController.hasClients) {
-          scrollController.animateTo(0, 
-            duration: const Duration(
-              milliseconds: 300
-            ), 
-            curve: Curves.easeInOut
-          );
-        }
-        ChatMessage messageToSend = ChatMessage(
-          uid: msgId,
-          content: downloadUrl!, 
-          senderId: ap.userId(),
-          senderName: ap.userName(),
-          receiverId: receiverId,
-          isRead: isRead ? true : false,
-          softDelete: false,
-          readers: [],
-          readerCountIds: [],
-          type: MessageType.image, 
-          sentTime: DateTime.now()
-        );
-        try {      
-          ds.addMessageToChat(
-            context,
-            msgId: msgId,
-            chatId: chatId(),  
-            isGroup: isGroup,
-            message: messageToSend,
-            currentUserId: ap.userId(),
-            userIdNotRead: userIdNotRead,
-            readers: readers,
-          ).then((_) async {
-            await ds.updateMicroTask(chatId: chatId());
-          });
-        } catch(e, stacktrace) {
-          debugPrint(stacktrace.toString());
-        } 
-        if(!isRead) {
-          try {
-            await Provider.of<FirebaseProvider>(context, listen: false).sendNotification(
-              chatId: chatId(),
-              registrationIds: registrationIds,
-              tokens: tokens,
-              token: token, 
-              title: title,
-              subtitle: subtitle,
-              body: messageToSend.content, 
-              receiverId: receiverId,
-              receiverName: receiverName,
-              receiverImage: receiverImage,
-              groupImage: groupImage,
-              groupName: groupName,
-              isGroup: isGroup,
-              type: "image"
-            );
-          } catch(e, stacktrace) {
-            debugPrint(stacktrace.toString());
-          } 
-        }
-        try {
-          await loadSoundSent();
-        } catch(e, stacktrace) {
-          debugPrint(stacktrace.toString());
-        }
-      }
+        }),
+        loadSoundSent()
+      ]);
     } catch (e, stacktrace) {
       debugPrint(stacktrace.toString());
     }
   }
 
-  void isScreenOn({required String receiverId}) async {
-    try {
-      isScreenOnStream = ds.isScreenOn(chatId: chatId())!.listen((snapshot) {
-        if(snapshot.exists) {
-          Map<String, dynamic> data = snapshot.data() as Map<String, dynamic>;
-          if(data["on_screens"].where((el) => el["user_id"] == receiverId).isNotEmpty) {
-            token = data["on_screens"].firstWhere((el) => el["user_id"] == receiverId)["token"];
-            isRead = data["on_screens"].firstWhere((el) => el["user_id"] == receiverId)["on"];
-          } 
-          if(data["on_screens"].where((el) => el["on"] == false).isNotEmpty) {
-            userIdNotRead = [];
-            for (var item in data["on_screens"].where((el) => el["on"] == false && el["user_id"] != userId()).toList()) {
-              userIdNotRead.add(item["user_id"]);
-            }
-          }
-          if(data["on_screens"].where((el) => el["user_id"] != userId() && el["on"] == true).isNotEmpty) {
-            currentUserIsRead = data["on_screens"].firstWhere((el) => el["user_id"] != userId() && el["on"] == true)["user_id"];
-          } else {
-            currentUserIsRead = "";
+  void isScreenOn({required String receiverId}) {
+    isScreenOnStream = ds.isScreenOn(chatId: chatId()).listen((snapshot) {
+      if(snapshot.exists) {
+        Map<String, dynamic> data = snapshot.data() as Map<String, dynamic>;
+        if(data["on_screens"].where((el) => el["user_id"] == receiverId).isNotEmpty) {
+          token = data["on_screens"].firstWhere((el) => el["user_id"] == receiverId)["token"];
+          isRead = data["on_screens"].firstWhere((el) => el["user_id"] == receiverId)["on"];
+        } 
+        if(data["on_screens"].where((el) => el["on"] == false).isNotEmpty) {
+          userIdNotRead = [];
+          for (var item in data["on_screens"].where((el) => el["on"] == false && el["user_id"] != userId()).toList()) {
+            userIdNotRead.add(item["user_id"]);
           }
         }
-        Future.delayed(Duration.zero, () => notifyListeners()); 
-      });
-    } catch(e) {
-      debugPrint(e.toString());
-    }
+        if(data["on_screens"].where((el) => el["user_id"] != userId() && el["on"] == true).isNotEmpty) {
+          currentUserIsRead = data["on_screens"].firstWhere((el) => el["user_id"] != userId() && el["on"] == true)["user_id"];
+        } else {
+          currentUserIsRead = "";
+        }
+      }
+      Future.delayed(Duration.zero, () => notifyListeners()); 
+    });
   }
 
   Future<void> joinScreen() async {
@@ -499,8 +471,8 @@ class ChatProvider extends ChangeNotifier {
         chatId: chatId(),
         userId: ap.userId()
       );
-    } catch(e) {
-      debugPrint(e.toString());
+    } catch(e, stacktrace) {
+      debugPrint(stacktrace.toString());
     }
   }
 
@@ -510,8 +482,8 @@ class ChatProvider extends ChangeNotifier {
         chatId: chatId(),
         userId: ap.userId()
       );
-    } catch(e) {
-      debugPrint(e.toString());
+    } catch(e, stacktrace) {
+      debugPrint(stacktrace.toString());
     }
   }
 
@@ -519,24 +491,25 @@ class ChatProvider extends ChangeNotifier {
     try {
       ByteData asset = await rootBundle.load("assets/sounds/sent.mp3");
       return await pool.play(await pool.load(asset));
-    } catch(e) {
-      debugPrint(e.toString());
+    } catch(e, stacktrace) {
+      debugPrint(stacktrace.toString());
     }
     return 0;
   }
 
   Future<void> seeMsg({required String receiverId, required bool isGroup}) async {
     try {
-      ds.seeMsg(
-        chatId: chatId(),
-        isGroup: isGroup,
-        receiverId: receiverId,
-        userId: ap.userId(),
-        userName: ap.userName(),
-        userImage: ap.userImage(),
-      ).then((_) async {
-        await ds.updateMicroTask(chatId: chatId());
-      });
+      await Future.wait([
+        ds.seeMsg(
+          chatId: chatId(),
+          isGroup: isGroup,
+          receiverId: receiverId,
+          userId: ap.userId(),
+          userName: ap.userName(),
+          userImage: ap.userImage(),
+        ),
+        ds.updateMicroTask(chatId: chatId())
+      ]);
     } catch(e, stacktrace) {
       debugPrint(stacktrace.toString());
     }
@@ -563,60 +536,49 @@ class ChatProvider extends ChangeNotifier {
   }
 
   Future<void> deleteMsgBulk({required bool softDelete}) async {
-    try {
-      for (ChatMessage item in selectedMessages) {
+    for (ChatMessage item in selectedMessages) {
+      await Future.wait([
         ds.deleteMsgBulk(
           chatId: chatId(), 
           msgId: item.uid,
           softDelete: softDelete
-        ).then((_) async {
-          await ds.updateMicroTask(chatId: chatId());
-        });
-        await ds.removeReaderCountIds(chatId: chatId());
-      }
-      selectedMessages = [];
-      Future.delayed(Duration.zero, () => notifyListeners());
-    } catch(e) {
-      debugPrint(e.toString());
+        ),
+        ds.removeReaderCountIds(chatId: chatId()),
+        ds.updateMicroTask(chatId: chatId())
+      ]);
     }
+    selectedMessages = [];
+    Future.delayed(Duration.zero, () => notifyListeners());
   }
 
   void isUserOnline({required String receiverId}) {
-    try {
-      isUserOnlineStream = ds.getChatUserOnline(userId: receiverId).listen((snapshot) {
-        isOnline = "";
-        Map<String, dynamic> data = snapshot.data() as Map<String, dynamic>;
-        ChatUser chatUser = ChatUser.fromJson(data);
-        chatUser.isUserOnline() 
-        ? isOnline = "ONLINE" 
-        : isOnline = "OFFLINE";
-        Future.delayed(Duration.zero, () => notifyListeners());
-      });
-    } catch(e) {
-      debugPrint(e.toString());
-    }
+    isUserOnlineStream = ds.getChatUserOnline(userId: receiverId).listen((snapshot) {
+      isOnline = "";
+      Map<String, dynamic> data = snapshot.data() as Map<String, dynamic>;
+      ChatUser chatUser = ChatUser.fromJson(data);
+      chatUser.isUserOnline() 
+      ? isOnline = "ONLINE" 
+      : isOnline = "OFFLINE";
+      Future.delayed(Duration.zero, () => notifyListeners());
+    });
   }
 
-  Future<void> isUserTyping() async {
-    try {
-      isUserTypingStream = ds.isUserTyping(chatId: chatId()).listen((snapshot) {
-        if(snapshot.exists) {
-          Map<String, dynamic> data = snapshot.data() as Map<String, dynamic>;
-          List isActivities = data["is_activity"];
-          int index = isActivities.indexWhere((el) => el["is_active"] == true && el["user_id"] != userId());
-          if(index != -1) {
-            isTyping = isActivities[index]["is_group"] == true
-            ? "${isActivities[index]["name"]} sedang menulis pesan..."
-            : "Mengetik...";
-          } else {
-            isTyping = "";
-          }
-          Future.delayed(Duration.zero, () => notifyListeners());
+  void isUserTyping() {
+    isUserTypingStream = ds.isUserTyping(chatId: chatId()).listen((snapshot) {
+      if(snapshot.exists) {
+        Map<String, dynamic> data = snapshot.data() as Map<String, dynamic>;
+        List isActivities = data["is_activity"];
+        int index = isActivities.indexWhere((el) => el["is_active"] == true && el["user_id"] != userId());
+        if(index != -1) {
+          isTyping = isActivities[index]["is_group"] == true
+          ? "${isActivities[index]["name"]} sedang menulis pesan..."
+          : "Mengetik...";
+        } else {
+          isTyping = "";
         }
-      });
-    } catch(e) {
-      debugPrint(e.toString());
-    }
+          Future.delayed(Duration.zero, () => notifyListeners());
+      }
+    });
   }
 
   String userId() => sp.getString("userId") ?? "";

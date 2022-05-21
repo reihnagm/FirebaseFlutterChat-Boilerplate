@@ -50,19 +50,15 @@ class UserProvider extends ChangeNotifier {
     super.dispose();
   }
   
-  Future<void> getUsers({String? name}) async {
-    try {
-      usersStream = ds.getUsers(name: name).listen((event) async {
-        _users = event.docs.map((d) {
-          Map<String, dynamic> data = d.data() as Map<String, dynamic>;
-          data["uid"] = d.id;
-          return ChatUser.fromJson(data);
-        }).toList();
-        Future.delayed(Duration.zero, () => notifyListeners());
-      });
-    } catch(e) {  
-      debugPrint(e.toString());
-    }
+  void getUsers({String? name}) {
+    usersStream = ds.getUsers(name: name).listen((event) async {
+      _users = event.docs.map((d) {
+        Map<String, dynamic> data = d.data() as Map<String, dynamic>;
+        data["uid"] = d.id;
+        return ChatUser.fromJson(data);
+      }).toList();
+      Future.delayed(Duration.zero, () => notifyListeners());
+    });
   }
 
   void updateSelectedUsers(ChatUser user) {
@@ -88,98 +84,80 @@ class UserProvider extends ChangeNotifier {
       List members = [];
       List onScreens = [];
       setStateCreateGroupStatus(CreateGroupStatus.loading);
+
       for (String uid in relations) {
         try {
-          DocumentSnapshot<Object?> snapshot = await ds.getUser(userId: uid);
-          Map<String, dynamic> userData = snapshot.data() as Map<String, dynamic>;
-          members.add({
-            "uid": snapshot.id,
-            "token": userData["token"],
-            "name": userData["name"],
-            "email": userData["email"],
-            "image": userData["image"],
-            "isOnline":  userData["isOnline"],
-            "last_active": userData["last_active"]
-          });
-          tokens.add({
-            "user_id": snapshot.id,
-            "token": userData["token"]
-          });
-          isActivity.add({
-            "chat_id": chatId,
-            "user_id": snapshot.id,
-            "name": userData["name"],
-            "is_active": false,
-            "is_group": true
-          });
-          onScreens.add({
-            "user_id": snapshot.id,
-            "token": userData["token"],
-            "on": false 
-          });
-        } catch(e, stacktrace) {
-          setStateCreateGroupStatus(CreateGroupStatus.error);
-          debugPrint(stacktrace.toString());
-        }
-      }
-      try {
-        await ds.createOnScreens(chatId, {
-          "id": chatId,
-          "on_screens": onScreens,
-        });
-      } catch(e, stacktrace) {
-        debugPrint(stacktrace.toString());
-      }
-      try {
-        await ds.insertTokens(
-          chatId: chatId, 
-          data: {
-            "tokens": tokens,
-          }
-        );
-      } catch(e, stacktrace) {
-        debugPrint(stacktrace.toString());
-      }
-      try {
-        await ds.insertMembers(
-          chatId: chatId, 
-          data: {
-            "members": members
-          }
-        );
-      } catch(e, stacktrace) {
-        debugPrint(stacktrace.toString());
-      }
-      try {
-        String? groupImageUrl = "";
-        if(groupImage != null) {
-          groupImageUrl = await css.saveGroupImageToStorage(
-            groupName: groupName, 
-            groupImage: groupImage
-          );
-        }
-        try {
-          await ds.createChatGroup(chatId, {
-            "is_group": isGroup,
-            "is_activity": isActivity,
-            "group": {
-              "name": groupName,
-              "image": groupImageUrl,
-            },  
-            "members": members,
-            "relations": relations,
-            "created_at": DateTime.now(),
-            "updated_at": DateTime.now(),
-          });
-          Navigator.of(context).pop();
+          await Future.wait([
+            ds.getUser(userId: uid).then((DocumentSnapshot<Object?> snapshot) async {
+              Map<String, dynamic> userData = snapshot.data() as Map<String, dynamic>;
+              members.add({
+                "uid": snapshot.id,
+                "token": userData["token"],
+                "name": userData["name"],
+                "email": userData["email"],
+                "image": userData["image"],
+                "isOnline":  userData["isOnline"],
+                "last_active": userData["last_active"]
+              });
+              tokens.add({
+                "user_id": snapshot.id,
+                "token": userData["token"]
+              });
+              isActivity.add({
+                "chat_id": chatId,
+                "user_id": snapshot.id,
+                "name": userData["name"],
+                "is_active": false,
+                "is_group": true
+              });
+              onScreens.add({
+                "user_id": snapshot.id,
+                "token": userData["token"],
+                "on": false 
+              });
+              
+              String? groupImageUrl = "";
+              if(groupImage != null) {
+                groupImageUrl = await css.saveGroupImageToStorage(
+                  groupName: groupName, 
+                  groupImage: groupImage
+                );
+              }
+              await ds.createChatGroup(chatId, {
+                "is_group": isGroup,
+                "is_activity": isActivity,
+                "group": {
+                  "name": groupName,
+                  "image": groupImageUrl,
+                },  
+                "members": members,
+                "relations": relations,
+                "created_at": DateTime.now(),
+                "updated_at": DateTime.now(),
+              });
+            }),
+            ds.createOnScreens(chatId, {
+              "id": chatId,
+              "on_screens": onScreens,
+            }),
+            ds.insertTokens(
+              chatId: chatId, 
+              data: {
+                "tokens": tokens,
+              }
+            ),
+            ds.insertMembers(
+              chatId: chatId, 
+              data: {
+                "members": members
+              }
+            )
+          ]);
+          ns.goBack(context);
           setStateCreateGroupStatus(CreateGroupStatus.loaded);
         } catch(e, stacktrace) {
-          setStateCreateGroupStatus(CreateGroupStatus.error);
           debugPrint(stacktrace.toString());
         }
-      } catch(e, stacktrace) {
-        setStateCreateGroupStatus(CreateGroupStatus.error);
-        debugPrint(stacktrace.toString());
       }
     }
   }
