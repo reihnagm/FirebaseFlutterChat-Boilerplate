@@ -29,7 +29,6 @@ class TopBar extends StatefulWidget {
 
 class _TopBarState extends State<TopBar> {
   late double deviceHeight;
-
   late double deviceWidth;
 
   @override

@@ -26,6 +26,13 @@ class AuthenticationProvider extends ChangeNotifier {
   final CloudStorageService css;
   final NavigationService ns;
 
+  AuthenticationProvider({
+    required this.sp, 
+    required this.ds,
+    required this.css,
+    required this.ns
+  });
+
   AuthStatus _authStatus = AuthStatus.loading;
   AuthStatus get authStatus => _authStatus;
 
@@ -61,13 +68,6 @@ class AuthenticationProvider extends ChangeNotifier {
   FirebaseAuth auth = FirebaseAuth.instance;
   ChatUser? chatUser;
   
-  AuthenticationProvider({
-    required this.sp, 
-    required this.ds,
-    required this.css,
-    required this.ns
-  });
-
   Future<void> initAuthStateChanges() async {
     try {
       await Future.wait([

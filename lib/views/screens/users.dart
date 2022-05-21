@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:provider/provider.dart';
 import 'package:timeago/timeago.dart' as timeago;
@@ -180,7 +181,7 @@ class _UsersPageState extends State<UsersPage> {
                                                   Text("Create a group",
                                                     style: dongleLight.copyWith(
                                                       color: ColorResources.textBlackPrimary,
-                                                      fontSize: Dimensions.fontSizeSmall,
+                                                      fontSize: 30.0.sp,
                                                     ),
                                                   ),
                                                 ],
@@ -341,13 +342,12 @@ class _UsersPageState extends State<UsersPage> {
                                               child: ListView.builder(
                                                 itemCount: userProvider.users!.length,
                                                 itemBuilder: (BuildContext context, int i) {
-                                                  return CustomListViewTile(
+                                                  return CustomListViewCreateAGroupTile(
                                                     title: userProvider.users![i].name!,
                                                     group: false,
-                                                    subtitle: "Last Active: ${timeago.format(userProvider.users![i].lastActive!)}",
+                                                    subtitle: "",
                                                     height: deviceHeight * 0.10,  
                                                     imagePath: userProvider.users![i].image!, 
-                                                    isActive: userProvider.users![i].isUserOnline(), 
                                                     isSelected: userProvider.selectedUsers.contains(userProvider.users![i]), 
                                                     onTap: () {
                                                       userProvider.updateSelectedUsers(userProvider.users![i]);

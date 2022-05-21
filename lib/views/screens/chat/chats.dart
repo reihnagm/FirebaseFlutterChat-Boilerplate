@@ -116,8 +116,8 @@ class _ChatsPageState extends State<ChatsPage> {
         if(chats == null) {
           return const Center(
             child: SizedBox(
-              width: 8.0,
-              height: 8.0,
+              width: 16.0,
+              height: 16.0,
               child: CircularProgressIndicator(
                 color: ColorResources.loaderBluePrimary,
               ),

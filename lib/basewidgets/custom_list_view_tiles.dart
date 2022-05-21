@@ -73,6 +73,62 @@ class CustomListViewTile extends StatelessWidget {
   }
 }
 
+class CustomListViewCreateAGroupTile extends StatelessWidget {
+  final double height;
+  final bool group;
+  final String title;
+  final String subtitle;
+  final String imagePath;
+  final bool isSelected;
+  final Function onTap;
+  final Function? onLongPress;
+
+  const CustomListViewCreateAGroupTile({
+    Key? key, 
+    required this.height,
+    required this.group,
+    required this.title,
+    required this.subtitle,
+    required this.imagePath,
+    required this.isSelected,
+    required this.onTap,
+    this.onLongPress,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      trailing: isSelected 
+      ? const Icon(
+          Icons.check,
+          color: ColorResources.backgroundBlueSecondary,
+        )
+      : null,
+      onTap: () => onTap(),
+      onLongPress: () => onLongPress!(),
+      leading: RoundedImageNetworkWithoutStatusIndicator(
+        imagePath: imagePath,
+        group: group,
+        key: UniqueKey(),
+        size: height / 2,
+      ),
+      title: Text(title,
+        style: dongleLight.copyWith(
+          color: ColorResources.textBlackPrimary,
+          fontSize: Dimensions.fontSizeSmall,
+          height: 0.0
+        ),
+      ),
+      subtitle: Text(subtitle,
+        style: dongleLight.copyWith(
+          color: ColorResources.textBlackPrimary,
+          fontSize: Dimensions.fontSizeExtraSmall,
+        ),
+      ),
+    );
+  }
+}
+
 class CustomListViewUsersTile extends StatelessWidget {
   final double height;
   final bool group;

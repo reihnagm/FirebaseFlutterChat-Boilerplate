@@ -420,10 +420,7 @@ class DatabaseService {
     if(userId != null) {
       try {
       
-        // db
-        // .collection(userCollection)
-        // .doc(userId)
-        // .update({});
+   
   
         DocumentSnapshot<Map<String, dynamic>> user = await db
         .collection(userCollection)

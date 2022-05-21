@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:cron/cron.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
@@ -140,11 +141,17 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
     super.initState();
     WidgetsBinding.instance?.addObserver(this);
 
+    Future.delayed(Duration.zero, () async {
+      if(mounted) {
+        await context.read<AuthenticationProvider>().initAuthStateChanges();
+      }
+    });
 
+    Cron cron = Cron();
+    cron.schedule(Schedule.parse('*/1 * * * *'), () async {
+      await context.read<AuthenticationProvider>().initAuthStateChanges();
+    });
 
-        context.read<AuthenticationProvider>().initAuthStateChanges();
- 
-  
     // AwesomeNotifications().isNotificationAllowed().then((isAllowed) {
     //   if(!isAllowed) {
     //     showDialog(
@@ -229,11 +236,11 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
 
   @override
   void dispose() {
+    super.dispose();
     // AwesomeNotifications().actionSink.close();
     // AwesomeNotifications().createdSink.close();
     // AwesomeNotifications().displayedSink.close();
     // AwesomeNotifications().dispose();
-    super.dispose();
     WidgetsBinding.instance?.removeObserver(this);
   }
 

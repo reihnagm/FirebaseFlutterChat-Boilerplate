@@ -27,12 +27,14 @@ class ChatsGroupDetail extends StatefulWidget {
 }
 
 class _ChatsGroupDetailState extends State<ChatsGroupDetail> {
+  GlobalKey<ScaffoldState> globalKey = GlobalKey<ScaffoldState>();
   
+  late ChatsProvider cp;
+  late ScrollController sc;
+
   String imageUrl = "";
   String title = "";
   String titleMore = "";
-  late ChatsProvider chatsProvider;
-  late ScrollController scrollController;
   bool lastStatus = true;
 
   scrollListener() {
@@ -44,16 +46,18 @@ class _ChatsGroupDetailState extends State<ChatsGroupDetail> {
   }
 
   bool get isShrink {
-    return scrollController.hasClients && scrollController.offset > (250 - kToolbarHeight);
+    return sc.hasClients && sc.offset > (250 - kToolbarHeight);
   }
 
   @override
   void initState() {
-    super.initState();
-    chatsProvider = context.read<ChatsProvider>();
-    chatsProvider.getMembersByChat();
-    scrollController = ScrollController();
-    scrollController.addListener(scrollListener);
+    super.initState();    
+    
+    cp = context.read<ChatsProvider>();
+    cp.getMembersByChat();
+
+    sc = ScrollController();
+    sc.addListener(scrollListener);
     if (widget.title.length > 24) {
       titleMore = widget.title.substring(0, 24);
     } else {
@@ -63,8 +67,9 @@ class _ChatsGroupDetailState extends State<ChatsGroupDetail> {
 
   @override
   void dispose() {
-    scrollController.removeListener(scrollListener);
-    scrollController.dispose();
+    sc.removeListener(scrollListener);
+    sc.dispose();
+    
     super.dispose();
   }
   
@@ -75,6 +80,7 @@ class _ChatsGroupDetailState extends State<ChatsGroupDetail> {
     imageUrl = widget.imageUrl;
 
     return Scaffold(
+      key: globalKey,
       body: SafeArea(
         child: LayoutBuilder(
           builder: (BuildContext context, BoxConstraints constraints) {
@@ -89,7 +95,7 @@ class _ChatsGroupDetailState extends State<ChatsGroupDetail> {
                   );
                 }
                 return CustomScrollView(
-                  controller: scrollController,
+                  controller: sc,
                   slivers: [
                     SliverAppBar(
                       elevation: 0.0,
@@ -184,38 +190,20 @@ class _ChatsGroupDetailState extends State<ChatsGroupDetail> {
                             return context.read<AuthenticationProvider>().userId() == chatsProvider.members[i].uid 
                             ? Container() 
                             : ListTile(
-                              onTap: () {},
-                              leading: RoundedImageNetworkWithStatusIndicator(
-                                key: UniqueKey(),
-                                imagePath: chatsProvider.members[i].image!, 
-                                size: MediaQuery.of(context).size.height * 0.10 / 2, 
-                                isActive: chatsProvider.members[i].isOnline!,
-                                group: false
-                              ),
+                                onTap: () {},
+                                leading: RoundedImageNetworkWithoutStatusIndicator(
+                                  key: UniqueKey(),
+                                  imagePath: chatsProvider.members[i].image!, 
+                                  size: MediaQuery.of(context).size.height * 0.10 / 2, 
+                                  group: false
+                                ),
                               minVerticalPadding: MediaQuery.of(context).size.height * 0.10 * 0.20,
                               title: Text(chatsProvider.members[i].name!,
                                 style: dongleLight.copyWith(
                                   color: ColorResources.black,
                                   fontSize: Dimensions.fontSizeSmall,
-                                  fontWeight: FontWeight.bold
                                 )
-                              ),
-                              subtitle: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  SizedBox(
-                                    width: MediaQuery.of(context).size.width * 0.50,
-                                    child: Text("Last Active: ${timeago.format(chatsProvider.members[i].lastActive!)}", 
-                                    softWrap: true,
-                                      style: dongleLight.copyWith(
-                                        overflow: TextOverflow.ellipsis,
-                                        color: ColorResources.black,
-                                        fontSize: Dimensions.fontSizeExtraSmall,
-                                      )
-                                    ),
-                                  ),
-                                ],
-                              )     
+                              ),  
                             );
                           },
                           childCount: chatsProvider.members.length
