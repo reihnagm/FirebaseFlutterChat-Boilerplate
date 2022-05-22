@@ -14,7 +14,6 @@ import 'package:chat/basewidgets/snackbar/snackbar.dart';
 import 'package:chat/basewidgets/button/custom_button.dart';
 import 'package:chat/basewidgets/custom_input_fields.dart';
 
-import 'package:chat/services/cloud_storage.dart';
 import 'package:chat/services/media.dart';
 import 'package:chat/services/navigation.dart';
 

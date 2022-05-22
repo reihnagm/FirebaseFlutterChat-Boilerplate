@@ -490,56 +490,37 @@ class DatabaseService {
   }
 
   Future<DocumentSnapshot?> checkChat({required String chatId}) async {
-    try {
-      return await db
-      .collection(chatCollection)
-      .doc(chatId)
-      .get();
-    } catch(e) {
-      debugPrint(e.toString());
-    }
+    return db
+    .collection(chatCollection)
+    .doc(chatId)
+    .get();
   }
 
   Future<void> createChat(String chatId, Map<String, dynamic> data) async {
     WriteBatch batch = FirebaseFirestore.instance.batch();
-
-    try {
-      DocumentReference<Map<String, dynamic>> createChatDoc = db
-      .collection(chatCollection)
-      .doc(chatId);
-      batch.set(createChatDoc, data);
-      batch.commit();
-    } catch(e) {
-      debugPrint(e.toString());
-    }
+    DocumentReference<Map<String, dynamic>> createChatDoc = db
+    .collection(chatCollection)
+    .doc(chatId);
+    batch.set(createChatDoc, data);
+    await batch.commit();
   }
   
   Future<void> createChatGroup(String chatId, Map<String, dynamic> data) async {
     WriteBatch batch = FirebaseFirestore.instance.batch();
-
-    try {
-      DocumentReference<Map<String, dynamic>> createChatGroupDoc = db
-      .collection(chatCollection)
-      .doc(chatId);
-      batch.set(createChatGroupDoc, data);
-      batch.commit();
-    } catch(e) {
-      debugPrint(e.toString());
-    }
+    DocumentReference<Map<String, dynamic>> createChatGroupDoc = db
+    .collection(chatCollection)
+    .doc(chatId);
+    batch.set(createChatGroupDoc, data);
+    await batch.commit();
   }
 
   Future<void> createOnScreens(String chatId, Map<String, dynamic> data) async {
-    WriteBatch batch = FirebaseFirestore.instance.batch();
-
-    try {
-      DocumentReference<Map<String, dynamic>> createOnScreensDoc = db
-      .collection(onScreenCollection)
-      .doc(chatId);
-      batch.set(createOnScreensDoc, data);
-      batch.commit();
-    } catch(e) {
-      debugPrint(e.toString());
-    }
+    WriteBatch batch = FirebaseFirestore.instance.batch();  
+    DocumentReference<Map<String, dynamic>> createOnScreensDoc = db
+    .collection(onScreenCollection)
+    .doc(chatId);
+    batch.set(createOnScreensDoc, data);
+    await batch.commit();
   }
 
   Future<void> deleteChat({ required String chatId}) async {

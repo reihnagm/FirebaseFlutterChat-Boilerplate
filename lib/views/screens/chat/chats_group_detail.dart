@@ -1,15 +1,16 @@
 import 'dart:io';
 
 import 'package:provider/provider.dart';
-import 'package:timeago/timeago.dart' as timeago;
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 
 import 'package:chat/providers/authentication.dart';
-import 'package:chat/utils/custom_themes.dart';
 import 'package:chat/providers/chats.dart';
+
 import 'package:chat/basewidgets/rounded_image.dart';
+
+import 'package:chat/utils/custom_themes.dart';
 import 'package:chat/utils/dimensions.dart';
 import 'package:chat/utils/color_resources.dart';
 
@@ -37,7 +38,7 @@ class _ChatsGroupDetailState extends State<ChatsGroupDetail> {
   String titleMore = "";
   bool lastStatus = true;
 
-  scrollListener() {
+  void scrollListener() {
     if (isShrink != lastStatus) {
       setState(() {
         lastStatus = isShrink;

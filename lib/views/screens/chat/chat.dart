@@ -55,7 +55,7 @@ class ChatPage extends StatefulWidget {
 class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   late double deviceHeight;
   late double deviceWidth;
-  late ChatProvider chatProvider;
+  late ChatProvider cp;
   
   @override 
   void didChangeAppLifecycleState(AppLifecycleState state) async {
@@ -96,27 +96,28 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   @override 
   void initState() {
     super.initState();
-    chatProvider = context.read<ChatProvider>();
-    chatProvider.clearMsgLimit();
     WidgetsBinding.instance!.addObserver(this);
-    WidgetsBinding.instance!.addPostFrameCallback((_) {
+
+    cp.clearMsgLimit();
+
+    Future.delayed(Duration.zero, () {
       if(mounted) {
-        chatProvider.listenToMessages();
+        cp.listenToMessages();
       }
       if(mounted) {
-        chatProvider.joinScreen();
+        cp.joinScreen();
       }
       if(mounted) {
-        chatProvider.isUserTyping();
+        cp.isUserTyping();
       }
       if(mounted) {
-        chatProvider.isScreenOn(receiverId: widget.receiverId);
+        cp.isScreenOn(receiverId: widget.receiverId);
       }
       if(mounted) {
-        chatProvider.isUserOnline(receiverId: widget.receiverId);
+        cp.isUserOnline(receiverId: widget.receiverId);
       }
       if(mounted) {
-        chatProvider.seeMsg(
+        cp.seeMsg(
           receiverId: widget.receiverId, 
           isGroup: widget.isGroup
         );
@@ -140,10 +141,13 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   Widget buildUI() {
     return Builder(
       builder: (BuildContext context) {
+
+        cp = context.read<ChatProvider>();
+
         return WillPopScope(
           onWillPop: () async {
-            context.read<ChatProvider>().leaveScreen();
-            context.read<ChatProvider>().clearSelectedMessages();
+            await cp.leaveScreen();
+            cp.clearSelectedMessages();
             return Future.value(true);
           },
           child: KeyboardDismisser(

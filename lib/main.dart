@@ -189,7 +189,11 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
     //   }
     // }); 
     // FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
-    context.read<FirebaseProvider>().setupInteractedMessage();
+     
+    Future.delayed(Duration.zero, () async {
+      await context.read<FirebaseProvider>().setupInteractedMessage();
+    });
+
     context.read<FirebaseProvider>().listenNotification(context);
     NotificationService.init();
     listenOnClickNotifications();
