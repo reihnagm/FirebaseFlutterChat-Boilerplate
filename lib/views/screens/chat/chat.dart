@@ -411,7 +411,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                       );
                     },
                     order: GroupedListOrder.ASC,
-                    groupComparator: (el1, el2) => el2.compareTo(el1),
+                    groupComparator: (el1, el2) => el1.compareTo(el1),
                     itemComparator: (el1, el2) => el2.sentTime.compareTo(el1.sentTime),
                     shrinkWrap: true,
                     reverse: true,
